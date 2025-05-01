@@ -40,12 +40,16 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
+      // إزالة المسافات من البريد الإلكتروني وكلمة المرور
+      const trimmedEmail = email.trim();
+      const trimmedPassword = password.trim();
+      
       // For debugging
-      console.log("Attempting login with:", { email, password });
+      console.log("Attempting login with:", { email: trimmedEmail });
       
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: trimmedEmail,
+        password: trimmedPassword,
       });
       
       console.log("Login response:", data);
@@ -97,7 +101,9 @@ const LoginPage = () => {
     }
 
     try {
-      await sendMagicLink(email);
+      // إزالة المسافات من البريد الإلكتروني
+      const trimmedEmail = email.trim();
+      await sendMagicLink(trimmedEmail);
       setMagicLinkSent(true);
       toast({
         title: "تم إرسال رابط الدخول",

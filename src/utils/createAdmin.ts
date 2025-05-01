@@ -7,8 +7,9 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export async function createTestAdmin() {
   try {
-    const adminEmail = "karim-it@outlook.sa";
-    const adminPassword = "|l0v3N@fes";
+    // تأكد من عدم وجود مسافات في البريد الإلكتروني وكلمة المرور
+    const adminEmail = "karim-it@outlook.sa".trim();
+    const adminPassword = "|l0v3N@fes".trim();
 
     // Check if user exists first by trying to sign in
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({

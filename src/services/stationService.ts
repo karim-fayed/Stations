@@ -156,8 +156,11 @@ function toRadians(degrees: number): number {
 
 // إرسال رابط تسجيل دخول سحري للمستخدم المشرف
 export const sendMagicLink = async (email: string) => {
+  // إزالة المسافات من البريد الإلكتروني
+  const trimmedEmail = email.trim();
+  
   const { data, error } = await supabase.auth.signInWithOtp({
-    email,
+    email: trimmedEmail,
   });
 
   if (error) {
