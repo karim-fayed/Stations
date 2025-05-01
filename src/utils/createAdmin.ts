@@ -10,20 +10,21 @@ export async function createTestAdmin() {
     const adminEmail = "karim-it@outlook.sa";
     const adminPassword = "|l0v3N@fes";
 
-    // Check if user exists first by searching users
-    const { data, error: searchError } = await supabase.auth.admin.listUsers();
+    // Check if user exists first by trying to sign in
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: adminEmail,
+      password: adminPassword,
+    });
 
-    if (searchError) {
-      console.error("Error checking for existing admin:", searchError);
+    // If sign in is successful, the user already exists
+    if (signInData.user) {
+      console.log("Admin user already exists and credentials are valid");
+      // Sign out after checking
+      await supabase.auth.signOut();
       return;
     }
 
-    // If the user already exists, don't create it again
-    // Use type assertion to tell TypeScript that users have an email property
-    if (data?.users && data.users.some((user: any) => user.email === adminEmail)) {
-      console.log("Admin user already exists");
-      return;
-    }
+    console.log("Creating admin user...");
 
     // Create the admin user
     const { data: userData, error } = await supabase.auth.admin.createUser({

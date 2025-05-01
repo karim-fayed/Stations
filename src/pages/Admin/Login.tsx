@@ -40,11 +40,21 @@ const LoginPage = () => {
 
     try {
       console.log("Attempting login with:", { email });
-      const response = await adminLogin(email, password);
-      console.log("Login response:", response);
+      
+      // Use signInWithPassword instead of the custom adminLogin function
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      console.log("Login response:", data);
+      
+      if (error) {
+        throw error;
+      }
       
       // Check if we have a session
-      if (response.session) {
+      if (data.session) {
         toast({
           title: "تم تسجيل الدخول بنجاح",
           description: "جاري تحويلك إلى لوحة التحكم",
