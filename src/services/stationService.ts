@@ -154,23 +154,6 @@ function toRadians(degrees: number): number {
   return (degrees * Math.PI) / 180;
 }
 
-// المصادقة للمشرفين
-export const adminLogin = async (email: string, password: string) => {
-  console.log("Attempting login with:", { email });
-  
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    console.error("Login error:", error);
-    throw error;
-  }
-
-  return data;
-};
-
 // إرسال رابط تسجيل دخول سحري للمستخدم المشرف
 export const sendMagicLink = async (email: string) => {
   const { data, error } = await supabase.auth.signInWithOtp({
