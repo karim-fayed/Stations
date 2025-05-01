@@ -19,9 +19,12 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
+          console.error("Auth error:", error);
           throw error;
         }
 
+        console.log("Auth session check result:", data);
+        
         setAuthState({
           isAuthenticated: !!data.session,
           user: data.session?.user || null,
@@ -37,9 +40,10 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
       }
     };
 
-    // إعداد مراقب لتغييرات حالة التسجيل
+    // Set up auth state listener
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log("Auth state changed:", event, session);
         setAuthState({
           isAuthenticated: !!session,
           user: session?.user || null,
@@ -64,10 +68,12 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
   }
 
   if (!authState?.isAuthenticated) {
-    // حفظ المسار الحالي للعودة إليه بعد تسجيل الدخول
+    console.log("User not authenticated, redirecting to login");
+    // Save the current path to return to after login
     return <Navigate to="/admin/login" state={{ from: location }} replace />;
   }
 
+  console.log("User is authenticated, rendering protected content");
   return <>{children}</>;
 };
 

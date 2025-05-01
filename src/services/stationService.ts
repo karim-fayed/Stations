@@ -53,7 +53,7 @@ export const fetchStation = async (id: string): Promise<GasStation> => {
 
 // إضافة محطة جديدة
 export const addStation = async (station: Omit<GasStation, "id">): Promise<GasStation> => {
-  // تحقق أن المستخدم مسجل الدخول كمشرف قبل السماح بالإضافة
+  // تحقق أن المستخدم مسجل الدخول قبل السماح بالإضافة
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   
   if (sessionError || !sessionData.session) {
@@ -79,7 +79,7 @@ export const updateStation = async (
   id: string,
   station: Partial<GasStation>
 ): Promise<GasStation> => {
-  // تحقق أن المستخدم مسجل الدخول كمشرف قبل السماح بالتحديث
+  // تحقق أن المستخدم مسجل الدخول قبل السماح بالتحديث
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   
   if (sessionError || !sessionData.session) {
@@ -103,7 +103,7 @@ export const updateStation = async (
 
 // حذف محطة
 export const deleteStation = async (id: string): Promise<void> => {
-  // تحقق أن المستخدم مسجل الدخول كمشرف قبل السماح بالحذف
+  // تحقق أن المستخدم مسجل الدخول قبل السماح بالحذف
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   
   if (sessionError || !sessionData.session) {
