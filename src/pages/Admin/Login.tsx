@@ -1,11 +1,11 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { adminLogin } from "@/services/stationService";
+import { adminLogin, checkAdminStatus } from "@/services/stationService";
 import { useToast } from "@/hooks/use-toast";
 
 const LoginPage = () => {
@@ -15,18 +15,49 @@ const LoginPage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Check if the user is already logged in
+    const checkAuth = async () => {
+      try {
+        const { isAuthenticated } = await checkAdminStatus();
+        if (isAuthenticated) {
+          navigate("/admin/dashboard");
+        }
+      } catch (error) {
+        console.error("Error checking auth status:", error);
+      }
+    };
+
+    checkAuth();
+  }, [navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      await adminLogin(email, password);
-      toast({
-        title: "تم تسجيل الدخول بنجاح",
-        description: "جاري تحويلك إلى لوحة التحكم",
-      });
-      navigate("/admin/dashboard");
+      console.log("Attempting login with:", { email, password });
+      const response = await adminLogin(email, password);
+      console.log("Login response:", response);
+      
+      // Check if we have a session
+      if (response.session) {
+        toast({
+          title: "تم تسجيل الدخول بنجاح",
+          description: "جاري تحويلك إلى لوحة التحكم",
+        });
+        setTimeout(() => {
+          navigate("/admin/dashboard");
+        }, 1500);
+      } else {
+        toast({
+          title: "خطأ في تسجيل الدخول",
+          description: "لا يوجد جلسة مستخدم. تأكد من صحة بريدك الإلكتروني وكلمة المرور",
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
+      console.error("Login error:", error);
       toast({
         title: "خطأ في تسجيل الدخول",
         description: error.message || "تأكد من صحة بريدك الإلكتروني وكلمة المرور",
@@ -108,6 +139,10 @@ const LoginPage = () => {
               >
                 {isLoading ? "جاري التسجيل..." : "تسجيل الدخول"}
               </Button>
+
+              <div className="text-sm text-gray-600 mt-2">
+                <p>للتجربة: استخدم admin@example.com / password1234</p>
+              </div>
             </form>
           </CardContent>
           <CardFooter>

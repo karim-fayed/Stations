@@ -11,6 +11,7 @@ export interface GasStation {
   created_at?: string;
   updated_at?: string;
   distance_meters?: number;
+  location?: any;
 }
 
 export interface AdminState {

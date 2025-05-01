@@ -235,7 +235,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         center: [44.1277, 17.4924], // إحداثيات افتراضية (نجران)
         zoom: 11,
         attributionControl: false,
-        language: language === 'ar' ? 'ar' : 'en'
       });
 
       // إضافة أدوات التحكم بالخريطة

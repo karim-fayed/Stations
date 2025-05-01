@@ -35,13 +35,13 @@ const GasStationList: React.FC<GasStationListProps> = ({
   }), [language]);
 
   const regions = useMemo(() => {
-    const uniqueRegions = Array.from(new Set(stations.map(station => station.region || station.area)));
+    const uniqueRegions = Array.from(new Set(stations.map(station => station.region)));
     return uniqueRegions;
   }, [stations]);
 
   const filteredStations = useMemo(() => {
     if (selectedRegion === 'all') return stations;
-    return stations.filter(station => (station.region || station.area) === selectedRegion);
+    return stations.filter(station => station.region === selectedRegion);
   }, [selectedRegion, stations]);
 
   // تنسيق المسافة
@@ -51,9 +51,7 @@ const GasStationList: React.FC<GasStationListProps> = ({
         ? `${(station.distance_meters/1000).toFixed(2)} ${language === 'ar' ? 'كم' : 'km'}`
         : `${Math.round(station.distance_meters)} ${language === 'ar' ? 'متر' : 'm'}`;
     }
-    return station.distanceFromCenter ? 
-      `${station.distanceFromCenter} ${language === 'ar' ? 'كم' : 'km'}` : 
-      '-';
+    return '-';
   };
 
   // تأثيرات متحركة للصف المحدد
@@ -110,11 +108,11 @@ const GasStationList: React.FC<GasStationListProps> = ({
                 className={`${selectedStation?.id === station.id ? 'bg-muted' : ''} cursor-pointer`}
                 onClick={() => onSelectStation(station)}
               >
-                <TableCell className="font-medium">{station.region || station.area}</TableCell>
+                <TableCell className="font-medium">{station.region}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <MapPin size={16} className="text-noor-purple" />
-                    {station.sub_region || station.location}
+                    {station.sub_region}
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">{station.fuel_types || '-'}</TableCell>

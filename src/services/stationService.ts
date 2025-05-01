@@ -5,7 +5,7 @@ import { GasStation } from "@/types/station";
 // جلب المحطات
 export const fetchStations = async (): Promise<GasStation[]> => {
   const { data, error } = await supabase
-    .from("gas_stations")
+    .from("stations")
     .select("*");
 
   if (error) {
@@ -19,7 +19,7 @@ export const fetchStations = async (): Promise<GasStation[]> => {
 // جلب محطة معينة
 export const fetchStation = async (id: string): Promise<GasStation> => {
   const { data, error } = await supabase
-    .from("gas_stations")
+    .from("stations")
     .select("*")
     .eq("id", id)
     .single();
@@ -35,7 +35,7 @@ export const fetchStation = async (id: string): Promise<GasStation> => {
 // إضافة محطة جديدة
 export const addStation = async (station: Omit<GasStation, "id">): Promise<GasStation> => {
   const { data, error } = await supabase
-    .from("gas_stations")
+    .from("stations")
     .insert([station])
     .select()
     .single();
@@ -54,7 +54,7 @@ export const updateStation = async (
   station: Partial<GasStation>
 ): Promise<GasStation> => {
   const { data, error } = await supabase
-    .from("gas_stations")
+    .from("stations")
     .update(station)
     .eq("id", id)
     .select()
@@ -70,7 +70,7 @@ export const updateStation = async (
 
 // حذف محطة
 export const deleteStation = async (id: string): Promise<void> => {
-  const { error } = await supabase.from("gas_stations").delete().eq("id", id);
+  const { error } = await supabase.from("stations").delete().eq("id", id);
 
   if (error) {
     console.error(`Error deleting station with id ${id}:`, error);
@@ -85,22 +85,24 @@ export const fetchNearestStations = async (
   limit: number = 5
 ): Promise<GasStation[]> => {
   try {
-    // استخدام وظيفة محددة مسبقًا في Supabase أو دالة RPC
-    const { data, error } = await supabase.rpc('get_nearest_stations', {
-      user_lat: latitude,
-      user_lng: longitude,
-      max_rows: limit
-    });
-
-    if (error) throw error;
+    // First attempt: Try direct SQL query to get nearest stations
+    const { data, error } = await supabase
+      .from("stations")
+      .select("*, ST_Distance(location, ST_SetSRID(ST_Point($1, $2), 4326)::geography) as distance_meters", 
+        { prepare: false })
+      .order('location <-> ST_SetSRID(ST_Point($1, $2), 4326)::geography')
+      .limit(limit)
+      .parameters([longitude, latitude]);
     
+    if (error) throw error;
+
     return data as GasStation[];
   } catch (error) {
     console.error("Error fetching nearest stations:", error);
     
     // محاولة العثور على أقرب محطة من جهة العميل إذا فشل الطلب الأول
     const { data: allStations, error: fetchError } = await supabase
-      .from("gas_stations")
+      .from("stations")
       .select("*");
       
     if (fetchError) throw fetchError;
