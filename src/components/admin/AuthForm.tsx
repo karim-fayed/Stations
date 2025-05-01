@@ -174,8 +174,6 @@ const AuthForm = () => {
         
         <div className="text-sm text-gray-600 mt-6 text-center">
           <p>للتجربة استخدم أي من الحسابات التالية:</p>
-          <p className="font-semibold mt-1">admin@example.com / Admin123!</p>
-          <p className="font-semibold mt-1">karim-it@outlook.sa / |l0v3N@fes</p>
         </div>
       </CardContent>
       <CardFooter className="flex justify-center">
