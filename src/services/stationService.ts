@@ -91,22 +91,7 @@ export const fetchNearestStations = async (
   limit: number = 5
 ): Promise<GasStation[]> => {
   try {
-    // First attempt: Try direct SQL query to get nearest stations
-    const { data, error } = await supabase
-      .from("stations")
-      .select("*, ST_Distance(location, ST_SetSRID(ST_Point($1, $2), 4326)::geography) as distance_meters")
-      .order('location <-> ST_SetSRID(ST_Point($1, $2), 4326)::geography')
-      .limit(limit)
-      .eq('dummy', 'dummy').or(`dummy.is.null`)  // Dummy condition to enable parameters
-      .filter('id', 'neq', '00000000-0000-0000-0000-000000000000') // Another strategy
-      
-    if (error) throw error;
-
-    return data as GasStation[];
-  } catch (error) {
-    console.error("Error fetching nearest stations:", error);
-    
-    // محاولة العثور على أقرب محطة من جهة العميل إذا فشل الطلب الأول
+    // Get all stations first, then calculate distance client-side
     const { data: allStations, error: fetchError } = await supabase
       .from("stations")
       .select("*");
@@ -128,6 +113,9 @@ export const fetchNearestStations = async (
     stations.sort((a, b) => (a.distance_meters || 0) - (b.distance_meters || 0));
     
     return stations.slice(0, limit) as GasStation[];
+  } catch (error) {
+    console.error("Error fetching nearest stations:", error);
+    throw error;
   }
 };
 
