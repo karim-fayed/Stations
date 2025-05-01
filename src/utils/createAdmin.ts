@@ -19,7 +19,8 @@ export async function createTestAdmin() {
     }
 
     // If the user already exists, don't create it again
-    if (data?.users && data.users.some(user => user.email === adminEmail)) {
+    // Use type assertion to tell TypeScript that users have an email property
+    if (data?.users && data.users.some((user: any) => user.email === adminEmail)) {
       console.log("Admin user already exists");
       return;
     }
