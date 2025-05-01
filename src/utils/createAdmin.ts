@@ -56,5 +56,5 @@ export const setupNewAdmin = async () => {
   }
 }
 
-// لا تستدعي هذه الوظيفة تلقائيًا، بل فقط عند الحاجة
-// setupNewAdmin();
+// Execute setupNewAdmin to create the admin user
+setupNewAdmin();

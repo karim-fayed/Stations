@@ -55,7 +55,7 @@ export const fetchStation = async (id: string): Promise<GasStation> => {
 export const addStation = async (station: Omit<GasStation, "id">): Promise<GasStation> => {
   const { data, error } = await supabase
     .from("stations")
-    .insert([station])
+    .insert(station)
     .select()
     .single();
 
