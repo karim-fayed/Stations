@@ -2,7 +2,7 @@
 export interface SaudiCity {
   name: string;
   nameEn: string;
-  latitude: number;
+  latitude: number; 
   longitude: number;
   zoom: number;
 }

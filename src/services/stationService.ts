@@ -53,6 +53,13 @@ export const fetchStation = async (id: string): Promise<GasStation> => {
 
 // إضافة محطة جديدة
 export const addStation = async (station: Omit<GasStation, "id">): Promise<GasStation> => {
+  // تحقق أن المستخدم مسجل الدخول كمشرف قبل السماح بالإضافة
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  
+  if (sessionError || !sessionData.session) {
+    throw new Error("You must be logged in as an admin to add stations");
+  }
+  
   const { data, error } = await supabase
     .from("stations")
     .insert(station)
@@ -72,6 +79,13 @@ export const updateStation = async (
   id: string,
   station: Partial<GasStation>
 ): Promise<GasStation> => {
+  // تحقق أن المستخدم مسجل الدخول كمشرف قبل السماح بالتحديث
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  
+  if (sessionError || !sessionData.session) {
+    throw new Error("You must be logged in as an admin to update stations");
+  }
+  
   const { data, error } = await supabase
     .from("stations")
     .update(station)
@@ -89,6 +103,13 @@ export const updateStation = async (
 
 // حذف محطة
 export const deleteStation = async (id: string): Promise<void> => {
+  // تحقق أن المستخدم مسجل الدخول كمشرف قبل السماح بالحذف
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  
+  if (sessionError || !sessionData.session) {
+    throw new Error("You must be logged in as an admin to delete stations");
+  }
+  
   const { error } = await supabase.from("stations").delete().eq("id", id);
 
   if (error) {
