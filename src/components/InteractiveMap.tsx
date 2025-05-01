@@ -8,9 +8,22 @@ import { fetchNearestStations } from '@/services/stationService';
 import { motion } from 'framer-motion';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // تهيئة Mapbox باستخدام المفتاح
 mapboxgl.accessToken = MAPBOX_TOKEN;
+
+// قائمة المدن الرئيسية في المملكة العربية السعودية مع إحداثياتها
+const saudiCities = [
+  { name: 'الرياض', nameEn: 'Riyadh', latitude: 24.7136, longitude: 46.6753, zoom: 10 },
+  { name: 'جدة', nameEn: 'Jeddah', latitude: 21.4858, longitude: 39.1925, zoom: 10 },
+  { name: 'مكة المكرمة', nameEn: 'Mecca', latitude: 21.3891, longitude: 39.8579, zoom: 10 },
+  { name: 'المدينة المنورة', nameEn: 'Medina', latitude: 24.5247, longitude: 39.5692, zoom: 10 },
+  { name: 'الدمام', nameEn: 'Dammam', latitude: 26.4207, longitude: 50.0888, zoom: 10 },
+  { name: 'الخبر', nameEn: 'Khobar', latitude: 26.2172, longitude: 50.1971, zoom: 10 },
+  { name: 'تبوك', nameEn: 'Tabuk', latitude: 28.3998, longitude: 36.5717, zoom: 10 },
+  { name: 'نجران', nameEn: 'Najran', latitude: 17.4924, longitude: 44.1277, zoom: 10 },
+];
 
 interface InteractiveMapProps {
   selectedStation: GasStation | null;
@@ -33,6 +46,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [isLoadingNearest, setIsLoadingNearest] = useState(false);
+  const [selectedCity, setSelectedCity] = useState<string>('الرياض'); // الرياض كمدينة افتراضية
   const { toast } = useToast();
   
   // نصوص متعددة اللغات
@@ -58,6 +72,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     distance: language === 'ar' ? 'المسافة:' : 'Distance:',
     name: language === 'ar' ? 'الاسم:' : 'Name:',
     clickForDetails: language === 'ar' ? 'اضغط للتفاصيل' : 'Click for details',
+    selectCity: language === 'ar' ? 'اختر مدينة' : 'Select City',
   };
 
   // إنشاء محتوى النافذة المنبثقة (Popup) للمحطة
@@ -70,6 +85,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     
     const content = document.createElement('div');
     content.className = 'px-2 py-1';
+    content.dir = language === 'ar' ? 'rtl' : 'ltr'; // إضافة اتجاه النص حسب اللغة
     content.innerHTML = `
       <div class="font-bold text-noor-purple">${station.name}</div>
       <div class="text-xs text-gray-600">${texts.region} ${station.region}</div>
@@ -303,16 +319,43 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     }
   };
 
+  // التغيير إلى مدينة مختارة
+  const handleCityChange = (cityName: string) => {
+    setSelectedCity(cityName);
+    const city = saudiCities.find(city => city.name === cityName || city.nameEn === cityName);
+    
+    if (city && map.current) {
+      // تحريك الخريطة إلى المدينة المختارة
+      map.current.flyTo({
+        center: [city.longitude, city.latitude],
+        zoom: city.zoom,
+        essential: true,
+        duration: 1500
+      });
+      
+      // يمكن هنا إضافة منطق لتصفية المحطات حسب المدينة المختارة
+      toast({
+        title: language === 'ar' ? `تم الانتقال إلى ${city.name}` : `Moved to ${city.nameEn}`,
+        description: language === 'ar' ? 'تم عرض المحطات في المنطقة المختارة' : 'Showing stations in the selected area',
+      });
+    }
+  };
+
   // تهيئة الخريطة
   useEffect(() => {
     if (map.current) return; // تجنب إعادة التهيئة
     
     if (mapContainer.current) {
+      // البحث عن مدينة الرياض في قائمة المدن
+      const riyadh = saudiCities.find(city => city.name === 'الرياض' || city.nameEn === 'Riyadh');
+      const initialCenter = riyadh ? [riyadh.longitude, riyadh.latitude] : [46.6753, 24.7136]; // إحداثيات الرياض
+      const initialZoom = riyadh?.zoom || 10;
+
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12',
-        center: [44.1277, 17.4924], // إحداثيات افتراضية (نجران)
-        zoom: 11,
+        center: initialCenter, // تحديد مركز الخريطة على الرياض
+        zoom: initialZoom,
         attributionControl: false,
       });
 
@@ -365,6 +408,26 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   return (
     <div className="w-full h-full flex flex-col">
+      {/* قائمة المدن المنسدلة */}
+      <div className={`mb-4 ${language === 'ar' ? 'text-right' : 'text-left'}`}>
+        <Select 
+          value={selectedCity} 
+          onValueChange={handleCityChange}
+          dir={language === 'ar' ? 'rtl' : 'ltr'} // توجيه القائمة حسب اللغة
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder={texts.selectCity} />
+          </SelectTrigger>
+          <SelectContent dir={language === 'ar' ? 'rtl' : 'ltr'}>
+            {saudiCities.map((city) => (
+              <SelectItem key={city.nameEn} value={city.name}>
+                {language === 'ar' ? city.name : city.nameEn}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      
       <div className="relative flex-grow">
         <div ref={mapContainer} className="map-container h-[500px] rounded-lg shadow-lg"></div>
         

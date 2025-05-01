@@ -88,6 +88,7 @@ const Index = () => {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
       className={`min-h-screen flex flex-col ${language === 'ar' ? 'rtl' : 'ltr'}`}
+      dir={language === 'ar' ? 'rtl' : 'ltr'} // إضافة خاصية dir للتحكم في اتجاه الصفحة
     >
       <Toaster />
       
@@ -143,7 +144,7 @@ const Index = () => {
         )}
       </main>
       
-      <footer className={`bg-noor-purple text-white p-4 ${language === 'ar' ? 'rtl' : 'ltr'}`}>
+      <footer className={`bg-noor-purple text-white p-4`}>
         <div className="container mx-auto text-center">
           <p>
             {language === 'ar'
