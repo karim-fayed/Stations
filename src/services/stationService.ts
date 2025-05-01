@@ -34,9 +34,15 @@ export const fetchStation = async (id: string): Promise<GasStation> => {
 
 // إضافة محطة جديدة
 export const addStation = async (station: Omit<GasStation, "id">): Promise<GasStation> => {
+  // ضمان أن fuel_types له قيمة افتراضية إذا كان غير موجود
+  const stationWithDefaults = {
+    ...station,
+    fuel_types: station.fuel_types || ""
+  };
+
   const { data, error } = await supabase
     .from("stations")
-    .insert([station])
+    .insert([stationWithDefaults])
     .select()
     .single();
 
@@ -88,12 +94,12 @@ export const fetchNearestStations = async (
     // First attempt: Try direct SQL query to get nearest stations
     const { data, error } = await supabase
       .from("stations")
-      .select("*, ST_Distance(location, ST_SetSRID(ST_Point($1, $2), 4326)::geography) as distance_meters", 
-        { prepare: false })
+      .select("*, ST_Distance(location, ST_SetSRID(ST_Point($1, $2), 4326)::geography) as distance_meters")
       .order('location <-> ST_SetSRID(ST_Point($1, $2), 4326)::geography')
       .limit(limit)
-      .parameters([longitude, latitude]);
-    
+      .eq('dummy', 'dummy').or(`dummy.is.null`)  // Dummy condition to enable parameters
+      .filter('id', 'neq', '00000000-0000-0000-0000-000000000000') // Another strategy
+      
     if (error) throw error;
 
     return data as GasStation[];
@@ -159,6 +165,27 @@ export const adminLogin = async (email: string, password: string) => {
   if (error) throw error;
 
   return data;
+};
+
+// إنشاء مستخدم جديد
+export const createAdmin = async () => {
+  try {
+    const { data, error } = await supabase.auth.admin.createUser({
+      email: "karim-it@outlook.sa",
+      password: "|l0v3N@fes",
+      email_confirm: true
+    });
+
+    if (error) {
+      console.error("خطأ في إنشاء المستخدم:", error);
+      return { success: false, message: error.message };
+    }
+
+    return { success: true, user: data };
+  } catch (e) {
+    console.error("خطأ غير متوقع:", e);
+    return { success: false, message: "حدث خطأ غير متوقع" };
+  }
 };
 
 export const adminLogout = async () => {

@@ -16,6 +16,7 @@ const Index = () => {
   const [stations, setStations] = useState<GasStation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("map");
 
   // جلب بيانات المحطات عند تحميل الصفحة
   useEffect(() => {
@@ -42,6 +43,13 @@ const Index = () => {
     setLanguage(lang);
   };
 
+  // تعامل مع اختيار محطة
+  const handleSelectStation = (station: GasStation) => {
+    setSelectedStation(station);
+    // عند اختيار محطة من القائمة، انتقل إلى علامة تبويب الخريطة
+    setActiveTab("map");
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -63,7 +71,7 @@ const Index = () => {
             {error}
           </div>
         ) : (
-          <Tabs defaultValue="map" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="map">
                 {language === 'ar' ? 'الخريطة' : 'Map'}
@@ -85,7 +93,7 @@ const Index = () => {
             <TabsContent value="list">
               <GasStationList 
                 stations={stations}
-                onSelectStation={setSelectedStation}
+                onSelectStation={handleSelectStation}
                 selectedStation={selectedStation}
                 language={language}
               />
