@@ -31,7 +31,9 @@ import {
   adminLogout,
   checkAdminStatus
 } from "@/services/stationService";
-import { Plus, Edit, Trash2, LogOut } from "lucide-react";
+import { Plus, Edit, Trash2, LogOut, FileSpreadsheet } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ExcelImportExport from "@/components/admin/ExcelImportExport";
 
 const Dashboard = () => {
   const [stations, setStations] = useState<GasStation[]>([]);
@@ -210,68 +212,83 @@ const Dashboard = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">#</TableHead>
-                  <TableHead>الاسم</TableHead>
-                  <TableHead>المنطقة</TableHead>
-                  <TableHead>الموقع الفرعي</TableHead>
-                  <TableHead className="hidden md:table-cell">أنواع الوقود</TableHead>
-                  <TableHead className="text-center">الإحداثيات</TableHead>
-                  <TableHead className="text-right">الإجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {stations.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-10">
-                      لا توجد محطات مضافة
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  stations.map((station, index) => (
-                    <TableRow key={station.id}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell className="font-medium">{station.name}</TableCell>
-                      <TableCell>{station.region}</TableCell>
-                      <TableCell>{station.sub_region}</TableCell>
-                      <TableCell className="hidden md:table-cell">{station.fuel_types || "-"}</TableCell>
-                      <TableCell className="text-center text-xs">
-                        <div>خط العرض: {station.latitude}</div>
-                        <div>خط الطول: {station.longitude}</div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setCurrentStation(station);
-                              setIsEditDialogOpen(true);
-                            }}
-                          >
-                            <Edit size={16} className="text-blue-500" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setCurrentStation(station);
-                              setIsDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 size={16} className="text-red-500" />
-                          </Button>
-                        </div>
-                      </TableCell>
+          <Tabs defaultValue="stations" className="mb-6">
+            <TabsList className="mb-4">
+              <TabsTrigger value="stations">المحطات</TabsTrigger>
+              <TabsTrigger value="import-export" className="flex items-center gap-1">
+                <FileSpreadsheet size={14} /> استيراد/تصدير
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="stations">
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">#</TableHead>
+                      <TableHead>الاسم</TableHead>
+                      <TableHead>المنطقة</TableHead>
+                      <TableHead>الموقع الفرعي</TableHead>
+                      <TableHead className="hidden md:table-cell">أنواع الوقود</TableHead>
+                      <TableHead className="text-center">الإحداثيات</TableHead>
+                      <TableHead className="text-right">الإجراءات</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                  </TableHeader>
+                  <TableBody>
+                    {stations.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-10">
+                          لا توجد محطات مضافة
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      stations.map((station, index) => (
+                        <TableRow key={station.id}>
+                          <TableCell>{index + 1}</TableCell>
+                          <TableCell className="font-medium">{station.name}</TableCell>
+                          <TableCell>{station.region}</TableCell>
+                          <TableCell>{station.sub_region}</TableCell>
+                          <TableCell className="hidden md:table-cell">{station.fuel_types || "-"}</TableCell>
+                          <TableCell className="text-center text-xs">
+                            <div>خط العرض: {station.latitude}</div>
+                            <div>خط الطول: {station.longitude}</div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setCurrentStation(station);
+                                  setIsEditDialogOpen(true);
+                                }}
+                              >
+                                <Edit size={16} className="text-blue-500" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setCurrentStation(station);
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 size={16} className="text-red-500" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="import-export">
+              <ExcelImportExport />
+            </TabsContent>
+          </Tabs>
         </motion.div>
       )}
 

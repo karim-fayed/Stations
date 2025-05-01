@@ -51,3 +51,18 @@ export interface MapTexts {
   clickForDetails: string;
   selectCity: string;
 }
+
+// أنواع جديدة لإضافة ميزة استيراد/تصدير Excel
+export interface ImportResult {
+  success: number;
+  failed: number;
+  errors: string[];
+}
+
+// الحالة الأمنية للمستخدم
+export interface AuthState {
+  isAuthenticated: boolean;
+  user: any | null;
+  session: any | null;
+  loading: boolean;
+}

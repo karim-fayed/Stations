@@ -3,13 +3,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import Index from "./pages/Index";
 import LoginPage from "./pages/Admin/Login";
 import Dashboard from "./pages/Admin/Dashboard";
 import NotFound from "./pages/NotFound";
 import { ensureAdminExists } from "./utils/createAdmin";
+import AuthGuard from "@/components/admin/AuthGuard";
 
 const queryClient = new QueryClient();
 
@@ -28,10 +29,12 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            {/* Redirect login to dashboard temporarily */}
-            <Route path="/admin/login" element={<Navigate to="/admin/dashboard" replace />} />
-            {/* Remove authentication check from Dashboard temporarily */}
-            <Route path="/admin/dashboard" element={<Dashboard />} />
+            <Route path="/admin/login" element={<LoginPage />} />
+            <Route path="/admin/dashboard" element={
+              <AuthGuard>
+                <Dashboard />
+              </AuthGuard>
+            } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
