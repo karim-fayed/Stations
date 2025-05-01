@@ -2,114 +2,172 @@
 import { supabase } from "@/integrations/supabase/client";
 import { GasStation } from "@/types/station";
 
+// جلب المحطات
 export const fetchStations = async (): Promise<GasStation[]> => {
   const { data, error } = await supabase
-    .from('stations')
-    .select('*');
+    .from("gas_stations")
+    .select("*");
 
   if (error) {
-    console.error('Error fetching stations:', error);
+    console.error("Error fetching stations:", error);
     throw error;
   }
 
-  return data || [];
+  return data as GasStation[];
 };
 
-export const fetchNearestStations = async (lat: number, lng: number, limit: number = 5): Promise<GasStation[]> => {
+// جلب محطة معينة
+export const fetchStation = async (id: string): Promise<GasStation> => {
   const { data, error } = await supabase
-    .rpc('find_nearest_stations', { lat, lng, limit_count: limit });
+    .from("gas_stations")
+    .select("*")
+    .eq("id", id)
+    .single();
 
   if (error) {
-    console.error('Error fetching nearest stations:', error);
+    console.error(`Error fetching station with id ${id}:`, error);
     throw error;
   }
 
-  return data || [];
+  return data as GasStation;
 };
 
-export const addStation = async (station: Omit<GasStation, 'id'>): Promise<GasStation> => {
+// إضافة محطة جديدة
+export const addStation = async (station: Omit<GasStation, "id">): Promise<GasStation> => {
   const { data, error } = await supabase
-    .from('stations')
+    .from("gas_stations")
     .insert([station])
-    .select();
+    .select()
+    .single();
 
   if (error) {
-    console.error('Error adding station:', error);
+    console.error("Error adding station:", error);
     throw error;
   }
 
-  return data[0];
+  return data as GasStation;
 };
 
-export const updateStation = async (id: string, updates: Partial<GasStation>): Promise<GasStation> => {
+// تحديث محطة
+export const updateStation = async (
+  id: string,
+  station: Partial<GasStation>
+): Promise<GasStation> => {
   const { data, error } = await supabase
-    .from('stations')
-    .update(updates)
-    .eq('id', id)
-    .select();
+    .from("gas_stations")
+    .update(station)
+    .eq("id", id)
+    .select()
+    .single();
 
   if (error) {
-    console.error('Error updating station:', error);
+    console.error(`Error updating station with id ${id}:`, error);
     throw error;
   }
 
-  return data[0];
+  return data as GasStation;
 };
 
+// حذف محطة
 export const deleteStation = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from('stations')
-    .delete()
-    .eq('id', id);
+  const { error } = await supabase.from("gas_stations").delete().eq("id", id);
 
   if (error) {
-    console.error('Error deleting station:', error);
+    console.error(`Error deleting station with id ${id}:`, error);
     throw error;
   }
 };
 
+// جلب أقرب محطات
+export const fetchNearestStations = async (
+  latitude: number,
+  longitude: number,
+  limit: number = 5
+): Promise<GasStation[]> => {
+  try {
+    // استخدام وظيفة محددة مسبقًا في Supabase أو دالة RPC
+    const { data, error } = await supabase.rpc('get_nearest_stations', {
+      user_lat: latitude,
+      user_lng: longitude,
+      max_rows: limit
+    });
+
+    if (error) throw error;
+    
+    return data as GasStation[];
+  } catch (error) {
+    console.error("Error fetching nearest stations:", error);
+    
+    // محاولة العثور على أقرب محطة من جهة العميل إذا فشل الطلب الأول
+    const { data: allStations, error: fetchError } = await supabase
+      .from("gas_stations")
+      .select("*");
+      
+    if (fetchError) throw fetchError;
+    
+    // حساب المسافة لكل محطة (بالمتر) - Haversine formula
+    const stations = allStations.map((station) => {
+      const distance = calculateDistance(
+        latitude,
+        longitude,
+        station.latitude,
+        station.longitude
+      );
+      return { ...station, distance_meters: Math.round(distance * 1000) };
+    });
+    
+    // ترتيب المحطات حسب المسافة
+    stations.sort((a, b) => (a.distance_meters || 0) - (b.distance_meters || 0));
+    
+    return stations.slice(0, limit) as GasStation[];
+  }
+};
+
+// دالة حساب المسافة - Haversine formula
+function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371; // نصف قطر الأرض بالكيلومتر
+  const dLat = toRadians(lat2 - lat1);
+  const dLon = toRadians(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(lat1)) *
+      Math.cos(toRadians(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // المسافة بالكيلومتر
+}
+
+function toRadians(degrees: number): number {
+  return (degrees * Math.PI) / 180;
+}
+
+// المصادقة للمشرفين
 export const adminLogin = async (email: string, password: string) => {
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
-  if (error) {
-    console.error('Error during login:', error);
-    throw error;
-  }
+  if (error) throw error;
 
   return data;
 };
 
 export const adminLogout = async () => {
   const { error } = await supabase.auth.signOut();
-  
-  if (error) {
-    console.error('Error during logout:', error);
-    throw error;
-  }
-
-  return true;
+  if (error) throw error;
 };
 
 export const checkAdminStatus = async () => {
-  const { data } = await supabase.auth.getUser();
-  
-  if (data?.user) {
-    // التحقق إذا كان المستخدم موجودًا في جدول المشرفين
-    const { data: adminData, error } = await supabase
-      .from('admins')
-      .select('*')
-      .eq('user_id', data.user.id)
-      .single();
-      
-    if (error || !adminData) {
-      return { isAuthenticated: false, user: null };
-    }
-    
-    return { isAuthenticated: true, user: data.user };
-  }
-  
-  return { isAuthenticated: false, user: null };
+  const { data } = await supabase.auth.getSession();
+  return {
+    isAuthenticated: !!data.session,
+    user: data.session?.user || null,
+  };
 };

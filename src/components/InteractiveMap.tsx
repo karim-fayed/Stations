@@ -235,22 +235,13 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         center: [44.1277, 17.4924], // إحداثيات افتراضية (نجران)
         zoom: 11,
         attributionControl: false,
-        locale: language === 'ar' ? 'ar-SA' : 'en-US'
+        language: language === 'ar' ? 'ar' : 'en'
       });
 
       // إضافة أدوات التحكم بالخريطة
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
       map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
       map.current.addControl(new mapboxgl.ScaleControl(), 'bottom-right');
-
-      // ضبط اتجاه الخريطة استنادًا إلى اللغة
-      if (language === 'ar') {
-        map.current.setRTLTextPlugin(
-          'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.2.3/mapbox-gl-rtl-text.js',
-          null,
-          true
-        );
-      }
 
       // حدث اكتمال تحميل الخريطة
       map.current.on('load', () => {
@@ -270,13 +261,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   useEffect(() => {
     updateMarkers();
   }, [stations, selectedStation]);
-
-  // تحديث عند تغير اللغة
-  useEffect(() => {
-    if (map.current) {
-      map.current.setLanguage(language === 'ar' ? 'ar' : 'en');
-    }
-  }, [language]);
 
   // CSS للأنيميشن
   useEffect(() => {
@@ -316,7 +300,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             <div className={`p-4 rounded-lg shadow-lg ${language === 'ar' ? 'text-right' : 'text-left'}`}>
               <h3 className="font-bold text-noor-purple text-lg">{selectedStation.name}</h3>
               <p className="text-sm text-muted-foreground">
-                {language === 'ar' ? `المنطقة: ${selectedStation.region || selectedStation.area}` : `Region: ${selectedStation.region || selectedStation.area}`}
+                {language === 'ar' ? `المنطقة: ${selectedStation.region}` : `Region: ${selectedStation.region}`}
               </p>
               {selectedStation.distance_meters && (
                 <p className="text-sm text-muted-foreground">
