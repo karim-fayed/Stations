@@ -19,7 +19,7 @@ export async function createTestAdmin() {
 
     // Create the first admin user
     try {
-      const { data: userData, error } = await supabase.auth.signUp({
+      const { data: adminUserData, error: adminUserError } = await supabase.auth.signUp({
         email: adminEmail,
         password: adminPassword,
         options: {
@@ -30,20 +30,20 @@ export async function createTestAdmin() {
         }
       });
 
-      if (error) {
-        if (error.message.includes("User already registered")) {
+      if (adminUserError) {
+        if (adminUserError.message.includes("User already registered")) {
           console.log("Admin user already exists:", adminEmail);
         } else {
-          console.error("Error creating admin user:", error);
+          console.error("Error creating admin user:", adminUserError);
         }
       } else {
-        console.log("Admin user created successfully:", userData);
+        console.log("Admin user created successfully:", adminUserData);
       }
     } catch (error) {
       console.error("Error in admin user creation:", error);
     }
 
-    // Create the test user - используя проверенные тестовые данные
+    // Create the test user
     try {
       const { data: testUserData, error: testUserError } = await supabase.auth.signUp({
         email: testEmail,

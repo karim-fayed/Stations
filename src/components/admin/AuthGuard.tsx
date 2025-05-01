@@ -16,6 +16,10 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Clear any console before fetching new data
+        console.clear();
+        console.log("Checking authentication status...");
+        
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -25,8 +29,31 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
 
         console.log("Auth session check result:", data);
         
+        if (!data.session) {
+          console.log("No session found, user is not authenticated");
+          setAuthState({
+            isAuthenticated: false,
+            user: null,
+          });
+          setLoading(false);
+          return;
+        }
+        
+        // Verify the user has an admin profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('admin_profiles')
+          .select('*')
+          .eq('id', data.session.user.id)
+          .single();
+        
+        if (profileError) {
+          console.error("Error fetching admin profile:", profileError);
+        }
+        
+        console.log("Admin profile:", profileData);
+        
         setAuthState({
-          isAuthenticated: !!data.session,
+          isAuthenticated: !!data.session && !!profileData,
           user: data.session?.user || null,
         });
       } catch (error) {
@@ -44,10 +71,37 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log("Auth state changed:", event, session);
-        setAuthState({
-          isAuthenticated: !!session,
-          user: session?.user || null,
-        });
+        
+        if (event === 'SIGNED_IN') {
+          // Check if the user has an admin profile when they sign in
+          const checkAdminProfile = async () => {
+            if (!session?.user?.id) return;
+            
+            const { data: profileData, error: profileError } = await supabase
+              .from('admin_profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+              
+            if (profileError) {
+              console.error("Error fetching admin profile:", profileError);
+            }
+            
+            setAuthState({
+              isAuthenticated: !!session && !!profileData,
+              user: session?.user || null,
+            });
+          };
+          
+          // Use setTimeout to avoid Supabase deadlock
+          setTimeout(checkAdminProfile, 0);
+        } else {
+          setAuthState({
+            isAuthenticated: !!session,
+            user: session?.user || null,
+          });
+        }
+        
         setLoading(false);
       }
     );

@@ -33,30 +33,6 @@ export type Database = {
         }
         Relationships: []
       }
-      admins: {
-        Row: {
-          created_at: string | null
-          email: string
-          id: string
-          name: string | null
-          password: string
-        }
-        Insert: {
-          created_at?: string | null
-          email: string
-          id?: string
-          name?: string | null
-          password: string
-        }
-        Update: {
-          created_at?: string | null
-          email?: string
-          id?: string
-          name?: string | null
-          password?: string
-        }
-        Relationships: []
-      }
       spatial_ref_sys: {
         Row: {
           auth_name: string | null

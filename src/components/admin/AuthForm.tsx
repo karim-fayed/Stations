@@ -19,9 +19,17 @@ const AuthForm = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data?.session) {
-        navigate('/admin/dashboard');
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
+        
+        if (data?.session) {
+          console.log("User is already logged in, redirecting to dashboard");
+          navigate('/admin/dashboard');
+        }
+      } catch (error) {
+        console.error("Error checking auth status:", error);
       }
     };
 
@@ -34,14 +42,16 @@ const AuthForm = () => {
     setErrorMessage(null);
 
     try {
-      console.log("Login attempt with:", { email: email.trim() });
+      if (!email.trim() || !password.trim()) {
+        throw new Error("الرجاء إدخال البريد الإلكتروني وكلمة المرور");
+      }
+      
+      console.log("Attempting login with:", { email: email.trim() });
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim(),
       });
-      
-      console.log("Login response:", data);
       
       if (error) {
         console.error("Login error:", error);
@@ -49,27 +59,44 @@ const AuthForm = () => {
       }
       
       if (data.session) {
-        console.log("Login successful, user:", data.user);
+        console.log("Login successful, session:", data.session);
+        
         toast({
           title: "تم تسجيل الدخول بنجاح",
           description: "جاري تحويلك إلى لوحة التحكم",
         });
         
+        // Fetch user profile to confirm they have admin role
+        const { data: profileData, error: profileError } = await supabase
+          .from('admin_profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+          
+        if (profileError) {
+          console.error("Error fetching admin profile:", profileError);
+        }
+        
+        console.log("Admin profile:", profileData);
+        
         setTimeout(() => {
           navigate("/admin/dashboard");
         }, 1000);
       } else {
-        console.error("No session returned after login");
         throw new Error("فشل تسجيل الدخول، لم يتم إنشاء جلسة");
       }
     } catch (error: any) {
       console.error("Login error details:", error);
       
-      setErrorMessage(
-        error.message === "Invalid login credentials"
-          ? "بيانات تسجيل الدخول غير صحيحة"
-          : error.message || "حدث خطأ أثناء تسجيل الدخول"
-      );
+      let errorMsg = "حدث خطأ أثناء تسجيل الدخول";
+      
+      if (error.message === "Invalid login credentials") {
+        errorMsg = "بيانات تسجيل الدخول غير صحيحة";
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      
+      setErrorMessage(errorMsg);
       
       toast({
         title: "فشل تسجيل الدخول",
@@ -147,7 +174,8 @@ const AuthForm = () => {
         
         <div className="text-sm text-gray-600 mt-6 text-center">
           <p>للتجربة استخدم أي من الحسابات التالية:</p>
- 
+          <p className="font-semibold mt-1">admin@example.com / Admin123!</p>
+          <p className="font-semibold mt-1">karim-it@outlook.sa / |l0v3N@fes</p>
         </div>
       </CardContent>
       <CardFooter className="flex justify-center">
