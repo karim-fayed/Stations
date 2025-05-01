@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Lock, Mail, AlertCircle } from "lucide-react";
+import { Loader2, Mail, Lock, AlertCircle } from "lucide-react";
 
 const AuthForm = () => {
   const [email, setEmail] = useState('');
@@ -35,19 +35,44 @@ const AuthForm = () => {
     setErrorMessage(null);
 
     try {
+      // Remove whitespace from email and password
+      const trimmedEmail = email.trim();
+      const trimmedPassword = password.trim();
+      
+      console.log("Attempting login with:", { email: trimmedEmail });
+      
+      // Use Supabase password login
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password.trim(),
+        email: trimmedEmail,
+        password: trimmedPassword,
       });
-
-      if (error) throw error;
-
+      
+      console.log("Login response:", data);
+      
+      if (error) {
+        console.error("Login error details:", error);
+        throw error;
+      }
+      
+      // Check if we have a session
       if (data.session) {
+        console.log("Login successful, user:", data.user);
         toast({
           title: "تم تسجيل الدخول بنجاح",
           description: "جاري تحويلك إلى لوحة التحكم",
         });
-        navigate("/admin/dashboard");
+        
+        // Add a small delay before redirecting to allow the toast to be seen
+        setTimeout(() => {
+          navigate("/admin/dashboard");
+        }, 1500);
+      } else {
+        console.error("No session returned after successful login");
+        toast({
+          title: "خطأ في تسجيل الدخول",
+          description: "لا يوجد جلسة مستخدم. تأكد من صحة بريدك الإلكتروني وكلمة المرور",
+          variant: "destructive",
+        });
       }
     } catch (error: any) {
       console.error("Login error:", error);
@@ -59,50 +84,6 @@ const AuthForm = () => {
       toast({
         title: "فشل تسجيل الدخول",
         description: "تأكد من صحة بريدك الإلكتروني وكلمة المرور",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrorMessage(null);
-
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password: password.trim(),
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "تم إنشاء الحساب بنجاح",
-        description: "تم إرسال رابط تأكيد إلى بريدك الإلكتروني",
-      });
-      
-      // إذا تم تعطيل التحقق من البريد الإلكتروني في إعدادات Supabase
-      if (data.session) {
-        toast({
-          title: "تم تسجيل الدخول بنجاح",
-          description: "جاري تحويلك إلى لوحة التحكم",
-        });
-        navigate("/admin/dashboard");
-      }
-    } catch (error: any) {
-      console.error("Signup error:", error);
-      if (error.message.includes("already registered")) {
-        setErrorMessage("البريد الإلكتروني مسجل بالفعل");
-      } else {
-        setErrorMessage(error.message || "حدث خطأ أثناء إنشاء الحساب");
-      }
-      
-      toast({
-        title: "فشل إنشاء الحساب",
-        description: error.message || "حدث خطأ أثناء التسجيل",
         variant: "destructive",
       });
     } finally {
@@ -157,9 +138,8 @@ const AuthForm = () => {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="login">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsList className="grid w-full grid-cols-1 mb-6">
             <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
-            <TabsTrigger value="signup">إنشاء حساب</TabsTrigger>
           </TabsList>
           
           <TabsContent value="login">
@@ -235,64 +215,6 @@ const AuthForm = () => {
             </form>
           </TabsContent>
           
-          <TabsContent value="signup">
-            <form onSubmit={handleSignUp} className="space-y-4">
-              <div className="space-y-2">
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="email-signup"
-                    type="email"
-                    placeholder="البريد الإلكتروني"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    dir="rtl"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="password-signup"
-                    type="password"
-                    placeholder="كلمة المرور (8 أحرف على الأقل)"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                    dir="rtl"
-                    minLength={8}
-                    required
-                  />
-                </div>
-              </div>
-              
-              {errorMessage && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-              )}
-              
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-noor-purple hover:bg-noor-purple/90"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> جاري إنشاء الحساب...
-                  </>
-                ) : (
-                  "إنشاء حساب"
-                )}
-              </Button>
-            </form>
-          </TabsContent>
-          
           <TabsContent value="reset" className="hidden">
             <form onSubmit={handleReset} className="space-y-4">
               <div className="space-y-2">
@@ -350,6 +272,15 @@ const AuthForm = () => {
             </form>
           </TabsContent>
         </Tabs>
+        
+        <div className="text-sm text-gray-600 mt-6 text-center">
+          <p>للتجربة استخدم أي من الحسابات التالية:</p>
+          <p>البريد: karim-it@outlook.sa</p>
+          <p>كلمة المرور: |l0v3N@fes</p>
+          <p className="mt-2">أو</p>
+          <p>البريد: admin@example.com</p>
+          <p>كلمة المرور: Admin123!</p>
+        </div>
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-gray-500">

@@ -43,7 +43,7 @@ export async function createTestAdmin() {
       console.error("Error in admin user creation:", error);
     }
 
-    // Create the test user
+    // Create the test user - используя проверенные тестовые данные
     try {
       const { data: testUserData, error: testUserError } = await supabase.auth.signUp({
         email: testEmail,

@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import Index from "./pages/Index";
 import LoginPage from "./pages/Admin/Login";
 import Dashboard from "./pages/Admin/Dashboard";
+import UserManagement from "./pages/Admin/UserManagement";
 import NotFound from "./pages/NotFound";
 import { ensureAdminExists } from "./utils/createAdmin";
 import AuthGuard from "@/components/admin/AuthGuard";
@@ -33,6 +34,11 @@ const App = () => {
             <Route path="/admin/dashboard" element={
               <AuthGuard>
                 <Dashboard />
+              </AuthGuard>
+            } />
+            <Route path="/admin/users" element={
+              <AuthGuard>
+                <UserManagement />
               </AuthGuard>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

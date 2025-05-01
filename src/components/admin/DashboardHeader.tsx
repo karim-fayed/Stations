@@ -1,7 +1,8 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, Plus } from "lucide-react";
+import { LogOut, Plus, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface DashboardHeaderProps {
   onLogout: () => void;
@@ -16,6 +17,14 @@ const DashboardHeader = ({ onLogout, onAddStation }: DashboardHeaderProps) => {
         <p className="text-gray-600">إدارة محطات الوقود</p>
       </div>
       <div className="flex gap-2">
+        <Link to="/admin/users">
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2"
+          >
+            <Users size={16} /> إدارة المستخدمين
+          </Button>
+        </Link>
         <Button 
           variant="outline" 
           className="flex items-center gap-2"
