@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl from 'mapbox-gl';
@@ -162,7 +161,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       
       popupsRef.current.push(popup);
 
-      // إنشاء مُعلّمة وإضافتها إلى الخريطة
+      // إنشاء مُعلّم وإضافتها إلى الخريطة
       const marker = new mapboxgl.Marker(el)
         .setLngLat([station.longitude, station.latitude])
         .setPopup(popup)
@@ -348,13 +347,14 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     if (mapContainer.current) {
       // البحث عن مدينة الرياض في قائمة المدن
       const riyadh = saudiCities.find(city => city.name === 'الرياض' || city.nameEn === 'Riyadh');
-      const initialCenter = riyadh ? [riyadh.longitude, riyadh.latitude] : [46.6753, 24.7136]; // إحداثيات الرياض
+      // Fix: Ensure initialCenter is an array with two values [longitude, latitude]
+      const initialCenter: [number, number] = riyadh ? [riyadh.longitude, riyadh.latitude] : [46.6753, 24.7136]; 
       const initialZoom = riyadh?.zoom || 10;
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: 'mapbox://styles/mapbox/streets-v12',
-        center: initialCenter, // تحديد مركز الخريطة على الرياض
+        center: initialCenter, 
         zoom: initialZoom,
         attributionControl: false,
       });
