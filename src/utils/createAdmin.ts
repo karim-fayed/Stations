@@ -10,12 +10,8 @@ export async function createTestAdmin() {
     const adminEmail = "karim-it@outlook.sa";
     const adminPassword = "|l0v3N@fes";
 
-    // Check if user exists first
-    const { data: existingUsers, error: searchError } = await supabase.auth.admin.listUsers({
-      filter: {
-        email: adminEmail
-      }
-    });
+    // Check if user exists first by using getUser instead of listUsers with filter
+    const { data: existingUser, error: searchError } = await supabase.auth.admin.getUserByEmail(adminEmail);
 
     if (searchError) {
       console.error("Error checking for existing admin:", searchError);
@@ -23,7 +19,7 @@ export async function createTestAdmin() {
     }
 
     // If the user already exists, don't create it again
-    if (existingUsers?.users && existingUsers.users.length > 0) {
+    if (existingUser) {
       console.log("Admin user already exists");
       return;
     }
