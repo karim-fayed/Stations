@@ -23,13 +23,13 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
     setIsLoading(true);
 
     try {
-      // إزالة المسافات من البريد الإلكتروني وكلمة المرور
+      // Remove whitespace from email and password
       const trimmedEmail = email.trim();
       const trimmedPassword = password.trim();
       
       console.log("Attempting login with:", { email: trimmedEmail });
       
-      // استخدام طريقة تسجيل الدخول بكلمة المرور
+      // Use Supabase password login
       const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password: trimmedPassword,
@@ -38,19 +38,24 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       console.log("Login response:", data);
       
       if (error) {
+        console.error("Login error details:", error);
         throw error;
       }
       
       // Check if we have a session
       if (data.session) {
+        console.log("Login successful, user:", data.user);
         toast({
           title: "تم تسجيل الدخول بنجاح",
           description: "جاري تحويلك إلى لوحة التحكم",
         });
+        
+        // Add a small delay before redirecting
         setTimeout(() => {
           navigate("/admin/dashboard");
         }, 1500);
       } else {
+        console.error("No session returned after successful login");
         toast({
           title: "خطأ في تسجيل الدخول",
           description: "لا يوجد جلسة مستخدم. تأكد من صحة بريدك الإلكتروني وكلمة المرور",

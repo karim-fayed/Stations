@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { sendMagicLink } from "@/services/stationService";
+import { supabase } from "@/integrations/supabase/client";
 
 interface MagicLinkFormProps {
   email: string;
@@ -31,10 +31,23 @@ const MagicLinkForm = ({ email, setEmail }: MagicLinkFormProps) => {
     }
 
     try {
-      // إزالة المسافات من البريد الإلكتروني
+      // Remove whitespace from email
       const trimmedEmail = email.trim();
-      await sendMagicLink(trimmedEmail);
+      
+      console.log("Sending magic link to:", trimmedEmail);
+      
+      const { data, error } = await supabase.auth.signInWithOtp({
+        email: trimmedEmail,
+      });
+
+      if (error) {
+        console.error("Magic link error details:", error);
+        throw error;
+      }
+      
+      console.log("Magic link response:", data);
       setMagicLinkSent(true);
+      
       toast({
         title: "تم إرسال رابط الدخول",
         description: "يرجى التحقق من بريدك الإلكتروني للدخول",

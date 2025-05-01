@@ -7,29 +7,18 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export async function createTestAdmin() {
   try {
-    // تأكد من عدم وجود مسافات في البريد الإلكتروني وكلمة المرور
-    const adminEmail = "karim-it@outlook.sa".trim();
-    const adminPassword = "|l0v3N@fes".trim();
+    // Make sure there's no whitespace in email and password
+    const adminEmail = "karim-it@outlook.sa";
+    const adminPassword = "|l0v3N@fes";
 
-    // حاول إنشاء مستخدم جديد للتجربة
-    const testEmail = "admin@example.com".trim();
-    const testPassword = "Admin123!".trim();
+    // Test credentials
+    const testEmail = "admin@example.com";
+    const testPassword = "Admin123!";
 
-    // Check if user exists first by trying to sign in
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: adminEmail,
-      password: adminPassword,
-    });
+    console.log("Attempting to create or verify admin users");
 
-    // If sign in is successful, the user already exists
-    if (signInData.user) {
-      console.log("Admin user already exists and credentials are valid");
-      // Sign out after checking
-      await supabase.auth.signOut();
-    } else {
-      console.log("Creating admin user...");
-
-      // Create the admin user
+    // Create the first admin user
+    try {
       const { data: userData, error } = await supabase.auth.signUp({
         email: adminEmail,
         password: adminPassword,
@@ -42,27 +31,20 @@ export async function createTestAdmin() {
       });
 
       if (error) {
-        console.error("Error creating admin user:", error);
+        if (error.message.includes("User already registered")) {
+          console.log("Admin user already exists:", adminEmail);
+        } else {
+          console.error("Error creating admin user:", error);
+        }
       } else {
         console.log("Admin user created successfully:", userData);
       }
+    } catch (error) {
+      console.error("Error in admin user creation:", error);
     }
 
-    // Now create the test user
-    const { data: testSignInData, error: testSignInError } = await supabase.auth.signInWithPassword({
-      email: testEmail,
-      password: testPassword,
-    });
-
-    // If sign in is successful, the test user already exists
-    if (testSignInData.user) {
-      console.log("Test user already exists and credentials are valid");
-      // Sign out after checking
-      await supabase.auth.signOut();
-    } else {
-      console.log("Creating test user...");
-
-      // Create the test user
+    // Create the test user
+    try {
       const { data: testUserData, error: testUserError } = await supabase.auth.signUp({
         email: testEmail,
         password: testPassword,
@@ -75,11 +57,20 @@ export async function createTestAdmin() {
       });
 
       if (testUserError) {
-        console.error("Error creating test user:", testUserError);
+        if (testUserError.message.includes("User already registered")) {
+          console.log("Test user already exists:", testEmail);
+        } else {
+          console.error("Error creating test user:", testUserError);
+        }
       } else {
         console.log("Test user created successfully:", testUserData);
       }
+    } catch (error) {
+      console.error("Error in test user creation:", error);
     }
+    
+    // Sign out after creating/checking users
+    await supabase.auth.signOut();
     
   } catch (error) {
     console.error("Error in createTestAdmin:", error);

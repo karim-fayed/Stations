@@ -16,6 +16,7 @@ const queryClient = new QueryClient();
 const App = () => {
   useEffect(() => {
     // Ensure admin user exists on app startup
+    console.log("App initializing - ensuring admin users exist");
     ensureAdminExists().catch(console.error);
   }, []);
 
