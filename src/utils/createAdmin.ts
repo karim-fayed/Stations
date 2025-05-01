@@ -1,60 +1,62 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-// إنشاء مستخدم مشرف جديد
-export const createAdminUser = async (email: string, password: string) => {
+/**
+ * Creates a test admin user in Supabase if it doesn't exist.
+ * This is for development purposes only.
+ */
+export async function createTestAdmin() {
   try {
-    // استخدام واجهة برمجة التطبيقات العامة لإنشاء مستخدم
-    // في بيئة الإنتاج يجب استخدام وظيفة خلفية آمنة لهذه العملية
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin + '/admin/dashboard',
+    const adminEmail = "karim-it@outlook.sa";
+    const adminPassword = "|l0v3N@fes";
+
+    // Check if user exists first
+    const { data: existingUsers, error: searchError } = await supabase.auth.admin.listUsers({
+      filter: {
+        email: adminEmail
+      }
+    });
+
+    if (searchError) {
+      console.error("Error checking for existing admin:", searchError);
+      return;
+    }
+
+    // If the user already exists, don't create it again
+    if (existingUsers?.users && existingUsers.users.length > 0) {
+      console.log("Admin user already exists");
+      return;
+    }
+
+    // Create the admin user
+    const { data, error } = await supabase.auth.admin.createUser({
+      email: adminEmail,
+      password: adminPassword,
+      email_confirm: true,
+      user_metadata: {
+        name: "Admin",
+        role: "admin"
       }
     });
 
     if (error) {
       console.error("Error creating admin user:", error);
-      throw error;
+      return;
     }
 
     console.log("Admin user created successfully:", data);
-    
-    // إنشاء رابط تأكيد بريد إلكتروني للمستخدم
-    const { error: otpError } = await supabase.auth.resend({
-      type: 'signup',
-      email,
-      options: {
-        emailRedirectTo: window.location.origin + '/admin/dashboard',
-      }
-    });
-
-    if (otpError) {
-      console.error("Error sending confirmation email:", otpError);
-    }
-
-    // إعطاء المستخدم دور المسؤول (يتطلب وظيفة RLS أو Edge Function في الإنتاج)
-    // في هذا المشروع يمكن للمستخدمين المسجلين بأي بريد إلكتروني تسجيل الدخول كمسؤول
-    
-    return data;
   } catch (error) {
-    console.error("Error in createAdminUser function:", error);
-    throw error;
+    console.error("Error in createTestAdmin:", error);
   }
 }
 
-// استدعاء هذه الوظيفة لإنشاء حساب المسؤول الجديد
-export const setupNewAdmin = async () => {
-  try {
-    await createAdminUser("karim-it@outlook.sa", "|l0v3N@fes");
-    console.log("Admin user setup complete");
-    return true;
-  } catch (error) {
-    console.error("Failed to setup admin:", error);
-    return false;
+/**
+ * This function should be called once during app initialization
+ * to ensure an admin user exists
+ */
+export async function ensureAdminExists() {
+  // Only run this in development mode
+  if (process.env.NODE_ENV !== "production") {
+    await createTestAdmin();
   }
 }
-
-// Execute setupNewAdmin to create the admin user
-setupNewAdmin();
