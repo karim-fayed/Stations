@@ -3,18 +3,9 @@ import { useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronRight } from "lucide-react";
-
-interface GasStation {
-  id: string;
-  name: string;
-  area: string;
-  location: string;
-  distance: number; // in km
-  distanceFromCenter: number; // in km
-  latitude: number;
-  longitude: number;
-}
+import { ChevronRight, MapPin } from "lucide-react";
+import { GasStation } from "@/types/station";
+import { motion } from "framer-motion";
 
 interface GasStationListProps {
   stations: GasStation[];
@@ -29,43 +20,68 @@ const GasStationList: React.FC<GasStationListProps> = ({
   selectedStation,
   language
 }) => {
-  const [selectedArea, setSelectedArea] = useState<string>('all');
+  const [selectedRegion, setSelectedRegion] = useState<string>('all');
   
   const translations = useMemo(() => ({
-    selectArea: language === 'ar' ? 'اختر منطقة' : 'Select Area',
-    allAreas: language === 'ar' ? 'جميع المناطق' : 'All Areas',
-    area: language === 'ar' ? 'المنطقة' : 'Area',
+    selectRegion: language === 'ar' ? 'اختر منطقة' : 'Select Region',
+    allRegions: language === 'ar' ? 'جميع المناطق' : 'All Regions',
+    region: language === 'ar' ? 'المنطقة' : 'Region',
     location: language === 'ar' ? 'الموقع' : 'Location',
-    fromCityCenter: language === 'ar' ? 'من مركز المدينة (كم)' : 'From City Center (km)',
+    fuelTypes: language === 'ar' ? 'أنواع الوقود' : 'Fuel Types',
+    distanceFromCenter: language === 'ar' ? 'من مركز المدينة (كم)' : 'From City Center (km)',
     showDirections: language === 'ar' ? 'عرض الاتجاهات' : 'Show Directions',
     map: language === 'ar' ? 'الخريطة' : 'Map',
+    noStations: language === 'ar' ? 'لا توجد محطات في هذه المنطقة' : 'No stations in this region',
   }), [language]);
 
-  const areas = useMemo(() => {
-    const uniqueAreas = Array.from(new Set(stations.map(station => station.area)));
-    return uniqueAreas;
+  const regions = useMemo(() => {
+    const uniqueRegions = Array.from(new Set(stations.map(station => station.region || station.area)));
+    return uniqueRegions;
   }, [stations]);
 
   const filteredStations = useMemo(() => {
-    if (selectedArea === 'all') return stations;
-    return stations.filter(station => station.area === selectedArea);
-  }, [selectedArea, stations]);
+    if (selectedRegion === 'all') return stations;
+    return stations.filter(station => (station.region || station.area) === selectedRegion);
+  }, [selectedRegion, stations]);
+
+  // تنسيق المسافة
+  const formatDistance = (station: GasStation) => {
+    if (station.distance_meters) {
+      return station.distance_meters > 1000 
+        ? `${(station.distance_meters/1000).toFixed(2)} ${language === 'ar' ? 'كم' : 'km'}`
+        : `${Math.round(station.distance_meters)} ${language === 'ar' ? 'متر' : 'm'}`;
+    }
+    return station.distanceFromCenter ? 
+      `${station.distanceFromCenter} ${language === 'ar' ? 'كم' : 'km'}` : 
+      '-';
+  };
+
+  // تأثيرات متحركة للصف المحدد
+  const rowVariants = {
+    selected: { scale: 1.01, backgroundColor: "rgba(102, 51, 204, 0.1)" },
+    normal: { scale: 1, backgroundColor: "transparent" }
+  };
 
   return (
-    <div className={`w-full ${language === 'ar' ? 'rtl' : 'ltr'}`}>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className={`w-full ${language === 'ar' ? 'rtl' : 'ltr'}`}
+    >
       <div className="mb-4">
         <Select
-          value={selectedArea}
-          onValueChange={setSelectedArea}
+          value={selectedRegion}
+          onValueChange={setSelectedRegion}
         >
           <SelectTrigger className="w-full sm:w-[300px]">
-            <SelectValue placeholder={translations.selectArea} />
+            <SelectValue placeholder={translations.selectRegion} />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="all">{translations.allAreas}</SelectItem>
-              {areas.map((area) => (
-                <SelectItem key={area} value={area}>{area}</SelectItem>
+              <SelectItem value="all">{translations.allRegions}</SelectItem>
+              {regions.map((region) => (
+                <SelectItem key={region} value={region}>{region}</SelectItem>
               ))}
             </SelectGroup>
           </SelectContent>
@@ -76,44 +92,59 @@ const GasStationList: React.FC<GasStationListProps> = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[180px]">{translations.area}</TableHead>
+              <TableHead className="w-[180px]">{translations.region}</TableHead>
               <TableHead>{translations.location}</TableHead>
-              <TableHead className="text-center">{translations.fromCityCenter}</TableHead>
+              <TableHead className="hidden md:table-cell">{translations.fuelTypes}</TableHead>
+              <TableHead className="text-center">{translations.distanceFromCenter}</TableHead>
               <TableHead className="w-[100px]">{translations.map}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredStations.map((station) => (
-              <TableRow 
+              <motion.tr 
                 key={station.id}
-                className={selectedStation?.id === station.id ? 'bg-muted' : ''}
+                initial="normal"
+                animate={selectedStation?.id === station.id ? "selected" : "normal"}
+                variants={rowVariants}
+                transition={{ duration: 0.2 }}
+                className={`${selectedStation?.id === station.id ? 'bg-muted' : ''} cursor-pointer`}
+                onClick={() => onSelectStation(station)}
               >
-                <TableCell className="font-medium">{station.area}</TableCell>
-                <TableCell>{station.location}</TableCell>
-                <TableCell className="text-center">{station.distanceFromCenter}</TableCell>
+                <TableCell className="font-medium">{station.region || station.area}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <MapPin size={16} className="text-noor-purple" />
+                    {station.sub_region || station.location}
+                  </div>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">{station.fuel_types || '-'}</TableCell>
+                <TableCell className="text-center">{formatDistance(station)}</TableCell>
                 <TableCell>
                   <Button 
                     variant="ghost" 
                     size="sm"
                     className="p-0 h-8 w-8"
-                    onClick={() => onSelectStation(station)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectStation(station);
+                    }}
                   >
                     <ChevronRight className={`h-5 w-5 ${language === 'ar' ? 'rotate-180' : ''}`} />
                   </Button>
                 </TableCell>
-              </TableRow>
+              </motion.tr>
             ))}
             {filteredStations.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-4">
-                  {language === 'ar' ? 'لا توجد محطات في هذه المنطقة' : 'No stations in this area'}
+                <TableCell colSpan={5} className="text-center py-4">
+                  {translations.noStations}
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
