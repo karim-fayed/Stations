@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { adminLogin, sendMagicLink, checkAdminStatus } from "@/services/stationService";
+import { sendMagicLink, checkAdminStatus } from "@/services/stationService";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
@@ -23,8 +23,8 @@ const LoginPage = () => {
     // Check if the user is already logged in
     const checkAuth = async () => {
       try {
-        const { isAuthenticated } = await checkAdminStatus();
-        if (isAuthenticated) {
+        const { data, error } = await supabase.auth.getSession();
+        if (data?.session) {
           navigate("/admin/dashboard");
         }
       } catch (error) {
@@ -40,9 +40,9 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      console.log("Attempting login with:", { email });
+      // For debugging
+      console.log("Attempting login with:", { email, password });
       
-      // Use signInWithPassword instead of the custom adminLogin function
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
