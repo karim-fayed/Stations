@@ -67,17 +67,17 @@ const AuthForm = () => {
         });
         
         // Fetch user profile to confirm they have admin role
-        const { data: profileData, error: profileError } = await supabase
-          .from('admin_profiles')
+        const { data: adminData, error: adminError } = await supabase
+          .from('admin_users')
           .select('*')
           .eq('id', data.user.id)
           .single();
           
-        if (profileError) {
-          console.error("Error fetching admin profile:", profileError);
+        if (adminError) {
+          console.error("Error fetching admin user:", adminError);
         }
         
-        console.log("Admin profile:", profileData);
+        console.log("Admin user data:", adminData);
         
         setTimeout(() => {
           navigate("/admin/dashboard");

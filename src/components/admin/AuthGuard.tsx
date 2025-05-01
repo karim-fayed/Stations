@@ -40,20 +40,20 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
         }
         
         // Verify the user has an admin profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('admin_profiles')
+        const { data: adminData, error: adminError } = await supabase
+          .from('admin_users')
           .select('*')
           .eq('id', data.session.user.id)
           .single();
         
-        if (profileError) {
-          console.error("Error fetching admin profile:", profileError);
+        if (adminError) {
+          console.error("Error fetching admin user:", adminError);
         }
         
-        console.log("Admin profile:", profileData);
+        console.log("Admin user data:", adminData);
         
         setAuthState({
-          isAuthenticated: !!data.session && !!profileData,
+          isAuthenticated: !!data.session && !!adminData,
           user: data.session?.user || null,
         });
       } catch (error) {
@@ -74,27 +74,27 @@ const AuthGuard = ({ children }: AuthGuardProps) => {
         
         if (event === 'SIGNED_IN') {
           // Check if the user has an admin profile when they sign in
-          const checkAdminProfile = async () => {
+          const checkAdminUser = async () => {
             if (!session?.user?.id) return;
             
-            const { data: profileData, error: profileError } = await supabase
-              .from('admin_profiles')
+            const { data: adminData, error: adminError } = await supabase
+              .from('admin_users')
               .select('*')
               .eq('id', session.user.id)
               .single();
               
-            if (profileError) {
-              console.error("Error fetching admin profile:", profileError);
+            if (adminError) {
+              console.error("Error fetching admin user:", adminError);
             }
             
             setAuthState({
-              isAuthenticated: !!session && !!profileData,
+              isAuthenticated: !!session && !!adminData,
               user: session?.user || null,
             });
           };
           
           // Use setTimeout to avoid Supabase deadlock
-          setTimeout(checkAdminProfile, 0);
+          setTimeout(checkAdminUser, 0);
         } else {
           setAuthState({
             isAuthenticated: !!session,

@@ -60,6 +60,17 @@ export const addStation = async (station: Omit<GasStation, "id">): Promise<GasSt
     throw new Error("You must be logged in as an admin to add stations");
   }
   
+  // Check if the user is an admin
+  const { data: adminData, error: adminError } = await supabase
+    .from('admin_users')
+    .select('*')
+    .eq('id', sessionData.session.user.id)
+    .single();
+  
+  if (adminError || !adminData) {
+    throw new Error("You must be an admin to add stations");
+  }
+  
   const { data, error } = await supabase
     .from("stations")
     .insert(station)
@@ -86,6 +97,17 @@ export const updateStation = async (
     throw new Error("You must be logged in as an admin to update stations");
   }
   
+  // Check if the user is an admin
+  const { data: adminData, error: adminError } = await supabase
+    .from('admin_users')
+    .select('*')
+    .eq('id', sessionData.session.user.id)
+    .single();
+  
+  if (adminError || !adminData) {
+    throw new Error("You must be an admin to update stations");
+  }
+  
   const { data, error } = await supabase
     .from("stations")
     .update(station)
@@ -108,6 +130,17 @@ export const deleteStation = async (id: string): Promise<void> => {
   
   if (sessionError || !sessionData.session) {
     throw new Error("You must be logged in as an admin to delete stations");
+  }
+  
+  // Check if the user is an admin
+  const { data: adminData, error: adminError } = await supabase
+    .from('admin_users')
+    .select('*')
+    .eq('id', sessionData.session.user.id)
+    .single();
+  
+  if (adminError || !adminData) {
+    throw new Error("You must be an admin to delete stations");
   }
   
   const { error } = await supabase.from("stations").delete().eq("id", id);
@@ -199,8 +232,23 @@ export const adminLogout = async () => {
 
 export const checkAdminStatus = async () => {
   const { data } = await supabase.auth.getSession();
+  
+  if (!data.session) {
+    return {
+      isAuthenticated: false,
+      user: null,
+    };
+  }
+  
+  // Check if the user is an admin in the admin_users table
+  const { data: adminData, error: adminError } = await supabase
+    .from('admin_users')
+    .select('*')
+    .eq('id', data.session.user.id)
+    .single();
+    
   return {
-    isAuthenticated: !!data.session,
+    isAuthenticated: !!data.session && !!adminData,
     user: data.session?.user || null,
   };
 };

@@ -35,15 +35,16 @@ const UserManagement = () => {
     try {
       setLoading(true);
       
-      // Fetch all users (in a real app, you might need to use Supabase Edge Functions for this)
-      // This is a simplified example
-      const { data: { users }, error } = await supabase.auth.admin.listUsers();
+      // Fetch admin users from the admin_users table
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('*');
       
       if (error) {
         throw error;
       }
 
-      setUsers(users || []);
+      setUsers(data || []);
     } catch (error: any) {
       console.error("Error fetching users:", error);
       toast({
@@ -65,15 +66,16 @@ const UserManagement = () => {
         throw new Error("يرجى إدخال البريد الإلكتروني وكلمة المرور");
       }
 
-      // Create the new user
-      const { data, error } = await supabase.auth.admin.createUser({
+      // Create the new user in Auth
+      const { data, error } = await supabase.auth.signUp({
         email: newUser.email.trim(),
         password: newUser.password.trim(),
-        user_metadata: {
-          name: newUser.name || newUser.email,
-          role: "admin",
-        },
-        email_confirm: true,
+        options: {
+          data: {
+            name: newUser.name || newUser.email,
+            role: "admin",
+          },
+        }
       });
 
       if (error) {
@@ -142,8 +144,8 @@ const UserManagement = () => {
                   {users.map((user) => (
                     <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
                       <td className="px-6 py-4">{user.email}</td>
-                      <td className="px-6 py-4">{user.user_metadata?.name || "-"}</td>
-                      <td className="px-6 py-4">{user.user_metadata?.role || "مستخدم"}</td>
+                      <td className="px-6 py-4">{user.name || "-"}</td>
+                      <td className="px-6 py-4">{user.role || "مستخدم"}</td>
                       <td className="px-6 py-4">
                         {new Date(user.created_at).toLocaleDateString("ar-SA")}
                       </td>
