@@ -27,9 +27,9 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       const trimmedEmail = email.trim();
       const trimmedPassword = password.trim();
       
-      // For debugging
       console.log("Attempting login with:", { email: trimmedEmail });
       
+      // استخدام طريقة تسجيل الدخول بكلمة المرور
       const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password: trimmedPassword,
