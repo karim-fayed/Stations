@@ -121,6 +121,21 @@ export const useUserManagement = () => {
         throw error;
       }
 
+      // Update the admin_users table to track that a reset was initiated
+      const { error: updateError } = await supabase
+        .from('admin_users')
+        .update({ 
+          updated_at: new Date().toISOString(),
+          // You could add a specific field to track password resets if needed
+          // password_reset_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error("Error updating user record:", updateError);
+        // We don't throw here as the password reset email was already sent
+      }
+
       toast({
         title: "تم إرسال رابط إعادة تعيين كلمة المرور",
         description: `تم إرسال رابط إعادة تعيين كلمة المرور إلى ${user.email}`,
