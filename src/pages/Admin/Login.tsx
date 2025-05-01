@@ -208,8 +208,12 @@ const LoginPage = () => {
                   </Button>
 
                   <div className="text-sm text-gray-600 mt-2 text-center">
-                    <p>للتجربة: استخدم البريد karim-it@outlook.sa</p>
-                    <p>وكلمة المرور |l0v3N@fes</p>
+                    <p>للتجربة استخدم أي من الحسابات التالية:</p>
+                    <p>البريد: karim-it@outlook.sa</p>
+                    <p>كلمة المرور: |l0v3N@fes</p>
+                    <p className="mt-2">أو</p>
+                    <p>البريد: admin@example.com</p>
+                    <p>كلمة المرور: Admin123!</p>
                   </div>
                 </form>
               </TabsContent>
