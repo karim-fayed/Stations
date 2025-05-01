@@ -191,8 +191,8 @@ const LoginPage = () => {
                   </Button>
 
                   <div className="text-sm text-gray-600 mt-2 text-center">
-                    <p>للتجربة: استخدم admin@example.com / password1234</p>
-                    <p>أو karim-it@outlook.sa / كلمة المرور المقدمة</p>
+                    <p>للتجربة: استخدم البريد karim-it@outlook.sa</p>
+                    <p>وكلمة المرور |l0v3N@fes</p>
                   </div>
                 </form>
               </TabsContent>

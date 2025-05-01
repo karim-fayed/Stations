@@ -171,22 +171,6 @@ export const adminLogin = async (email: string, password: string) => {
   return data;
 };
 
-// إنشاء مستخدم مشرف جديد
-export const createAdminUser = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-  });
-
-  if (error) {
-    console.error("Error creating admin user:", error);
-    throw error;
-  }
-
-  return data;
-};
-
 // إرسال رابط تسجيل دخول سحري للمستخدم المشرف
 export const sendMagicLink = async (email: string) => {
   const { data, error } = await supabase.auth.signInWithOtp({
