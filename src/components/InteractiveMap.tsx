@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl from 'mapbox-gl';
 import { MAPBOX_TOKEN } from '@/utils/environment';
@@ -7,6 +7,7 @@ import { GasStation } from '@/types/station';
 import { fetchNearestStations } from '@/services/stationService';
 import { motion } from 'framer-motion';
 import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 // تهيئة Mapbox باستخدام المفتاح
 mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -27,7 +28,11 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const popupsRef = useRef<mapboxgl.Popup[]>([]);
+  const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+  const [isLoadingNearest, setIsLoadingNearest] = useState(false);
   const { toast } = useToast();
   
   // نصوص متعددة اللغات
@@ -47,13 +52,52 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     kilometers: language === 'ar' ? 'كم' : 'km',
     locationError: language === 'ar' ? 'خطأ في تحديد الموقع' : 'Location Error',
     enableLocation: language === 'ar' ? 'يرجى تفعيل خدمة تحديد الموقع' : 'Please enable location services',
+    fuelTypes: language === 'ar' ? 'أنواع الوقود:' : 'Fuel Types:',
+    region: language === 'ar' ? 'المنطقة:' : 'Region:',
+    subRegion: language === 'ar' ? 'الموقع:' : 'Location:',
+    distance: language === 'ar' ? 'المسافة:' : 'Distance:',
+    name: language === 'ar' ? 'الاسم:' : 'Name:',
+    clickForDetails: language === 'ar' ? 'اضغط للتفاصيل' : 'Click for details',
+  };
+
+  // إنشاء محتوى النافذة المنبثقة (Popup) للمحطة
+  const createPopupContent = (station: GasStation) => {
+    const distance = station.distance_meters 
+      ? station.distance_meters > 1000 
+        ? `${(station.distance_meters / 1000).toFixed(2)} ${texts.kilometers}` 
+        : `${Math.round(station.distance_meters)} ${texts.meters}`
+      : null;
+    
+    const content = document.createElement('div');
+    content.className = 'px-2 py-1';
+    content.innerHTML = `
+      <div class="font-bold text-noor-purple">${station.name}</div>
+      <div class="text-xs text-gray-600">${texts.region} ${station.region}</div>
+      <div class="text-xs text-gray-600">${texts.subRegion} ${station.sub_region}</div>
+      ${station.fuel_types ? `<div class="text-xs text-gray-600">${texts.fuelTypes} ${station.fuel_types}</div>` : ''}
+      ${distance ? `<div class="text-xs text-gray-600">${texts.distance} ${distance}</div>` : ''}
+      <button class="mt-2 px-2 py-1 text-xs bg-noor-purple text-white rounded hover:bg-noor-purple/90 transition-all">${texts.clickForDetails}</button>
+    `;
+
+    // إضافة حدث النقر لزر التفاصيل
+    const button = content.querySelector('button');
+    if (button) {
+      button.addEventListener('click', () => {
+        onSelectStation(station);
+      });
+    }
+
+    return content;
   };
 
   // تحديث المُعلّمات (markers) على الخريطة
-  const updateMarkers = () => {
-    // حذف جميع المُعلّمات الموجودة
+  const updateMarkers = useCallback(() => {
+    // حذف جميع المُعلّمات والنوافذ المنبثقة الموجودة
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
+    
+    popupsRef.current.forEach(popup => popup.remove());
+    popupsRef.current = [];
 
     // إذا لم تكن الخريطة جاهزة بعد، لا تفعل شيئًا
     if (!map.current) return;
@@ -83,33 +127,54 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       // إضافة تأثير نبض للمُعلّمة المحددة
       if (selectedStation?.id === station.id) {
         el.style.animation = 'pulse 1.5s infinite';
-      }
-
-      // إنشاء مُعلّمة وإضافتها إلى الخريطة
-      const marker = new mapboxgl.Marker(el)
-        .setLngLat([station.longitude, station.latitude])
-        .addTo(map.current!);
-
-      // إضافة نافذة منبثقة (Popup) على النقر
-      marker.getElement().addEventListener('click', () => {
-        onSelectStation(station);
         
-        // تحريك الخريطة إلى المُعلّمة المحددة
-        map.current?.flyTo({
+        // تمرير الخريطة إلى المحطة المحددة
+        map.current.flyTo({
           center: [station.longitude, station.latitude],
           zoom: 14,
           essential: true,
           duration: 1000
         });
+      }
+
+      // إنشاء popup للمحطة
+      const popup = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        offset: 25
+      }).setDOMContent(createPopupContent(station));
+      
+      popupsRef.current.push(popup);
+
+      // إنشاء مُعلّمة وإضافتها إلى الخريطة
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat([station.longitude, station.latitude])
+        .setPopup(popup)
+        .addTo(map.current!);
+
+      // إضافة أحداث hover
+      el.addEventListener('mouseenter', () => {
+        popup.addTo(map.current!);
+      });
+      
+      el.addEventListener('mouseleave', () => {
+        popup.remove();
+      });
+
+      // إضافة حدث النقر
+      el.addEventListener('click', () => {
+        onSelectStation(station);
       });
 
       // تخزين المُعلّم في المرجع
       markersRef.current.push(marker);
     });
-  };
+  }, [stations, selectedStation, onSelectStation, language]);
 
   // تحديد موقع المستخدم
   const getUserLocation = () => {
+    setIsLoadingLocation(true);
+    
     toast({
       title: texts.locationDetecting,
       description: texts.pleaseWait,
@@ -121,6 +186,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         description: texts.enableLocation,
         variant: 'destructive',
       });
+      setIsLoadingLocation(false);
       return;
     }
 
@@ -137,6 +203,11 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           duration: 1000
         });
 
+        // حذف مؤشر المستخدم الحالي إذا وجد
+        if (userMarkerRef.current) {
+          userMarkerRef.current.remove();
+        }
+
         // إضافة مُعلّم لموقع المستخدم
         const el = document.createElement('div');
         el.className = 'user-location-marker';
@@ -148,31 +219,19 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         el.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.3)';
         el.style.animation = 'pulse 1.5s infinite';
 
-        new mapboxgl.Marker(el)
+        userMarkerRef.current = new mapboxgl.Marker(el)
           .setLngLat([longitude, latitude])
           .addTo(map.current!);
 
-        try {
-          // البحث عن أقرب محطات
-          const nearestStations = await fetchNearestStations(latitude, longitude, 1);
-          
-          if (nearestStations.length > 0) {
-            const nearest = nearestStations[0];
-            onSelectStation(nearest);
-            
-            // تحويل المسافة من أمتار إلى كيلومترات إذا كانت أكبر من 1000 متر
-            const distanceText = nearest.distance_meters && nearest.distance_meters > 1000 
-              ? `${(nearest.distance_meters / 1000).toFixed(2)} ${texts.kilometers}` 
-              : `${Math.round(nearest.distance_meters || 0)} ${texts.meters}`;
-              
-            toast({
-              title: texts.locationDetected,
-              description: `${texts.nearestStationIs} ${nearest.name} (${distanceText})`,
-            });
-          }
-        } catch (error) {
-          console.error('Error fetching nearest stations:', error);
-        }
+        setIsLoadingLocation(false);
+
+        toast({
+          title: texts.locationDetected,
+          description: texts.pleaseWait,
+        });
+
+        // تلقائيًا ابحث عن أقرب محطة
+        findNearestStation();
       },
       (error) => {
         console.error('Geolocation error:', error);
@@ -181,6 +240,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           description: error.message,
           variant: 'destructive',
         });
+        setIsLoadingLocation(false);
       }
     );
   };
@@ -206,6 +266,8 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       return;
     }
     
+    setIsLoadingNearest(true);
+    
     try {
       const nearestStations = await fetchNearestStations(userLocation.latitude, userLocation.longitude, 1);
       if (nearestStations.length > 0) {
@@ -218,9 +280,26 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           essential: true,
           duration: 1000
         });
+        
+        // تحويل المسافة من أمتار إلى كيلومترات إذا كانت أكبر من 1000 متر
+        const distanceText = nearestStations[0].distance_meters && nearestStations[0].distance_meters > 1000 
+          ? `${(nearestStations[0].distance_meters / 1000).toFixed(2)} ${texts.kilometers}` 
+          : `${Math.round(nearestStations[0].distance_meters || 0)} ${texts.meters}`;
+            
+        toast({
+          title: texts.locationDetected,
+          description: `${texts.nearestStationIs} ${nearestStations[0].name} (${distanceText})`,
+        });
       }
     } catch (error) {
       console.error('Error finding nearest station:', error);
+      toast({
+        title: texts.locationError,
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingNearest(false);
     }
   };
 
@@ -259,7 +338,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   // تحديث المعلمات عند تغير المحطات أو المحطة المحددة
   useEffect(() => {
     updateMarkers();
-  }, [stations, selectedStation]);
+  }, [stations, selectedStation, updateMarkers]);
 
   // CSS للأنيميشن
   useEffect(() => {
@@ -287,7 +366,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   return (
     <div className="w-full h-full flex flex-col">
       <div className="relative flex-grow">
-        <div ref={mapContainer} className="map-container rounded-lg shadow-lg"></div>
+        <div ref={mapContainer} className="map-container h-[500px] rounded-lg shadow-lg"></div>
         
         {selectedStation && (
           <motion.div 
@@ -300,6 +379,9 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
               <h3 className="font-bold text-noor-purple text-lg">{selectedStation.name}</h3>
               <p className="text-sm text-muted-foreground">
                 {language === 'ar' ? `المنطقة: ${selectedStation.region}` : `Region: ${selectedStation.region}`}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {language === 'ar' ? `الموقع: ${selectedStation.sub_region}` : `Location: ${selectedStation.sub_region}`}
               </p>
               {selectedStation.distance_meters && (
                 <p className="text-sm text-muted-foreground">
@@ -345,18 +427,30 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         <motion.button 
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="px-4 py-2 bg-noor-purple text-white rounded-md hover:bg-noor-purple/90 transition-colors"
+          className="px-4 py-2 bg-noor-purple text-white rounded-md hover:bg-noor-purple/90 transition-colors flex items-center justify-center"
           onClick={getUserLocation}
+          disabled={isLoadingLocation}
         >
-          {texts.getLocation}
+          {isLoadingLocation ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+            </>
+          ) : texts.getLocation}
         </motion.button>
         <motion.button 
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="px-4 py-2 border border-noor-purple text-noor-purple rounded-md hover:bg-noor-purple/10 transition-colors"
+          className="px-4 py-2 border border-noor-purple text-noor-purple rounded-md hover:bg-noor-purple/10 transition-colors flex items-center justify-center"
           onClick={findNearestStation}
+          disabled={isLoadingNearest || !userLocation}
         >
-          {texts.findNearest}
+          {isLoadingNearest ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {language === 'ar' ? 'جاري البحث...' : 'Searching...'}
+            </>
+          ) : texts.findNearest}
         </motion.button>
       </div>
     </div>

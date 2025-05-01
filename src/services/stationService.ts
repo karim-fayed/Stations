@@ -16,6 +16,25 @@ export const fetchStations = async (): Promise<GasStation[]> => {
   return data as GasStation[];
 };
 
+// جلب المحطات حسب المنطقة
+export const fetchStationsByRegion = async (region: string): Promise<GasStation[]> => {
+  if (region === 'all') {
+    return fetchStations();
+  }
+  
+  const { data, error } = await supabase
+    .from("stations")
+    .select("*")
+    .eq("region", region);
+
+  if (error) {
+    console.error(`Error fetching stations for region ${region}:`, error);
+    throw error;
+  }
+
+  return data as GasStation[];
+};
+
 // جلب محطة معينة
 export const fetchStation = async (id: string): Promise<GasStation> => {
   const { data, error } = await supabase
@@ -85,30 +104,13 @@ export const fetchNearestStations = async (
   limit: number = 5
 ): Promise<GasStation[]> => {
   try {
-    // First attempt: Try direct SQL query to get nearest stations
-    const { data, error } = await supabase
-      .from("stations")
-      .select("*, ST_Distance(location, ST_SetSRID(ST_Point($1, $2), 4326)::geography) as distance_meters", 
-        { prepare: false })
-      .order('location <-> ST_SetSRID(ST_Point($1, $2), 4326)::geography')
-      .limit(limit)
-      .parameters([longitude, latitude]);
+    // Get all stations first
+    const { data, error } = await supabase.from("stations").select("*");
     
     if (error) throw error;
-
-    return data as GasStation[];
-  } catch (error) {
-    console.error("Error fetching nearest stations:", error);
     
-    // محاولة العثور على أقرب محطة من جهة العميل إذا فشل الطلب الأول
-    const { data: allStations, error: fetchError } = await supabase
-      .from("stations")
-      .select("*");
-      
-    if (fetchError) throw fetchError;
-    
-    // حساب المسافة لكل محطة (بالمتر) - Haversine formula
-    const stations = allStations.map((station) => {
+    // Calculate distance for each station (in meters) - Haversine formula
+    const stations = data.map((station) => {
       const distance = calculateDistance(
         latitude,
         longitude,
@@ -118,10 +120,13 @@ export const fetchNearestStations = async (
       return { ...station, distance_meters: Math.round(distance * 1000) };
     });
     
-    // ترتيب المحطات حسب المسافة
+    // Sort stations by distance
     stations.sort((a, b) => (a.distance_meters || 0) - (b.distance_meters || 0));
     
     return stations.slice(0, limit) as GasStation[];
+  } catch (error) {
+    console.error("Error fetching nearest stations:", error);
+    throw error;
   }
 };
 
@@ -151,12 +156,47 @@ function toRadians(degrees: number): number {
 
 // المصادقة للمشرفين
 export const adminLogin = async (email: string, password: string) => {
+  console.log("Attempting login with:", { email });
+  
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
-  if (error) throw error;
+  if (error) {
+    console.error("Login error:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+// إنشاء مستخدم مشرف جديد
+export const createAdminUser = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+
+  if (error) {
+    console.error("Error creating admin user:", error);
+    throw error;
+  }
+
+  return data;
+};
+
+// إرسال رابط تسجيل دخول سحري للمستخدم المشرف
+export const sendMagicLink = async (email: string) => {
+  const { data, error } = await supabase.auth.signInWithOtp({
+    email,
+  });
+
+  if (error) {
+    console.error("Error sending magic link:", error);
+    throw error;
+  }
 
   return data;
 };

@@ -1,11 +1,13 @@
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChevronRight, MapPin } from "lucide-react";
+import { ChevronRight, MapPin, Search } from "lucide-react";
 import { GasStation } from "@/types/station";
 import { motion } from "framer-motion";
+import { Input } from "@/components/ui/input";
+import { fetchStationsByRegion } from '@/services/stationService';
 
 interface GasStationListProps {
   stations: GasStation[];
@@ -21,7 +23,9 @@ const GasStationList: React.FC<GasStationListProps> = ({
   language
 }) => {
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
-  
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [filteredStations, setFilteredStations] = useState<GasStation[]>(stations);
+
   const translations = useMemo(() => ({
     selectRegion: language === 'ar' ? 'اختر منطقة' : 'Select Region',
     allRegions: language === 'ar' ? 'جميع المناطق' : 'All Regions',
@@ -32,6 +36,7 @@ const GasStationList: React.FC<GasStationListProps> = ({
     showDirections: language === 'ar' ? 'عرض الاتجاهات' : 'Show Directions',
     map: language === 'ar' ? 'الخريطة' : 'Map',
     noStations: language === 'ar' ? 'لا توجد محطات في هذه المنطقة' : 'No stations in this region',
+    search: language === 'ar' ? 'بحث عن محطة...' : 'Search stations...',
   }), [language]);
 
   const regions = useMemo(() => {
@@ -39,10 +44,37 @@ const GasStationList: React.FC<GasStationListProps> = ({
     return uniqueRegions;
   }, [stations]);
 
-  const filteredStations = useMemo(() => {
-    if (selectedRegion === 'all') return stations;
-    return stations.filter(station => station.region === selectedRegion);
-  }, [selectedRegion, stations]);
+  // تحديث القائمة عند تغيير المنطقة المحددة
+  useEffect(() => {
+    const filterStations = async () => {
+      try {
+        // استخدام البيانات الحالية للمحطات بدلاً من جلبها مرة أخرى
+        let filtered;
+        
+        if (selectedRegion === 'all') {
+          filtered = stations;
+        } else {
+          filtered = stations.filter(station => station.region === selectedRegion);
+        }
+
+        // تطبيق البحث إذا كان هناك مصطلح بحث
+        if (searchTerm) {
+          filtered = filtered.filter(station => 
+            station.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            station.region.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            station.sub_region.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
+
+        setFilteredStations(filtered);
+      } catch (error) {
+        console.error('Error filtering stations:', error);
+        setFilteredStations([]);
+      }
+    };
+
+    filterStations();
+  }, [selectedRegion, stations, searchTerm]);
 
   // تنسيق المسافة
   const formatDistance = (station: GasStation) => {
@@ -67,7 +99,7 @@ const GasStationList: React.FC<GasStationListProps> = ({
       transition={{ duration: 0.5 }}
       className={`w-full ${language === 'ar' ? 'rtl' : 'ltr'}`}
     >
-      <div className="mb-4">
+      <div className="mb-4 flex flex-col sm:flex-row gap-2">
         <Select
           value={selectedRegion}
           onValueChange={setSelectedRegion}
@@ -84,6 +116,16 @@ const GasStationList: React.FC<GasStationListProps> = ({
             </SelectGroup>
           </SelectContent>
         </Select>
+        
+        <div className="relative flex-1">
+          <Input
+            className="w-full pl-10"
+            placeholder={translations.search}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        </div>
       </div>
 
       <div className="rounded-lg border shadow overflow-hidden">
