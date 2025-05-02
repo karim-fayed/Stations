@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
@@ -15,6 +15,7 @@ interface PasswordLoginFormProps {
 const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -28,6 +29,9 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       const trimmedPassword = password.trim();
       
       console.log("Attempting login with:", { email: trimmedEmail });
+      
+      // Sign out any existing session first to ensure a clean login
+      await supabase.auth.signOut();
       
       // Use Supabase password login with proper error handling
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -127,6 +131,10 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -151,17 +159,30 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
         <label htmlFor="password" className="block text-sm font-medium text-gray-700">
           كلمة المرور
         </label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full"
-          dir="ltr"
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full pr-10"
+            dir="ltr"
+          />
+          <button
+            type="button"
+            onClick={togglePasswordVisibility}
+            className="absolute inset-y-0 right-0 flex items-center pr-3"
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4 text-gray-400" />
+            ) : (
+              <Eye className="h-4 w-4 text-gray-400" />
+            )}
+          </button>
+        </div>
       </div>
 
       <Button 
@@ -181,9 +202,9 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
 
       <div className="text-sm text-gray-600 mt-2 text-center">
         <p>للتجربة استخدم أي من الحسابات التالية:</p>
-        <p className="font-semibold mt-1">admin@example.com / Admin123!</p>
-        <p className="font-semibold">karim-it@outlook.sa / |l0v3N@fes</p>
-        <p className="font-semibold">a@a.com / Password123!</p>
+        <p className="font-semibold mt-1 text-[#347d39]">admin@example.com / Admin123!</p>
+        <p className="font-semibold text-[#347d39]">karim-it@outlook.sa / |l0v3N@fes</p>
+        <p className="font-semibold text-[#347d39]">a@a.com / Password123!</p>
       </div>
     </form>
   );
