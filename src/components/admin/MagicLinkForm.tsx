@@ -31,10 +31,16 @@ const MagicLinkForm = ({ email, setEmail }: MagicLinkFormProps) => {
     }
 
     try {
-      // Remove whitespace from email
+      // Make sure to trim the email to avoid whitespace issues
       const trimmedEmail = email.trim();
       
       console.log("Sending magic link to:", trimmedEmail);
+      
+      // First sign out to clear any existing session
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) {
+        console.error("Error signing out:", signOutError);
+      }
       
       const { data, error } = await supabase.auth.signInWithOtp({
         email: trimmedEmail,
@@ -104,6 +110,16 @@ const MagicLinkForm = ({ email, setEmail }: MagicLinkFormProps) => {
           تم إرسال رابط الدخول إلى بريدك الإلكتروني، يرجى التحقق من صندوق الوارد.
         </p>
       )}
+
+      <div className="text-sm text-center mt-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+        <p className="font-medium text-gray-700 mb-2">بيانات حسابات الاختبار:</p>
+        <div className="space-y-1">
+          <p className="font-mono text-green-700">admin@example.com</p>
+          <p className="font-mono text-green-700">karim-it@outlook.sa</p>
+          <p className="font-mono text-green-700">a@a.com</p>
+        </div>
+        <p className="text-xs text-gray-500 mt-2">تأكد من إدخال البريد الإلكتروني بشكل صحيح بدون مسافات إضافية</p>
+      </div>
     </form>
   );
 };

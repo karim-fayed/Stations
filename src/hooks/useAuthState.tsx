@@ -10,7 +10,6 @@ export const useAuthState = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Clear any console before fetching new data
         console.clear();
         console.log("Checking authentication status...");
         
@@ -18,22 +17,21 @@ export const useAuthState = () => {
         
         if (error) {
           console.error("Auth error:", error);
-          throw error;
+          setAuthState({ isAuthenticated: false, user: null });
+          setLoading(false);
+          return;
         }
 
-        console.log("Auth session check result:", data);
+        console.log("Auth session result:", data);
         
         if (!data.session) {
           console.log("No session found, user is not authenticated");
-          setAuthState({
-            isAuthenticated: false,
-            user: null,
-          });
+          setAuthState({ isAuthenticated: false, user: null });
           setLoading(false);
           return;
         }
         
-        // Verify the user has an admin profile
+        // Verify the user has admin privileges
         const { data: adminData, error: adminError } = await supabase
           .from('admin_users')
           .select('*')
@@ -42,6 +40,9 @@ export const useAuthState = () => {
         
         if (adminError) {
           console.error("Error fetching admin user:", adminError);
+          setAuthState({ isAuthenticated: false, user: null });
+          setLoading(false);
+          return;
         }
         
         console.log("Admin user data:", adminData);
@@ -52,10 +53,7 @@ export const useAuthState = () => {
         });
       } catch (error) {
         console.error("Error checking authentication:", error);
-        setAuthState({
-          isAuthenticated: false,
-          user: null,
-        });
+        setAuthState({ isAuthenticated: false, user: null });
       } finally {
         setLoading(false);
       }
@@ -67,7 +65,7 @@ export const useAuthState = () => {
         console.log("Auth state changed:", event, session);
         
         if (event === 'SIGNED_IN') {
-          // Check if the user has an admin profile when they sign in
+          // Check if user is admin
           const checkAdminUser = async () => {
             if (!session?.user?.id) return;
             
@@ -79,6 +77,8 @@ export const useAuthState = () => {
               
             if (adminError) {
               console.error("Error fetching admin user:", adminError);
+              setAuthState({ isAuthenticated: false, user: null });
+              return;
             }
             
             setAuthState({
@@ -89,6 +89,8 @@ export const useAuthState = () => {
           
           // Use setTimeout to avoid Supabase deadlock
           setTimeout(checkAdminUser, 0);
+        } else if (event === 'SIGNED_OUT') {
+          setAuthState({ isAuthenticated: false, user: null });
         } else {
           setAuthState({
             isAuthenticated: !!session,

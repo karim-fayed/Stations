@@ -24,34 +24,60 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
     setIsLoading(true);
 
     try {
-      // Remove whitespace from email and password
+      // Make sure to trim the email and password to avoid whitespace issues
       const trimmedEmail = email.trim();
       const trimmedPassword = password.trim();
       
-      console.log("Attempting login with:", { email: trimmedEmail });
+      console.log("Login attempt with email:", trimmedEmail);
       
-      // Sign out any existing session first to ensure a clean login
-      await supabase.auth.signOut();
+      // First sign out to clear any existing session
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) {
+        console.error("Error signing out:", signOutError);
+      }
       
-      // Use Supabase password login with proper error handling
+      // Attempt to sign in with email and password
       const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password: trimmedPassword,
       });
       
       if (error) {
-        console.error("Login error details:", error);
-        throw error;
+        console.error("Login error:", error);
+        
+        // Handle specific error cases
+        if (error.message.includes("Invalid login credentials")) {
+          toast({
+            title: "خطأ في تسجيل الدخول",
+            description: "بيانات الدخول غير صحيحة. يرجى التأكد من البريد الإلكتروني وكلمة المرور",
+            variant: "destructive",
+          });
+        } else if (error.message.includes("rate limit")) {
+          toast({
+            title: "خطأ في تسجيل الدخول",
+            description: "تم تجاوز عدد محاولات تسجيل الدخول، يرجى المحاولة بعد قليل",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "خطأ في تسجيل الدخول",
+            description: error.message || "حدث خطأ أثناء تسجيل الدخول",
+            variant: "destructive",
+          });
+        }
+        
+        setIsLoading(false);
+        return;
       }
       
-      console.log("Login successful with response:", data);
+      console.log("Login successful:", data);
       
       // Check if we have a session
       if (data.session) {
-        console.log("Login successful, user:", data.user);
+        console.log("User authenticated:", data.user);
         
         try {
-          // تحقق مما إذا كان المستخدم موجودًا في جدول المشرفين
+          // Check if user is in admin_users table
           const { data: adminData, error: adminError } = await supabase
             .from('admin_users')
             .select('*')
@@ -59,38 +85,23 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
             .single();
           
           if (adminError) {
-            console.error("Error fetching admin user:", adminError);
+            console.error("Error checking admin status:", adminError);
             
-            // إذا لم يكن المستخدم موجودًا في جدول admin_users، نقوم بإضافته
-            if (adminError.code === 'PGRST116') { // No rows returned
-              console.log("Admin user not found in admin_users table, adding now...");
-              const { error: insertError } = await supabase
-                .from('admin_users')
-                .insert({
-                  id: data.user.id,
-                  email: data.user.email,
-                  name: data.user.user_metadata?.name || 'Admin User',
-                  role: 'admin',
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                });
-                
-              if (insertError) {
-                console.error("Error adding user to admin_users table:", insertError);
-                toast({
-                  title: "تم تسجيل الدخول",
-                  description: "ولكن هناك مشكلة في إضافة المستخدم إلى جدول المشرفين",
-                  variant: "destructive",
-                });
-              } else {
-                console.log("Successfully added user to admin_users table");
-              }
+            if (adminError.code === 'PGRST116') { // No rows found
+              await supabase.auth.signOut(); // Sign out if not an admin
+              toast({
+                title: "تنبيه",
+                description: "هذا الحساب لا يملك صلاحيات المشرف",
+                variant: "destructive",
+              });
+              setIsLoading(false);
+              return;
             }
           } else {
-            console.log("Found admin user in admin_users table:", adminData);
+            console.log("Admin user verified:", adminData);
           }
         } catch (adminCheckError) {
-          console.error("Error checking admin status:", adminCheckError);
+          console.error("Error during admin check:", adminCheckError);
         }
         
         toast({
@@ -98,32 +109,24 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
           description: "جاري تحويلك إلى لوحة التحكم",
         });
         
-        // Add a small delay before redirecting
+        // Redirect to dashboard
         setTimeout(() => {
           navigate("/admin/dashboard");
         }, 1000);
       } else {
-        console.error("No session returned after successful login");
+        console.error("No session after successful login");
         toast({
           title: "خطأ في تسجيل الدخول",
-          description: "لا يوجد جلسة مستخدم. تأكد من صحة بريدك الإلكتروني وكلمة المرور",
+          description: "فشل إنشاء جلسة المستخدم",
           variant: "destructive",
         });
       }
     } catch (error: any) {
-      console.error("Login error:", error);
-      
-      // تحقق من نوع الخطأ وعرض رسالة مناسبة
-      let errorMessage = "تأكد من صحة بريدك الإلكتروني وكلمة المرور";
-      if (error.message?.includes("Invalid login credentials")) {
-        errorMessage = "بيانات الدخول غير صحيحة. تأكد من البريد الإلكتروني وكلمة المرور";
-      } else if (error.message?.includes("rate limit")) {
-        errorMessage = "تم تجاوز عدد محاولات تسجيل الدخول، يرجى المحاولة بعد قليل";
-      }
+      console.error("Unexpected login error:", error);
       
       toast({
         title: "خطأ في تسجيل الدخول",
-        description: errorMessage,
+        description: error.message || "حدث خطأ غير متوقع أثناء تسجيل الدخول",
         variant: "destructive",
       });
     } finally {
@@ -200,11 +203,14 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
         )}
       </Button>
 
-      <div className="text-sm text-gray-600 mt-2 text-center">
-        <p>للتجربة استخدم أي من الحسابات التالية:</p>
-        <p className="font-semibold mt-1 text-[#347d39]">admin@example.com / Admin123!</p>
-        <p className="font-semibold text-[#347d39]">karim-it@outlook.sa / |l0v3N@fes</p>
-        <p className="font-semibold text-[#347d39]">a@a.com / Password123!</p>
+      <div className="text-sm text-center mt-4 p-3 bg-gray-50 rounded-md border border-gray-200">
+        <p className="font-medium text-gray-700 mb-2">بيانات حسابات الاختبار:</p>
+        <div className="space-y-1">
+          <p className="font-mono text-green-700">admin@example.com / Admin123!</p>
+          <p className="font-mono text-green-700">karim-it@outlook.sa / |l0v3N@fes</p>
+          <p className="font-mono text-green-700">a@a.com / Password123!</p>
+        </div>
+        <p className="text-xs text-gray-500 mt-2">تأكد من إدخال البيانات بشكل صحيح بدون مسافات إضافية</p>
       </div>
     </form>
   );
