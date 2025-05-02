@@ -1,6 +1,16 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Define a type for the user objects returned from Supabase
+interface SupabaseUser {
+  id: string;
+  email?: string;
+}
+
+interface SupabaseUserResponse {
+  users?: SupabaseUser[];
+}
+
 /**
  * يقوم بإنشاء مستخدم مشرف اختباري في Supabase إذا لم يكن موجودًا.
  * هذا للأغراض التطويرية فقط.
@@ -20,7 +30,7 @@ export async function createTestAdmin() {
     // إنشاء المستخدم المشرف الأول
     try {
       // 1. التحقق مما إذا كان المستخدم موجودًا بالفعل في Auth
-      const { data: existingUserData } = await supabase.auth.admin.listUsers();
+      const { data: existingUserData } = await supabase.auth.admin.listUsers() as { data: SupabaseUserResponse };
       const adminExists = existingUserData?.users?.some(user => user.email === adminEmail);
       
       if (!adminExists) {
@@ -69,34 +79,35 @@ export async function createTestAdmin() {
         console.log("المستخدم المشرف موجود بالفعل:", adminEmail);
         
         // التأكد من وجود المستخدم في جدول admin_users
-        const { data: adminUserFromAuth } = await supabase.auth.admin.getUserById(
-          existingUserData.users.find(user => user.email === adminEmail)?.id || ""
-        );
-        
-        if (adminUserFromAuth?.user) {
-          const { data: adminUserInTable, error: fetchError } = await supabase
-            .from('admin_users')
-            .select('*')
-            .eq('id', adminUserFromAuth.user.id)
-            .single();
-            
-          if (fetchError || !adminUserInTable) {
-            // إضافة المستخدم إلى جدول admin_users إذا لم يكن موجودًا
-            const { error: adminTableError } = await supabase
+        const foundUser = existingUserData.users?.find(user => user.email === adminEmail);
+        if (foundUser) {
+          const { data: adminUserFromAuth } = await supabase.auth.admin.getUserById(foundUser.id);
+          
+          if (adminUserFromAuth?.user) {
+            const { data: adminUserInTable, error: fetchError } = await supabase
               .from('admin_users')
-              .upsert({
-                id: adminUserFromAuth.user.id,
-                email: adminEmail,
-                name: "Admin",
-                role: "admin",
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
+              .select('*')
+              .eq('id', adminUserFromAuth.user.id)
+              .single();
               
-            if (adminTableError) {
-              console.error("خطأ في إضافة المستخدم إلى جدول admin_users:", adminTableError);
-            } else {
-              console.log("تم إضافة المستخدم إلى جدول admin_users بنجاح");
+            if (fetchError || !adminUserInTable) {
+              // إضافة المستخدم إلى جدول admin_users إذا لم يكن موجودًا
+              const { error: adminTableError } = await supabase
+                .from('admin_users')
+                .upsert({
+                  id: adminUserFromAuth.user.id,
+                  email: adminEmail,
+                  name: "Admin",
+                  role: "admin",
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                });
+                
+              if (adminTableError) {
+                console.error("خطأ في إضافة المستخدم إلى جدول admin_users:", adminTableError);
+              } else {
+                console.log("تم إضافة المستخدم إلى جدول admin_users بنجاح");
+              }
             }
           }
         }
@@ -108,7 +119,7 @@ export async function createTestAdmin() {
     // إنشاء مستخدم الاختبار
     try {
       // 1. التحقق مما إذا كان المستخدم موجودًا بالفعل في Auth
-      const { data: existingUserData } = await supabase.auth.admin.listUsers();
+      const { data: existingUserData } = await supabase.auth.admin.listUsers() as { data: SupabaseUserResponse };
       const testUserExists = existingUserData?.users?.some(user => user.email === testEmail);
       
       if (!testUserExists) {
@@ -157,34 +168,35 @@ export async function createTestAdmin() {
         console.log("مستخدم الاختبار موجود بالفعل:", testEmail);
         
         // التأكد من وجود المستخدم في جدول admin_users
-        const { data: testUserFromAuth } = await supabase.auth.admin.getUserById(
-          existingUserData.users.find(user => user.email === testEmail)?.id || ""
-        );
-        
-        if (testUserFromAuth?.user) {
-          const { data: testUserInTable, error: fetchError } = await supabase
-            .from('admin_users')
-            .select('*')
-            .eq('id', testUserFromAuth.user.id)
-            .single();
-            
-          if (fetchError || !testUserInTable) {
-            // إضافة المستخدم إلى جدول admin_users إذا لم يكن موجودًا
-            const { error: testTableError } = await supabase
+        const foundUser = existingUserData.users?.find(user => user.email === testEmail);
+        if (foundUser) {
+          const { data: testUserFromAuth } = await supabase.auth.admin.getUserById(foundUser.id);
+          
+          if (testUserFromAuth?.user) {
+            const { data: testUserInTable, error: fetchError } = await supabase
               .from('admin_users')
-              .upsert({
-                id: testUserFromAuth.user.id,
-                email: testEmail,
-                name: "Test Admin",
-                role: "admin",
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
+              .select('*')
+              .eq('id', testUserFromAuth.user.id)
+              .single();
               
-            if (testTableError) {
-              console.error("خطأ في إضافة مستخدم الاختبار إلى جدول admin_users:", testTableError);
-            } else {
-              console.log("تم إضافة مستخدم الاختبار إلى جدول admin_users بنجاح");
+            if (fetchError || !testUserInTable) {
+              // إضافة المستخدم إلى جدول admin_users إذا لم يكن موجودًا
+              const { error: testTableError } = await supabase
+                .from('admin_users')
+                .upsert({
+                  id: testUserFromAuth.user.id,
+                  email: testEmail,
+                  name: "Test Admin",
+                  role: "admin",
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                });
+                
+              if (testTableError) {
+                console.error("خطأ في إضافة مستخدم الاختبار إلى جدول admin_users:", testTableError);
+              } else {
+                console.log("تم إضافة مستخدم الاختبار إلى جدول admin_users بنجاح");
+              }
             }
           }
         }
