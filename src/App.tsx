@@ -10,7 +10,7 @@ import LoginPage from "./pages/Admin/Login";
 import Dashboard from "./pages/Admin/Dashboard";
 import UserManagement from "./pages/Admin/UserManagement";
 import NotFound from "./pages/NotFound";
-import { ensureAdminExists } from "./utils/createAdmin";
+import { ensureAdminExists } from "./utils/admin";
 import AuthGuard from "@/components/admin/AuthGuard";
 
 const queryClient = new QueryClient();
