@@ -29,7 +29,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       
       console.log("Attempting login with:", { email: trimmedEmail });
       
-      // Use Supabase password login
+      // Use Supabase password login with proper error handling
       const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password: trimmedPassword,
@@ -40,49 +40,53 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
         throw error;
       }
       
-      console.log("Login response:", data);
+      console.log("Login successful with response:", data);
       
       // Check if we have a session
       if (data.session) {
         console.log("Login successful, user:", data.user);
         
-        // تحقق مما إذا كان المستخدم موجودًا في جدول المشرفين
-        const { data: adminData, error: adminError } = await supabase
-          .from('admin_users')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
-        
-        if (adminError) {
-          console.error("Error fetching admin user:", adminError);
+        try {
+          // تحقق مما إذا كان المستخدم موجودًا في جدول المشرفين
+          const { data: adminData, error: adminError } = await supabase
+            .from('admin_users')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
           
-          // إذا لم يكن المستخدم موجودًا في جدول admin_users، نقوم بإضافته
-          if (adminError.code === 'PGRST116') { // No rows returned
-            console.log("Admin user not found in admin_users table, adding now...");
-            const { error: insertError } = await supabase
-              .from('admin_users')
-              .insert({
-                id: data.user.id,
-                email: data.user.email,
-                name: data.user.user_metadata?.name || 'Admin User',
-                role: 'admin',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
-              
-            if (insertError) {
-              console.error("Error adding user to admin_users table:", insertError);
-              toast({
-                title: "تم تسجيل الدخول",
-                description: "ولكن هناك مشكلة في إضافة المستخدم إلى جدول المشرفين",
-                variant: "destructive",
-              });
-            } else {
-              console.log("Successfully added user to admin_users table");
+          if (adminError) {
+            console.error("Error fetching admin user:", adminError);
+            
+            // إذا لم يكن المستخدم موجودًا في جدول admin_users، نقوم بإضافته
+            if (adminError.code === 'PGRST116') { // No rows returned
+              console.log("Admin user not found in admin_users table, adding now...");
+              const { error: insertError } = await supabase
+                .from('admin_users')
+                .insert({
+                  id: data.user.id,
+                  email: data.user.email,
+                  name: data.user.user_metadata?.name || 'Admin User',
+                  role: 'admin',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                });
+                
+              if (insertError) {
+                console.error("Error adding user to admin_users table:", insertError);
+                toast({
+                  title: "تم تسجيل الدخول",
+                  description: "ولكن هناك مشكلة في إضافة المستخدم إلى جدول المشرفين",
+                  variant: "destructive",
+                });
+              } else {
+                console.log("Successfully added user to admin_users table");
+              }
             }
+          } else {
+            console.log("Found admin user in admin_users table:", adminData);
           }
-        } else {
-          console.log("Found admin user in admin_users table:", adminData);
+        } catch (adminCheckError) {
+          console.error("Error checking admin status:", adminCheckError);
         }
         
         toast({
