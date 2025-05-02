@@ -60,11 +60,17 @@ const AuthForm = () => {
       
       console.log("Attempting login with:", { email: email.trim() });
       
-      // محاولة تسجيل الدخول بالمزيد من التفاصيل
+      // محاولة تسجيل الدخول مع التأكد من أن supabase متاح
+      if (!supabase || !supabase.auth) {
+        throw new Error("خطأ في الاتصال بنظام المصادقة");
+      }
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim(),
       });
+      
+      console.log("Login response:", data);
       
       if (error) {
         console.error("Login error details:", error);
@@ -79,7 +85,7 @@ const AuthForm = () => {
           description: "جاري تحويلك إلى لوحة التحكم",
         });
         
-        // Fetch user profile to confirm they have admin role
+        // التأكد من وجود المستخدم في جدول المشرفين
         try {
           const { data: adminData, error: adminError } = await supabase
             .from('admin_users')
@@ -89,7 +95,26 @@ const AuthForm = () => {
             
           if (adminError) {
             console.error("Error fetching admin user:", adminError);
-            // لا نريد إيقاف تسجيل الدخول هنا، فقط نسجل الخطأ
+            
+            // إذا لم يكن المستخدم موجودًا في جدول admin_users، نحاول إضافته
+            if (adminError.code === 'PGRST116') { // No rows returned
+              const { error: insertError } = await supabase
+                .from('admin_users')
+                .insert({
+                  id: data.user.id,
+                  email: data.user.email,
+                  name: data.user.user_metadata?.name || 'Admin',
+                  role: 'admin',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                });
+                
+              if (insertError) {
+                console.error("Error adding user to admin_users table:", insertError);
+              } else {
+                console.log("Successfully added user to admin_users table");
+              }
+            }
           }
           
           console.log("Admin user data:", adminData);
@@ -112,6 +137,8 @@ const AuthForm = () => {
       
       if (error.message === "Invalid login credentials") {
         errorMsg = "بيانات تسجيل الدخول غير صحيحة";
+      } else if (error.message.includes("row") && error.message.includes("not found")) {
+        errorMsg = "المستخدم غير موجود في قاعدة البيانات";
       } else if (error.message) {
         errorMsg = error.message;
       }

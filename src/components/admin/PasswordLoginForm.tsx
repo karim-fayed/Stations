@@ -45,6 +45,38 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       // Check if we have a session
       if (data.session) {
         console.log("Login successful, user:", data.user);
+        
+        // تحقق مما إذا كان المستخدم موجودًا في جدول المشرفين
+        const { data: adminData, error: adminError } = await supabase
+          .from('admin_users')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (adminError) {
+          console.error("Error fetching admin user:", adminError);
+          
+          // إذا لم يكن المستخدم موجودًا في جدول admin_users، نقوم بإضافته
+          if (adminError.code === 'PGRST116') { // No rows returned
+            const { error: insertError } = await supabase
+              .from('admin_users')
+              .insert({
+                id: data.user.id,
+                email: data.user.email,
+                name: data.user.user_metadata?.name || 'Admin',
+                role: 'admin',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+              
+            if (insertError) {
+              console.error("Error adding user to admin_users table:", insertError);
+            } else {
+              console.log("Successfully added user to admin_users table");
+            }
+          }
+        }
+        
         toast({
           title: "تم تسجيل الدخول بنجاح",
           description: "جاري تحويلك إلى لوحة التحكم",
@@ -128,7 +160,8 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
 
       <div className="text-sm text-gray-600 mt-2 text-center">
         <p>للتجربة استخدم أي من الحسابات التالية:</p>
-
+        <p className="font-semibold mt-1">admin@example.com / Admin123!</p>
+        <p className="font-semibold">karim-it@outlook.sa / |l0v3N@fes</p>
       </div>
     </form>
   );
