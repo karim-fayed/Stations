@@ -17,16 +17,28 @@ const AuthForm = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // حسابات اختبار للتسهيل على المستخدم
+  const testUsers = [
+    { email: 'admin@example.com', password: 'Admin123!' },
+    { email: 'karim-it@outlook.sa', password: '|l0v3N@fes' }
+  ];
+
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        console.log("Checking auth status...");
         const { data, error } = await supabase.auth.getSession();
         
-        if (error) throw error;
+        if (error) {
+          console.error("Error checking auth status:", error);
+          throw error;
+        }
         
         if (data?.session) {
           console.log("User is already logged in, redirecting to dashboard");
           navigate('/admin/dashboard');
+        } else {
+          console.log("No active session found");
         }
       } catch (error) {
         console.error("Error checking auth status:", error);
@@ -48,17 +60,18 @@ const AuthForm = () => {
       
       console.log("Attempting login with:", { email: email.trim() });
       
+      // محاولة تسجيل الدخول بالمزيد من التفاصيل
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password.trim(),
       });
       
       if (error) {
-        console.error("Login error:", error);
+        console.error("Login error details:", error);
         throw error;
       }
       
-      if (data.session) {
+      if (data && data.session) {
         console.log("Login successful, session:", data.session);
         
         toast({
@@ -67,22 +80,29 @@ const AuthForm = () => {
         });
         
         // Fetch user profile to confirm they have admin role
-        const { data: adminData, error: adminError } = await supabase
-          .from('admin_users')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
+        try {
+          const { data: adminData, error: adminError } = await supabase
+            .from('admin_users')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+            
+          if (adminError) {
+            console.error("Error fetching admin user:", adminError);
+            // لا نريد إيقاف تسجيل الدخول هنا، فقط نسجل الخطأ
+          }
           
-        if (adminError) {
-          console.error("Error fetching admin user:", adminError);
+          console.log("Admin user data:", adminData);
+        } catch (adminCheckError) {
+          console.error("Error checking admin status:", adminCheckError);
         }
         
-        console.log("Admin user data:", adminData);
-        
+        // التأخير قبل التحويل
         setTimeout(() => {
           navigate("/admin/dashboard");
         }, 1000);
       } else {
+        console.error("No session returned after successful login");
         throw new Error("فشل تسجيل الدخول، لم يتم إنشاء جلسة");
       }
     } catch (error: any) {
@@ -106,6 +126,11 @@ const AuthForm = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const setTestUser = (user: { email: string, password: string }) => {
+    setEmail(user.email);
+    setPassword(user.password);
   };
 
   return (
@@ -174,6 +199,18 @@ const AuthForm = () => {
         
         <div className="text-sm text-gray-600 mt-6 text-center">
           <p>للتجربة استخدم أي من الحسابات التالية:</p>
+          <div className="flex flex-col gap-2 mt-2">
+            {testUsers.map((user, index) => (
+              <Button 
+                key={index} 
+                variant="outline"
+                onClick={() => setTestUser(user)}
+                className="text-xs"
+              >
+                {user.email}
+              </Button>
+            ))}
+          </div>
         </div>
       </CardContent>
       <CardFooter className="flex justify-center">
