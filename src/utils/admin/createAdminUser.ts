@@ -7,45 +7,47 @@ import { SupabaseUserResponse } from "./types";
  */
 export async function createAdminUser(email: string, password: string, name: string): Promise<void> {
   try {
-    // 1. التحقق مما إذا كان المستخدم موجودًا بالفعل في Auth
-    const { data: existingUserData } = await supabase.auth.admin.listUsers() as { data: SupabaseUserResponse };
-    const userExists = existingUserData?.users?.some(user => user.email === email);
-    
-    if (!userExists) {
-      // 2. إنشاء مستخدم في Auth
-      const { data: userData, error: userError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            role: "admin"
-          },
-        }
-      });
+    // For development/test purposes only
+    // Try to sign up with the credentials
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name,
+          role: "admin"
+        },
+      }
+    });
 
-      if (userError) {
-        if (userError.message.includes("User already registered")) {
-          console.log(`المستخدم المشرف موجود بالفعل: ${email}`);
+    if (signUpError) {
+      if (signUpError.message.includes("User already registered")) {
+        console.log(`المستخدم المشرف موجود بالفعل: ${email}`);
+        // Try to sign in to check if the user exists and is valid
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (signInData?.user) {
+          // User exists and credentials are valid
+          await addUserToAdminTable(signInData.user.id, email, name);
+          // Sign out after checking
+          await supabase.auth.signOut();
         } else {
-          console.error(`خطأ في إنشاء المستخدم المشرف: ${userError}`);
+          console.error(`خطأ في تسجيل الدخول للمستخدم الموجود: ${signInError?.message || "Unknown error"}`);
         }
       } else {
-        console.log(`تم إنشاء المستخدم المشرف بنجاح: ${userData}`);
-        
-        // 3. إضافة المستخدم إلى جدول admin_users
-        if (userData?.user?.id) {
-          await addUserToAdminTable(userData.user.id, email, name);
-        }
+        console.error(`خطأ في إنشاء المستخدم المشرف: ${signUpError.message}`);
       }
-    } else {
-      console.log(`المستخدم المشرف موجود بالفعل: ${email}`);
+    } else if (signUpData?.user?.id) {
+      console.log(`تم إنشاء المستخدم المشرف بنجاح: ${email}`);
       
-      // التأكد من وجود المستخدم في جدول admin_users
-      const foundUser = existingUserData.users?.find(user => user.email === email);
-      if (foundUser) {
-        await ensureUserInAdminTable(foundUser.id, email, name);
-      }
+      // Add the user to admin_users table
+      await addUserToAdminTable(signUpData.user.id, email, name);
+      
+      // Sign out after creating the user
+      await supabase.auth.signOut();
     }
   } catch (error) {
     console.error(`خطأ في إنشاء المستخدم المشرف: ${error}`);
@@ -60,21 +62,38 @@ export async function addUserToAdminTable(
   email: string, 
   name: string = "Admin"
 ): Promise<void> {
-  const { error } = await supabase
-    .from('admin_users')
-    .upsert({
-      id: userId,
-      email,
-      name,
-      role: "admin",
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    });
+  try {
+    // First check if the user already exists in the admin_users table
+    const { data: existingUser } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (existingUser) {
+      console.log(`المستخدم موجود بالفعل في جدول admin_users: ${email}`);
+      return;
+    }
     
-  if (error) {
-    console.error(`خطأ في إضافة المستخدم إلى جدول admin_users: ${error}`);
-  } else {
-    console.log("تم إضافة المستخدم إلى جدول admin_users بنجاح");
+    // Add the user to admin_users table
+    const { error } = await supabase
+      .from('admin_users')
+      .upsert({
+        id: userId,
+        email,
+        name,
+        role: "admin",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+      
+    if (error) {
+      console.error(`خطأ في إضافة المستخدم إلى جدول admin_users: ${error.message}`);
+    } else {
+      console.log("تم إضافة المستخدم إلى جدول admin_users بنجاح");
+    }
+  } catch (error: any) {
+    console.error(`خطأ في إضافة المستخدم إلى جدول admin_users: ${error.message}`);
   }
 }
 
@@ -86,18 +105,21 @@ export async function ensureUserInAdminTable(
   email: string, 
   name: string = "Admin"
 ): Promise<void> {
-  const { data: adminUserFromAuth } = await supabase.auth.admin.getUserById(userId);
-  
-  if (adminUserFromAuth?.user) {
+  try {
+    // Check if user exists in admin_users table
     const { data: adminUserInTable, error: fetchError } = await supabase
       .from('admin_users')
       .select('*')
-      .eq('id', adminUserFromAuth.user.id)
+      .eq('id', userId)
       .single();
       
     if (fetchError || !adminUserInTable) {
       // إضافة المستخدم إلى جدول admin_users إذا لم يكن موجودًا
-      await addUserToAdminTable(adminUserFromAuth.user.id, email, name);
+      await addUserToAdminTable(userId, email, name);
+    } else {
+      console.log(`المستخدم موجود بالفعل في جدول admin_users: ${email}`);
     }
+  } catch (error: any) {
+    console.error(`خطأ في التحقق من وجود المستخدم في جدول admin_users: ${error.message}`);
   }
 }

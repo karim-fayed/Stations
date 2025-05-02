@@ -14,63 +14,23 @@ serve(async (req) => {
   }
 
   try {
+    // Create a Supabase client with the service role key
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
-
-    // First check if the user already exists
-    const { data: existingUsers, error: searchError } = await supabaseClient.auth.admin.listUsers();
     
-    if (searchError) {
-      throw new Error(`Error searching for existing users: ${searchError.message}`);
-    }
+    // Parse request body
+    const { email, password, name } = await req.json();
     
-    const existingUser = existingUsers?.users?.find(u => u.email === "a@a.com");
-    
-    if (existingUser) {
-      // Check if they're already in the admin_users table
-      const { data: adminData } = await supabaseClient
-        .from('admin_users')
-        .select('*')
-        .eq('id', existingUser.id)
-        .single();
-        
-      if (!adminData) {
-        // Add to admin_users table if not already there
-        const { error: insertError } = await supabaseClient
-          .from('admin_users')
-          .insert({
-            id: existingUser.id,
-            email: existingUser.email,
-            name: "Admin A",
-            role: "admin",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-
-        if (insertError) {
-          throw insertError;
-        }
-      }
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "User already exists and is now an admin",
-          user: existingUser
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
+    if (!email || !password) {
+      throw new Error("Email and password are required");
     }
 
-    // Create the new admin user if they don't exist
+    // Create the admin user
     const { data: userData, error: createError } = await supabaseClient.auth.admin.createUser({
-      email: "a@a.com",
-      password: "Password123!",
+      email,
+      password,
       email_confirm: true // Auto-confirm the email
     });
 
@@ -85,7 +45,7 @@ serve(async (req) => {
         .insert({
           id: userData.user.id,
           email: userData.user.email,
-          name: "Admin A",
+          name: name || "Admin",
           role: "admin",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()

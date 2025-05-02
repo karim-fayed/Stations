@@ -109,7 +109,7 @@ const MagicLinkForm = ({ email, setEmail }: MagicLinkFormProps) => {
       )}
 
       <div className="text-sm text-center mt-4 p-3 bg-gray-50 rounded-md border border-gray-200">
-        <p className="font-medium text-gray-700 mb-2">بيانات حسابات الاختبار:</p>
+        <p className="font-medium text-gray-700 mb-2">حسابات للاختبار:</p>
         <div className="space-y-1">
           <p className="font-mono text-green-700">admin@example.com</p>
           <p className="font-mono text-green-700">karim-it@outlook.sa</p>

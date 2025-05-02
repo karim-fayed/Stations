@@ -91,6 +91,7 @@ export const useAuthState = () => {
         } else if (event === 'SIGNED_OUT') {
           setAuthState({ isAuthenticated: false, user: null });
         } else {
+          // For other events, just check if there's a session
           setAuthState({
             isAuthenticated: !!session,
             user: session?.user || null,
