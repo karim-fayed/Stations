@@ -30,11 +30,19 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       
       console.log("Login attempt with email:", trimmedEmail);
       
-      // First sign out to clear any existing session
-      const { error: signOutError } = await supabase.auth.signOut();
-      if (signOutError) {
-        console.error("Error signing out:", signOutError);
+      // Validate inputs
+      if (!trimmedEmail || !trimmedPassword) {
+        toast({
+          title: "خطأ في البيانات",
+          description: "الرجاء إدخال البريد الإلكتروني وكلمة المرور",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
       }
+      
+      // First sign out to clear any existing session
+      await supabase.auth.signOut();
       
       // Attempt to sign in with email and password
       const { data, error } = await supabase.auth.signInWithPassword({

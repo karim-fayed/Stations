@@ -20,7 +20,7 @@ const MagicLinkForm = ({ email, setEmail }: MagicLinkFormProps) => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!email) {
+    if (!email || !email.trim()) {
       toast({
         title: "يرجى إدخال البريد الإلكتروني",
         description: "يجب إدخال بريدك الإلكتروني لإرسال رابط الدخول",
@@ -37,10 +37,7 @@ const MagicLinkForm = ({ email, setEmail }: MagicLinkFormProps) => {
       console.log("Sending magic link to:", trimmedEmail);
       
       // First sign out to clear any existing session
-      const { error: signOutError } = await supabase.auth.signOut();
-      if (signOutError) {
-        console.error("Error signing out:", signOutError);
-      }
+      await supabase.auth.signOut();
       
       const { data, error } = await supabase.auth.signInWithOtp({
         email: trimmedEmail,

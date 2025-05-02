@@ -10,7 +10,6 @@ export const useAuthState = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.clear();
         console.log("Checking authentication status...");
         
         const { data, error } = await supabase.auth.getSession();
