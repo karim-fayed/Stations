@@ -35,12 +35,12 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
         password: trimmedPassword,
       });
       
-      console.log("Login response:", data);
-      
       if (error) {
         console.error("Login error details:", error);
         throw error;
       }
+      
+      console.log("Login response:", data);
       
       // Check if we have a session
       if (data.session) {
@@ -58,12 +58,13 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
           
           // إذا لم يكن المستخدم موجودًا في جدول admin_users، نقوم بإضافته
           if (adminError.code === 'PGRST116') { // No rows returned
+            console.log("Admin user not found in admin_users table, adding now...");
             const { error: insertError } = await supabase
               .from('admin_users')
               .insert({
                 id: data.user.id,
                 email: data.user.email,
-                name: data.user.user_metadata?.name || 'Admin',
+                name: data.user.user_metadata?.name || 'Admin User',
                 role: 'admin',
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
@@ -71,10 +72,17 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
               
             if (insertError) {
               console.error("Error adding user to admin_users table:", insertError);
+              toast({
+                title: "تم تسجيل الدخول",
+                description: "ولكن هناك مشكلة في إضافة المستخدم إلى جدول المشرفين",
+                variant: "destructive",
+              });
             } else {
               console.log("Successfully added user to admin_users table");
             }
           }
+        } else {
+          console.log("Found admin user in admin_users table:", adminData);
         }
         
         toast({
@@ -85,7 +93,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
         // Add a small delay before redirecting
         setTimeout(() => {
           navigate("/admin/dashboard");
-        }, 1500);
+        }, 1000);
       } else {
         console.error("No session returned after successful login");
         toast({
@@ -96,9 +104,18 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       }
     } catch (error: any) {
       console.error("Login error:", error);
+      
+      // تحقق من نوع الخطأ وعرض رسالة مناسبة
+      let errorMessage = "تأكد من صحة بريدك الإلكتروني وكلمة المرور";
+      if (error.message?.includes("Invalid login credentials")) {
+        errorMessage = "بيانات الدخول غير صحيحة. تأكد من البريد الإلكتروني وكلمة المرور";
+      } else if (error.message?.includes("rate limit")) {
+        errorMessage = "تم تجاوز عدد محاولات تسجيل الدخول، يرجى المحاولة بعد قليل";
+      }
+      
       toast({
         title: "خطأ في تسجيل الدخول",
-        description: error.message || "تأكد من صحة بريدك الإلكتروني وكلمة المرور",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
