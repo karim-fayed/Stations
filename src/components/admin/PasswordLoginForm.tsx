@@ -162,6 +162,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
         <p>للتجربة استخدم أي من الحسابات التالية:</p>
         <p className="font-semibold mt-1">admin@example.com / Admin123!</p>
         <p className="font-semibold">karim-it@outlook.sa / |l0v3N@fes</p>
+        <p className="font-semibold">a@a.com / Password123!</p>
       </div>
     </form>
   );
