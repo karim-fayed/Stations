@@ -82,7 +82,8 @@ describe('checkDuplicateStation', () => {
       name: 'New Station',
       latitude: 24.774265,
       longitude: 46.738586,
-      region: 'Riyadh'
+      region: 'Riyadh',
+      sub_region: 'Central Riyadh' // Added this missing required property
     };
     mockedMaybeSingle.mockResolvedValue({ data: mockStation, error: null });
 
@@ -116,6 +117,7 @@ describe('checkDuplicateStation', () => {
       latitude: 24.774275,
       longitude: 46.738596,
       region: 'Riyadh',
+      sub_region: 'Central Riyadh', // Added this missing required property
       distance_meters: 50 // Close distance
     };
     
