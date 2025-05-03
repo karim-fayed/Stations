@@ -1,7 +1,6 @@
 
 import { checkDuplicateStation } from '../services/stationService';
 import { supabase } from '../integrations/supabase/client';
-import type { jest } from '@jest/globals';
 
 // Mock supabase client
 jest.mock('../integrations/supabase/client', () => ({
@@ -15,7 +14,7 @@ jest.mock('../integrations/supabase/client', () => ({
 }));
 
 // Create proper TypeScript types for the mocked functions
-const mockedFrom = supabase.from as jest.MockedFunction<typeof supabase.from>;
+const mockedFrom = supabase.from as jest.Mock;
 const mockedSelect = jest.fn().mockReturnThis();
 const mockedEq = jest.fn().mockReturnThis();
 const mockedMaybeSingle = jest.fn();
@@ -89,7 +88,7 @@ describe('Duplicate Station Check', () => {
       eq: mockedEq,
       maybeSingle: mockedMaybeSingle
     }));
-    (supabase.rpc as jest.Mock).mockImplementation(mockedRpc);
+    (supabase.rpc as jest.Mock).mockImplementation(() => mockedRpc);
 
     const result = await checkDuplicateStation('New Station', 24.774265, 46.738586);
     
@@ -134,7 +133,7 @@ describe('Duplicate Station Check', () => {
       eq: mockedEq,
       maybeSingle: mockedMaybeSingle
     }));
-    (supabase.rpc as jest.Mock).mockImplementation(mockedRpc);
+    (supabase.rpc as jest.Mock).mockImplementation(() => mockedRpc);
 
     const result = await checkDuplicateStation('New Station', 24.774265, 46.738586);
     

@@ -4,7 +4,10 @@ export type Language = 'ar' | 'en';
 
 export interface Translations {
   [key: string]: {
-    [key: string]: string;
+    [key: string]: {
+      ar: string;
+      en: string;
+    };
   };
 }
 
@@ -193,7 +196,7 @@ export const translations: Translations = {
       en: 'Map'
     },
     stationsList: {
-      ar: 'قائمة المحطات',
+      ar: '��ائمة المحطات',
       en: 'Stations List'
     },
     adminPanel: {
