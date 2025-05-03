@@ -1,6 +1,6 @@
 
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,122 +8,171 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
+  
   try {
-    // Create a Supabase client with the service role key
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-    
-    // Parse request body
+    // Get request body
     const { email, password, name } = await req.json();
     
-    // Clean inputs by removing any spaces
-    const cleanEmail = email ? email.trim().replace(/\s/g, '') : '';
-    const cleanPassword = password ? password.trim().replace(/\s/g, '') : '';
+    // Remove any spaces in the inputs
+    const cleanEmail = email ? email.replace(/\s/g, '') : '';
+    const cleanPassword = password ? password.replace(/\s/g, '') : '';
     const cleanName = name ? name.trim() : 'Admin';
-    
-    if (!cleanEmail || !cleanPassword) {
-      throw new Error("Email and password are required");
-    }
 
-    console.log(`Attempting to create admin user with email: ${cleanEmail}`);
-
-    // Check if user already exists
-    const { data: existingUsers, error: searchError } = await supabaseClient.auth.admin.listUsers();
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     
-    if (searchError) {
-      throw new Error(`Error searching for existing users: ${searchError.message}`);
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Missing Supabase environment variables" 
+        }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" }, 
+          status: 500 
+        }
+      );
     }
     
-    let userData = null;
-    const existingUser = existingUsers?.users?.find(u => u.email === cleanEmail);
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
-    if (existingUser) {
-      console.log("User already exists, updating password");
-      // Update password for existing user
-      const { data, error: updateError } = await supabaseClient.auth.admin.updateUserById(
-        existingUser.id,
+    console.log(`Creating admin user with email: ${cleanEmail}`);
+    
+    // Try to get the user first
+    const { data: existingUsers, error: getUserError } = await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+    
+    let user;
+    
+    if (getUserError) {
+      console.error("Error getting users:", getUserError);
+    } else if (existingUsers) {
+      user = existingUsers.users.find(u => u.email === cleanEmail);
+    }
+    
+    // If user doesn't exist, create one
+    if (!user) {
+      const { data: userData, error: createError } = await supabase.auth.admin.createUser({
+        email: cleanEmail,
+        password: cleanPassword,
+        email_confirm: true,
+        user_metadata: { name: cleanName, role: "admin" }
+      });
+      
+      if (createError) {
+        console.error("Error creating user:", createError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: createError.message 
+          }),
+          { 
+            headers: { ...corsHeaders, "Content-Type": "application/json" }, 
+            status: 500 
+          }
+        );
+      }
+      
+      user = userData.user;
+      console.log("User created successfully");
+    } else {
+      console.log("User already exists");
+      
+      // Update the existing user's password if needed
+      const { error: updateError } = await supabase.auth.admin.updateUserById(
+        user.id,
         { password: cleanPassword }
       );
       
       if (updateError) {
-        throw updateError;
+        console.error("Error updating user password:", updateError);
+      } else {
+        console.log("User password updated successfully");
       }
-      
-      userData = { user: existingUser };
-    } else {
-      // Create the admin user
-      const { data, error: createError } = await supabaseClient.auth.admin.createUser({
-        email: cleanEmail,
-        password: cleanPassword,
-        email_confirm: true // Auto-confirm the email
-      });
-
-      if (createError) {
-        throw createError;
-      }
-      
-      userData = data;
     }
-
-    // If user was created or updated successfully, add them to the admin_users table
-    if (userData?.user) {
-      console.log(`Adding/updating user ${userData.user.id} to admin_users table`);
-      
-      // Check if already exists in admin_users table
-      const { data: existingAdmin } = await supabaseClient
+    
+    // Now ensure the user exists in the admin_users table
+    if (user) {
+      const { data: existingAdminUser } = await supabase
         .from('admin_users')
         .select('*')
-        .eq('id', userData.user.id)
+        .eq('id', user.id)
         .single();
       
-      if (!existingAdmin) {
-        const { error: insertError } = await supabaseClient
+      if (!existingAdminUser) {
+        const { error: insertError } = await supabase
           .from('admin_users')
-          .insert({
-            id: userData.user.id,
-            email: userData.user.email,
+          .upsert({
+            id: user.id,
+            email: cleanEmail,
             name: cleanName,
             role: "admin",
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
-
+          
         if (insertError) {
-          throw insertError;
+          console.error("Error inserting admin user:", insertError);
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: insertError.message,
+              note: "User was created but failed to add to admin_users table"
+            }),
+            { 
+              headers: { ...corsHeaders, "Content-Type": "application/json" }, 
+              status: 500 
+            }
+          );
         }
+        
+        console.log("Admin user added to admin_users table");
+      } else {
+        console.log("User already exists in admin_users table");
       }
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          user: { 
+            id: user.id,
+            email: cleanEmail,
+            name: cleanName
+          } 
+        }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" }, 
+          status: 200 
+        }
+      );
+    } else {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Failed to create or find user" 
+        }),
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" }, 
+          status: 500 
+        }
+      );
     }
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Admin user created/updated successfully",
-        user: userData?.user
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
   } catch (error) {
-    console.error("Error creating admin user:", error);
-    
+    console.error("Unexpected error:", error);
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message,
-        details: error.stack || "No additional details"
+        error: error.message || "Unexpected error occurred" 
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
+      { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, 
+        status: 500 
       }
     );
   }

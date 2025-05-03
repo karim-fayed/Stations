@@ -66,9 +66,19 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       // Set up testing credentials for development
       let emailToUse = cleanEmail;
       let passwordToUse = cleanPassword;
+<<<<<<< HEAD
 
       // تم إزالة الاختصارات بناءً على طلب المستخدم لتحسين الأمان
 
+=======
+      
+      if (cleanEmail === "test") {
+        emailToUse = "test@example.com";
+        passwordToUse = "Test123!";
+        console.log("Using test credentials:", emailToUse, passwordToUse);
+      }
+      
+>>>>>>> 180db556a54ffa0cc39b8c6790a152795592ec67
       // Attempt to sign in with email and password
       const { data, error } = await supabase.auth.signInWithPassword({
         email: emailToUse,
