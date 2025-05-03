@@ -41,9 +41,9 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
     setIsLoading(true);
 
     try {
-      // No need to trim as we're already preventing spaces in the inputs
-      const cleanEmail = email;
-      const cleanPassword = password;
+      // Make sure there are no spaces in credentials
+      const cleanEmail = email.trim();
+      const cleanPassword = password.trim();
       
       console.log("Login attempt with email:", cleanEmail);
       
@@ -61,10 +61,19 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       // First sign out to clear any existing session
       await supabase.auth.signOut();
       
+      // Set up testing credentials for development
+      let emailToUse = cleanEmail;
+      let passwordToUse = cleanPassword;
+      
+      if (cleanEmail === "test") {
+        emailToUse = "test@example.com";
+        passwordToUse = "Test123!";
+      }
+      
       // Attempt to sign in with email and password
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password: cleanPassword,
+        email: emailToUse,
+        password: passwordToUse,
       });
       
       if (error) {
@@ -231,11 +240,9 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       <div className="text-sm text-center mt-4 p-3 bg-gray-50 rounded-md border border-gray-200">
         <p className="font-medium text-gray-700 mb-2">حسابات للاختبار:</p>
         <div className="space-y-1">
-          <p className="font-mono text-green-700">admin@example.com / Admin123!</p>
-          <p className="font-mono text-green-700">karim-it@outlook.sa / |l0v3N@fes</p>
-          <p className="font-mono text-green-700">a@a.com / Password123!</p>
+          <p className="font-mono text-green-700">test</p>
+          <p className="font-mono text-green-700 text-xs">(اختصار لـ test@example.com / Test123!)</p>
         </div>
-        <p className="text-xs text-gray-500 mt-2">البيانات بشكل صحيح بدون مسافات إضافية</p>
       </div>
     </form>
   );

@@ -8,35 +8,39 @@ import { createAdminUser } from "./createAdminUser";
  */
 export async function createTestAdmin() {
   try {
-    // بيانات اعتماد مستخدم 1 - تأكد من عدم وجود مسافات
-    const adminEmail = "karim-it@outlook.sa";
-    const adminPassword = "|l0v3N@fes";
-    
-    // بيانات اعتماد مستخدم 2 - تأكد من عدم وجود مسافات
-    const testEmail = "admin@example.com";
-    const testPassword = "Admin123!";
-    
-    // بيانات اعتماد مستخدم 3 - تأكد من عدم وجود مسافات
-    const testEmail3 = "a@a.com";
-    const testPassword3 = "Password123!";
-    
-    // مستخدم اختبار جديد - بيانات واضحة وبدون مسافات
-    const testEmail4 = "test@example.com";
-    const testPassword4 = "Test123!";
+    // بيانات اعتماد مستخدم جديد واضحة وسهلة الاستخدام
+    const testEmail = "test@example.com";
+    const testPassword = "Test123!";
 
-    console.log("محاولة إنشاء أو التحقق من المستخدمين المشرفين");
+    console.log("محاولة إنشاء مستخدم اختباري جديد");
 
-    // إنشاء المستخدم المشرف الأول
-    await createAdminUser(adminEmail, adminPassword, "Admin");
-    
-    // إنشاء مستخدم الاختبار الثاني
-    await createAdminUser(testEmail, testPassword, "Test Admin");
-    
-    // إنشاء مستخدم الاختبار الثالث
-    await createAdminUser(testEmail3, testPassword3, "Test Admin 3");
-    
-    // إنشاء مستخدم الاختبار الرابع - واضح وسهل
-    await createAdminUser(testEmail4, testPassword4, "Test Admin 4");
+    // إنشاء المستخدم المشرف بطريقة Edge Function
+    try {
+      const response = await fetch('/api/create-admin-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: testEmail,
+          password: testPassword,
+          name: "Test Admin"
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.log("خطأ في استدعاء edge function:", errorData);
+      } else {
+        const result = await response.json();
+        console.log("تم إنشاء المستخدم بنجاح:", result);
+      }
+    } catch (error) {
+      console.error("خطأ في استدعاء edge function:", error);
+      
+      // إذا فشل استدعاء edge function، جرب طريقة العميل
+      await createAdminUser(testEmail, testPassword, "Test Admin");
+    }
     
     // تسجيل الخروج بعد إنشاء/التحقق من المستخدمين
     await supabase.auth.signOut();
