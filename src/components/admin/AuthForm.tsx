@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import LoginTabs from "./LoginTabs";
@@ -78,17 +78,17 @@ const AuthForm = () => {
   }
 
   return (
-    <Card className="w-full max-w-md border-none shadow-md">
+    <Card className="w-full max-w-md border-none shadow-lg rounded-lg">
       <CardContent className="p-6">
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold">تسجيل الدخول</h2>
+          <h2 className="text-3xl font-bold">{t('login', 'title')}</h2>
           <p className="text-gray-600 mt-1">
-            قم بتسجيل الدخول للوصول إلى لوحة التحكم
+            {t('login', 'subtitle')}
           </p>
         </div>
         <LoginTabs />
         <p className="text-xs text-gray-500 text-center mt-8">
-          © محطات نور 2025 - جميع الحقوق محفوظة
+          © {t('common', 'copyright')}
         </p>
       </CardContent>
     </Card>

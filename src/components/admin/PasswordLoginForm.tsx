@@ -180,7 +180,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700 text-right">
+        <label htmlFor="email" className="block text-base font-medium text-gray-700 text-right">
           {t('common', 'email')}
         </label>
         <Input
@@ -192,13 +192,13 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
           value={email}
           onChange={handleEmailChange}
           placeholder="admin@example.com"
-          className="w-full text-left"
+          className="w-full text-left h-12 rounded-lg"
           dir="ltr"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700 text-right">
+        <label htmlFor="password" className="block text-base font-medium text-gray-700 text-right">
           {t('common', 'password')}
         </label>
         <div className="relative">
@@ -210,18 +210,18 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
             required
             value={password}
             onChange={handlePasswordChange}
-            className="w-full pr-10"
+            className="w-full pr-10 h-12 rounded-lg"
             dir="ltr"
           />
           <button
             type="button"
             onClick={togglePasswordVisibility}
-            className="absolute inset-y-0 right-0 flex items-center pr-3"
+            className="absolute inset-y-0 left-0 flex items-center pl-3"
           >
             {showPassword ? (
-              <EyeOff className="h-4 w-4 text-gray-400" />
+              <EyeOff className="h-5 w-5 text-gray-400" />
             ) : (
-              <Eye className="h-4 w-4 text-gray-400" />
+              <Eye className="h-5 w-5 text-gray-400" />
             )}
           </button>
         </div>
@@ -229,12 +229,12 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
 
       <Button
         type="submit"
-        className="w-full bg-noor-purple hover:bg-noor-purple/90"
+        className="w-full bg-noor-purple hover:bg-noor-purple/90 text-white py-6 text-lg rounded-lg h-auto"
         disabled={isLoading}
       >
         {isLoading ? (
           <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             {t('login', 'loggingIn')}
           </>
         ) : (

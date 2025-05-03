@@ -11,10 +11,10 @@ const LoginHeader = () => {
         alt="Noor Stations Logo"
         className="mx-auto h-28 w-auto mb-4"
       />
-      <h2 className="mt-2 text-3xl font-bold text-gray-900">
+      <h2 className="mt-2 text-5xl font-bold text-gray-900 mb-2">
         {t('login', 'title')}
       </h2>
-      <p className="mt-2 text-gray-600">
+      <p className="mt-2 text-xl text-gray-600">
         {t('login', 'subtitle')}
       </p>
     </div>
