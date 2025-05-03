@@ -23,8 +23,8 @@ type PostgrestResponse<T> = {
   error: any | null;
 };
 
-// Define the proper return type for maybeSingle - this is a mock function that returns a Promise
-const mockedMaybeSingle = jest.fn<() => Promise<PostgrestResponse<GasStation | null>>>();
+// Define the proper return type for maybeSingle
+const mockedMaybeSingle = jest.fn<Promise<PostgrestResponse<GasStation | null>>>();
 
 // Define expected type for checkDuplicateStation result
 interface DuplicateCheckResult {
@@ -82,8 +82,7 @@ describe('checkDuplicateStation', () => {
       name: 'New Station',
       latitude: 24.774265,
       longitude: 46.738586,
-      region: 'Riyadh',
-      sub_region: 'Central Riyadh' // Added this missing required property
+      region: 'Riyadh'
     };
     mockedMaybeSingle.mockResolvedValue({ data: mockStation, error: null });
 
@@ -117,7 +116,6 @@ describe('checkDuplicateStation', () => {
       latitude: 24.774275,
       longitude: 46.738596,
       region: 'Riyadh',
-      sub_region: 'Central Riyadh', // Added this missing required property
       distance_meters: 50 // Close distance
     };
     
