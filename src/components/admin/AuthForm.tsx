@@ -1,9 +1,9 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import LoginTabs from "./LoginTabs";
+import PasswordLoginForm from "./PasswordLoginForm";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const AuthForm = () => {
@@ -11,6 +11,7 @@ const AuthForm = () => {
   const { toast } = useToast();
   const { t } = useLanguage();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -78,22 +79,22 @@ const AuthForm = () => {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle className="text-2xl text-center">{t('login', 'title')}</CardTitle>
-        <CardDescription className="text-center">
-          {t('login', 'subtitle')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <LoginTabs />
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <p className="text-sm text-gray-500">
-          © {t('common', 'appName')} {new Date().getFullYear()} - {t('common', 'allRightsReserved')}
-        </p>
-      </CardFooter>
-    </Card>
+    <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+      <div className="mb-6 text-center">
+        <h3 className="text-xl font-medium">{t('login', 'loginTitle')}</h3>
+        <p className="text-sm text-gray-600 mt-1">{t('login', 'loginSubtitle')}</p>
+      </div>
+      
+      <PasswordLoginForm email={email} setEmail={setEmail} />
+      
+      <div className="mt-5 text-center text-xs text-gray-500">
+        <p>{t('login', 'testAccounts')}</p>
+      </div>
+      
+      <div className="mt-6 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+        © {t('common', 'appName')} {new Date().getFullYear()} - {t('common', 'allRightsReserved')}
+      </div>
+    </div>
   );
 };
 

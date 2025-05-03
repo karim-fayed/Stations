@@ -1,4 +1,3 @@
-
 // Define the structure of the translations
 export interface Translations {
   [key: string]: {
@@ -29,7 +28,98 @@ export const translations: Translations = {
       en: "Admin Panel"
     }
   },
-  // Additional sections can be added here
+  login: {
+    title: {
+      ar: "لوحة تحكم المشرفين",
+      en: "Admin Dashboard"
+    },
+    subtitle: {
+      ar: "الرجاء تسجيل الدخول للوصول إلى لوحة التحكم",
+      en: "Please login to access the dashboard"
+    },
+    loginTitle: {
+      ar: "تسجيل الدخول",
+      en: "Login"
+    },
+    loginSubtitle: {
+      ar: "أدخل بيانات حسابك للوصول إلى لوحة التحكم",
+      en: "Enter your account details to access the dashboard"
+    },
+    email: {
+      ar: "البريد الإلكتروني",
+      en: "Email"
+    },
+    password: {
+      ar: "كلمة المرور",
+      en: "Password"
+    },
+    loginButton: {
+      ar: "تسجيل الدخول",
+      en: "Login"
+    },
+    loggingIn: {
+      ar: "جاري تسجيل الدخول...",
+      en: "Logging in..."
+    },
+    loginSuccess: {
+      ar: "تم تسجيل الدخول بنجاح",
+      en: "Login successful"
+    },
+    redirecting: {
+      ar: "جاري التوجيه...",
+      en: "Redirecting..."
+    },
+    loginError: {
+      ar: "خطأ في تسجيل الدخول",
+      en: "Login error"
+    },
+    invalidCredentials: {
+      ar: "بيانات الدخول غير صحيحة",
+      en: "Invalid credentials"
+    },
+    error: {
+      ar: "خطأ",
+      en: "Error"
+    },
+    enterCredentials: {
+      ar: "يرجى إدخال البريد الإلكتروني وكلمة المرور",
+      en: "Please enter your email and password"
+    },
+    testAccounts: {
+      ar: "للتجربة استخدم أي من الحسابات التالية:",
+      en: "For testing, use any of the following accounts:"
+    },
+    checkingSession: {
+      ar: "جاري التحقق من الجلسة...",
+      en: "Checking session..."
+    },
+    notAdmin: {
+      ar: "هذا الحساب ليس لديه صلاحيات إدارية",
+      en: "This account does not have admin privileges"
+    }
+  },
+  common: {
+    email: {
+      ar: "البريد الإلكتروني",
+      en: "Email"
+    },
+    password: {
+      ar: "كلمة المرور",
+      en: "Password"
+    },
+    alert: {
+      ar: "تنبيه",
+      en: "Alert"
+    },
+    appName: {
+      ar: "محطات نور",
+      en: "Noor Stations"
+    },
+    allRightsReserved: {
+      ar: "جميع الحقوق محفوظة",
+      en: "All rights reserved"
+    }
+  },
   errors: {
     networkError: {
       ar: "خطأ في الاتصال بالشبكة",
