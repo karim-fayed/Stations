@@ -23,8 +23,8 @@ type PostgrestResponse<T> = {
   error: any | null;
 };
 
-// Define the proper return type for maybeSingle
-const mockedMaybeSingle = jest.fn<Promise<PostgrestResponse<GasStation | null>>>();
+// Define the proper return type for maybeSingle - this is a mock function that returns a Promise
+const mockedMaybeSingle = jest.fn<() => Promise<PostgrestResponse<GasStation | null>>>();
 
 // Define expected type for checkDuplicateStation result
 interface DuplicateCheckResult {
