@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { GasStation } from "@/types/station";
 
@@ -79,7 +80,7 @@ export const createStation = async (station: Partial<GasStation>): Promise<GasSt
 
     const { data, error } = await supabase
       .from("stations")
-      .insert({
+      .insert([{
         name: station.name,
         region: station.region || '',
         sub_region: station.sub_region || '',
@@ -87,7 +88,7 @@ export const createStation = async (station: Partial<GasStation>): Promise<GasSt
         longitude: station.longitude,
         fuel_types: station.fuel_types || '',
         additional_info: station.additional_info || ''
-      })
+      }])
       .select()
       .single();
 
@@ -106,7 +107,27 @@ export const createStation = async (station: Partial<GasStation>): Promise<GasSt
 /**
  * Add station - alias for createStation for backward compatibility
  */
-export const addStation = createStation;
+export const addStation = async (station: Partial<GasStation>, skipDuplicateCheck?: boolean): Promise<GasStation> => {
+  try {
+    // If skipDuplicateCheck is true, bypass duplicate check
+    if (skipDuplicateCheck) {
+      return await createStation(station);
+    }
+
+    // Check for duplicates before adding
+    if (station.name && station.latitude && station.longitude) {
+      const duplicateCheck = await checkDuplicateStation(station.name, station.latitude, station.longitude);
+      if (duplicateCheck.isDuplicate) {
+        throw new Error(`Duplicate station found: ${duplicateCheck.duplicateType}`);
+      }
+    }
+
+    return await createStation(station);
+  } catch (error) {
+    console.error("Error in addStation:", error);
+    throw error;
+  }
+};
 
 /**
  * Update a station
@@ -163,8 +184,9 @@ export const fetchNearestStations = async (
   maxDistance = 50000 // 50 km in meters
 ): Promise<GasStation[]> => {
   try {
+    // Using Supabase PostgreSQL functions
     const { data, error } = await supabase
-      .rpc('find_stations_within_distance', {
+      .rpc("find_stations_within_distance", {
         lat: latitude,
         lng: longitude,
         max_distance: maxDistance,
@@ -176,7 +198,7 @@ export const fetchNearestStations = async (
       throw error;
     }
 
-    return data || [];
+    return data as GasStation[] || [];
   } catch (error) {
     console.error("Error in fetchNearestStations:", error);
     throw error;
@@ -207,14 +229,14 @@ export const checkDuplicateStation = async (
     if (nameMatch) {
       return {
         isDuplicate: true,
-        duplicateStation: nameMatch,
+        duplicateStation: nameMatch as GasStation,
         duplicateType: 'name'
       };
     }
 
     // Check for nearby stations within 100 meters
     const { data: locationMatches, error: locationError } = await supabase
-      .rpc('find_stations_within_distance', {
+      .rpc("find_stations_within_distance", {
         lat: latitude,
         lng: longitude,
         max_distance: 100, // 100 meters
@@ -226,10 +248,10 @@ export const checkDuplicateStation = async (
       throw locationError;
     }
 
-    if (locationMatches && locationMatches.length > 0) {
+    if (locationMatches && Array.isArray(locationMatches) && locationMatches.length > 0) {
       return {
         isDuplicate: true,
-        duplicateStation: locationMatches[0],
+        duplicateStation: locationMatches[0] as GasStation,
         duplicateType: 'location'
       };
     }
