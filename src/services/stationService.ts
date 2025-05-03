@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { GasStation } from "@/types/station";
 
@@ -232,12 +233,11 @@ export const checkDuplicateStation = async (
     }
 
     // Check for nearby stations using standard Postgres/PostGIS distance calculation
+    // Fix: Using .eq() with a column filter instead of .filter() which requires different parameters
     const { data: locationMatches, error: locationError } = await supabase
       .from('stations')
       .select('*')
-      .filter(
-        `ST_DWithin(location, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography, 100)`
-      )
+      .or(`ST_DWithin(location, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography, 100)`)
       .limit(1);
 
     if (locationError) {
