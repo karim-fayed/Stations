@@ -16,6 +16,7 @@ jest.mock('../integrations/supabase/client', () => ({
 const mockedFrom = supabase.from as jest.Mock;
 const mockedSelect = jest.fn().mockReturnThis();
 const mockedEq = jest.fn().mockReturnThis();
+// Define the proper return type for maybeSingle
 const mockedMaybeSingle = jest.fn();
 
 // Define expected type for checkDuplicateStation result
@@ -39,12 +40,13 @@ describe('checkDuplicateStation', () => {
       maybeSingle: mockedMaybeSingle
     });
 
-    // Mock return values
-    mockedMaybeSingle.mockResolvedValue({ data: null });
+    // Mock return values with proper type
+    mockedMaybeSingle.mockResolvedValue({ data: null, error: null });
 
     // Mock the RPC call for distance check
     const mockedRpc = jest.fn().mockReturnValue({
-      data: null
+      data: null,
+      error: null
     });
     (supabase.rpc as jest.Mock).mockImplementation(() => mockedRpc);
 
@@ -67,7 +69,7 @@ describe('checkDuplicateStation', () => {
       maybeSingle: mockedMaybeSingle
     });
 
-    // Mock return value for exact name match
+    // Mock return value for exact name match with proper type
     const mockStation = {
       id: '123',
       name: 'New Station',
@@ -75,11 +77,12 @@ describe('checkDuplicateStation', () => {
       longitude: 46.738586,
       region: 'Riyadh'
     };
-    mockedMaybeSingle.mockResolvedValue({ data: mockStation });
+    mockedMaybeSingle.mockResolvedValue({ data: mockStation, error: null });
 
     // Mock the RPC call for distance check (not needed for this test case)
     const mockedRpc = jest.fn().mockReturnValue({
-      data: null
+      data: null,
+      error: null
     });
     (supabase.rpc as jest.Mock).mockImplementation(() => mockedRpc);
 
@@ -97,7 +100,7 @@ describe('checkDuplicateStation', () => {
       eq: mockedEq,
       maybeSingle: mockedMaybeSingle
     });
-    mockedMaybeSingle.mockResolvedValue({ data: null });
+    mockedMaybeSingle.mockResolvedValue({ data: null, error: null });
 
     // Mock the RPC call for distance check
     const nearbyStation = {
@@ -110,7 +113,8 @@ describe('checkDuplicateStation', () => {
     };
     
     const mockedRpc = jest.fn().mockReturnValue({
-      data: [nearbyStation]
+      data: [nearbyStation],
+      error: null
     });
     (supabase.rpc as jest.Mock).mockImplementation(() => mockedRpc);
 
