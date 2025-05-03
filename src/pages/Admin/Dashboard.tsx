@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -96,7 +95,8 @@ const Dashboard = () => {
 
   const handleAddStation = async () => {
     try {
-      if (!currentStation.name || !currentStation.region || !currentStation.latitude || !currentStation.longitude) {
+      if (!currentStation.name || !currentStation.region || 
+          currentStation.latitude === undefined || currentStation.longitude === undefined) {
         toast({
           title: "بيانات غير مكتملة",
           description: "يرجى إدخال جميع البيانات المطلوبة (الاسم، المنطقة، خط العرض، خط الطول)",
@@ -108,9 +108,9 @@ const Dashboard = () => {
       // التحقق من وجود محطة مكررة
       try {
         const { isDuplicate, duplicateStation: foundDuplicate } = await checkDuplicateStation(
-          currentStation.name as string,
-          currentStation.latitude as number,
-          currentStation.longitude as number
+          currentStation.name,
+          Number(currentStation.latitude),
+          Number(currentStation.longitude)
         );
 
         if (isDuplicate && foundDuplicate) {
@@ -127,7 +127,16 @@ const Dashboard = () => {
       }
 
       // إذا لم تكن هناك محطة مكررة، نضيف المحطة الجديدة
-      const newStation = await addStation(currentStation as Omit<GasStation, 'id'>);
+      const newStation = await addStation({
+        name: currentStation.name,
+        region: currentStation.region,
+        sub_region: currentStation.sub_region || '',
+        latitude: Number(currentStation.latitude),
+        longitude: Number(currentStation.longitude),
+        fuel_types: currentStation.fuel_types || '',
+        additional_info: currentStation.additional_info || ''
+      });
+
       setStations([...stations, newStation]);
       setIsAddDialogOpen(false);
       setCurrentStation({});
@@ -154,7 +163,15 @@ const Dashboard = () => {
       // تجاوز التحقق من المحطات المكررة
       const { data, error } = await supabase
         .from("stations")
-        .insert(pendingAddStation)
+        .insert({
+          name: pendingAddStation.name,
+          region: pendingAddStation.region,
+          sub_region: pendingAddStation.sub_region || '',
+          latitude: Number(pendingAddStation.latitude),
+          longitude: Number(pendingAddStation.longitude),
+          fuel_types: pendingAddStation.fuel_types || '',
+          additional_info: pendingAddStation.additional_info || ''
+        })
         .select()
         .single();
 

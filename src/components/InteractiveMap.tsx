@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import mapboxgl from 'mapbox-gl';
@@ -42,15 +41,15 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [isLoadingNearest, setIsLoadingNearest] = useState(false);
-  const [selectedCity, setSelectedCity] = useState<string>('الرياض'); // الرياض كمدينة افتراضية
+  const [selectedCity, setSelectedCity] = useState<string>(''); // Empty city as default
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>('');
-  const [filteredStations, setFilteredStations] = useState<GasStation[]>(stations);
+  const [filteredStations, setFilteredStations] = useState<GasStation[]>([]);
   const { toast } = useToast();
 
   // Load custom hooks
   const texts = useMapLocalization(language);
-  const saudiCities = useSaudiCities();
+  const { cities, isLoading: citiesLoading } = useSaudiCities();
 
   // تأخير البحث لتجنب التحديث المستمر أثناء الكتابة
   useEffect(() => {
@@ -66,14 +65,20 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   // تحديث المحطات المفلترة عند تغيير مصطلح البحث
   useEffect(() => {
     if (!debouncedSearchTerm.trim()) {
-      setFilteredStations(stations);
+      // If no search term, respect the city filter
+      if (selectedCity) {
+        filterStationsByCity(selectedCity);
+      } else {
+        // Start with empty filtered stations
+        setFilteredStations([]);
+      }
       return;
     }
 
     const filtered = stations.filter(station =>
       station.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      station.region.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      station.sub_region.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      station.region?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      station.sub_region?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
       (station.fuel_types && station.fuel_types.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
     );
 
@@ -82,7 +87,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     // التوجيه إلى المحطة أو المدينة عند البحث
     if (filtered.length > 0 && map.current) {
       // البحث عن مدينة مطابقة أولاً
-      const matchingCity = saudiCities.find(city =>
+      const matchingCity = cities.find(city =>
         city.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         city.nameEn.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       );
@@ -112,7 +117,83 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         onSelectStation(firstStation);
       }
     }
-  }, [debouncedSearchTerm, stations, saudiCities, onSelectStation]);
+  }, [debouncedSearchTerm, stations, cities, onSelectStation]);
+
+  // Function to filter stations by city name
+  const filterStationsByCity = (cityName: string) => {
+    try {
+      if (!cityName || cityName === '') {
+        // If no city is selected, return empty list to avoid showing all stations at once
+        setFilteredStations([]);
+        return;
+      }
+
+      const city = cities.find(c => c.name === cityName || c.nameEn === cityName);
+      
+      if (!city) {
+        throw new Error(`City ${cityName} not found`);
+      }
+
+      // Find all stations in the selected city
+      const cityStations = stations.filter(station => {
+        // Check if station's region matches the city name
+        return station.region === city.name || station.region === city.nameEn;
+      });
+
+      // If no exact matches found, try by proximity
+      if (cityStations.length === 0) {
+        // Calculate distance to the city center for each station
+        const stationsWithDistance = stations.map(station => {
+          const distance = calculateDistance(
+            station.latitude,
+            station.longitude,
+            city.latitude,
+            city.longitude
+          );
+          return { ...station, distanceFromCity: distance };
+        });
+
+        // Get stations within 50km of the city center
+        const nearbyStations = stationsWithDistance
+          .filter(station => station.distanceFromCity <= 50)
+          .sort((a, b) => (a.distanceFromCity || 0) - (b.distanceFromCity || 0));
+
+        setFilteredStations(nearbyStations);
+        toast({
+          title: language === 'ar' ? `تم الانتقال إلى ${city.name}` : `Moved to ${city.nameEn}`,
+          description: language === 'ar'
+            ? `تم العثور على ${nearbyStations.length} محطة بالقرب من المدينة`
+            : `Found ${nearbyStations.length} stations near the city`,
+        });
+      } else {
+        setFilteredStations(cityStations);
+        toast({
+          title: language === 'ar' ? `تم الانتقال إلى ${city.name}` : `Moved to ${city.nameEn}`,
+          description: language === 'ar'
+            ? `تم العثور على ${cityStations.length} محطة في المدينة`
+            : `Found ${cityStations.length} stations in the city`,
+        });
+      }
+
+      // Move map to the selected city
+      if (map.current && city) {
+        map.current.flyTo({
+          center: [city.longitude, city.latitude],
+          zoom: city.zoom,
+          essential: true,
+          duration: 1500
+        });
+      }
+    } catch (error) {
+      console.error("Error filtering stations by city:", error);
+      setFilteredStations([]);
+      toast({
+        title: language === 'ar' ? 'خطأ في تصفية المحطات' : 'Error filtering stations',
+        description: error instanceof Error ? error.message : "حدث خطأ غير معروف",
+        variant: "destructive",
+      });
+    }
+  };
 
   // إنشاء محتوى النافذة المنبثقة (Popup) للمحطة
   const createPopupContent = (station: GasStation) => {
@@ -275,72 +356,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   // التغيير إلى مدينة مختارة
   const handleCityChange = (cityName: string) => {
     setSelectedCity(cityName);
-    const city = saudiCities.find(city => city.name === cityName || city.nameEn === cityName);
-
-    if (city && map.current) {
-      // تحريك الخريطة إلى المدينة المختارة
-      map.current.flyTo({
-        center: [city.longitude, city.latitude],
-        zoom: city.zoom,
-        essential: true,
-        duration: 1500
-      });
-
-      // تصفية المحطات حسب المدينة المختارة
-      try {
-        // نستخدم اسم المدينة للمطابقة مع حقل region في المحطات
-        const cityStations = stations.filter(station => {
-          // نبحث عن المحطات التي تقع في المنطقة المختارة
-          // نستخدم includes بدلاً من المطابقة الدقيقة لتغطية الحالات المختلفة للتسمية
-          return station.region.includes(city.nameEn) || station.region.includes(city.name);
-        });
-
-        // عدد المحطات التي سيتم عرضها
-        let stationCount = cityStations.length;
-
-        // إذا لم نجد محطات بالمطابقة المباشرة، نستخدم المسافة الجغرافية
-        if (cityStations.length === 0) {
-          // حساب المسافة بين كل محطة ومركز المدينة
-          const stationsWithDistance = stations.map(station => {
-            // حساب المسافة بين المحطة ومركز المدينة (بالكيلومترات)
-            const distance = calculateDistance(
-              station.latitude,
-              station.longitude,
-              city.latitude,
-              city.longitude
-            );
-            return { ...station, distanceFromCity: distance };
-          });
-
-          // اختيار المحطات التي تقع ضمن دائرة نصف قطرها 50 كم من مركز المدينة
-          const nearbyStations = stationsWithDistance.filter(station => station.distanceFromCity <= 50);
-
-          // تحديث المحطات المفلترة
-          stationCount = nearbyStations.length;
-          setFilteredStations(nearbyStations);
-        } else {
-          // تحديث المحطات المفلترة بالمحطات التي تم العثور عليها
-          setFilteredStations(cityStations);
-        }
-
-        // عرض رسالة للمستخدم
-        toast({
-          title: language === 'ar' ? `تم الانتقال إلى ${city.name}` : `Moved to ${city.nameEn}`,
-          description: language === 'ar'
-            ? `تم عرض ${stationCount} محطة في المنطقة المختارة`
-            : `Showing ${stationCount} stations in the selected area`,
-        });
-      } catch (error) {
-        console.error("Error filtering stations by city:", error);
-        // في حالة حدوث خطأ، نعرض جميع المحطات
-        setFilteredStations(stations);
-        toast({
-          title: language === 'ar' ? `تم الانتقال إلى ${city.name}` : `Moved to ${city.nameEn}`,
-          description: language === 'ar' ? 'تم عرض جميع المحطات' : 'Showing all stations',
-          variant: 'destructive'
-        });
-      }
-    }
+    filterStationsByCity(cityName);
   };
 
   // دالة لحساب المسافة بين نقطتين جغرافيتين (بالكيلومترات)
@@ -369,103 +385,37 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     // إعادة تعيين موقع المستخدم
     setUserLocation(null);
 
-    // إعادة تعيين المدينة إلى الافتراضية (الرياض)
-    setSelectedCity('الرياض');
+    // إعادة تعيين المدينة
+    setSelectedCity('');
+    
+    // Clear filtered stations
+    setFilteredStations([]);
 
-    // إعادة تعيين قائمة المحطات المفلترة لعرض جميع المحطات
-    setFilteredStations(stations);
-
-    // إعادة تعيين الخريطة إلى الموقع الافتراضي (الرياض)
+    // إعادة تعيين الخريطة إلى الموقع الافتراضي (السعودية)
     if (map.current) {
-      const riyadh = saudiCities.find(city => city.name === 'الرياض' || city.nameEn === 'Riyadh');
-      if (riyadh) {
-        map.current.flyTo({
-          center: [riyadh.longitude, riyadh.latitude],
-          zoom: riyadh.zoom,
-          essential: true,
-          duration: 1500
-        });
+      // Center on Saudi Arabia
+      map.current.flyTo({
+        center: [45.079, 23.885], // Center of Saudi Arabia
+        zoom: 5,
+        essential: true,
+        duration: 1500
+      });
 
-        try {
-          // تصفية المحطات في منطقة الرياض
-          const riyadhStations = stations.filter(station => {
-            return station.region.includes('Riyadh') || station.region.includes('الرياض');
-          });
-
-          // عرض جميع المحطات في حالة عدم وجود محطات في الرياض
-          if (riyadhStations.length === 0) {
-            setFilteredStations(stations);
-            toast({
-              title: language === 'ar' ? 'تم إعادة تعيين الخريطة' : 'Map has been reset',
-              description: language === 'ar'
-                ? 'تم عرض جميع المحطات'
-                : 'Showing all stations',
-            });
-          } else {
-            // تحديث المحطات المفلترة بالمحطات التي تم العثور عليها
-            setFilteredStations(riyadhStations);
-            toast({
-              title: language === 'ar' ? 'تم إعادة تعيين الخريطة' : 'Map has been reset',
-              description: language === 'ar'
-                ? `تم عرض محطات الرياض (${riyadhStations.length} محطة)`
-                : `Showing Riyadh stations (${riyadhStations.length} stations)`,
-            });
-          }
-        } catch (error) {
-          console.error("Error resetting map:", error);
-          // في حالة حدوث خطأ، نعرض جميع المحطات
-          setFilteredStations(stations);
-          toast({
-            title: language === 'ar' ? 'تم إعادة تعيين الخريطة' : 'Map has been reset',
-            description: language === 'ar' ? 'تم عرض جميع المحطات' : 'Showing all stations',
-            variant: 'destructive'
-          });
-        }
-      }
+      toast({
+        title: language === 'ar' ? 'تم إعادة تعيين الخريطة' : 'Map has been reset',
+        description: language === 'ar' ? 'يمكنك اختيار مدينة لعرض المحطات فيها' : 'Choose a city to view its stations',
+      });
     }
-  }, [onSelectStation, saudiCities, stations, language, toast]);
-
-  // تحديث المحطات المفلترة عندما تتغير المحطات
-  useEffect(() => {
-    if (stations.length > 0) {
-      // إذا كانت هناك مدينة محددة، نقوم بتصفية المحطات حسب المدينة
-      if (selectedCity) {
-        const city = saudiCities.find(city => city.name === selectedCity || city.nameEn === selectedCity);
-        if (city) {
-          try {
-            const cityStations = stations.filter(station => {
-              return station.region.includes(city.nameEn) || station.region.includes(city.name);
-            });
-
-            if (cityStations.length > 0) {
-              setFilteredStations(cityStations);
-            } else {
-              // إذا لم نجد محطات في المدينة المحددة، نعرض جميع المحطات
-              setFilteredStations(stations);
-            }
-          } catch (error) {
-            console.error("Error updating filtered stations:", error);
-            setFilteredStations(stations);
-          }
-        } else {
-          setFilteredStations(stations);
-        }
-      } else {
-        setFilteredStations(stations);
-      }
-    }
-  }, [stations, selectedCity, saudiCities]);
+  }, [onSelectStation, language, toast]);
 
   // تهيئة الخريطة
   useEffect(() => {
     if (map.current) return; // تجنب إعادة التهيئة
 
     if (mapContainer.current) {
-      // البحث عن مدينة الرياض في قائمة المدن
-      const riyadh = saudiCities.find(city => city.name === 'الرياض' || city.nameEn === 'Riyadh');
-      // Fix: Ensure initialCenter is an array with two values [longitude, latitude]
-      const initialCenter: [number, number] = riyadh ? [riyadh.longitude, riyadh.latitude] : [46.6753, 24.7136];
-      const initialZoom = riyadh?.zoom || 10;
+      // Center initially on Saudi Arabia
+      const initialCenter: [number, number] = [45.079, 23.885]; // Center of Saudi Arabia
+      const initialZoom = 5;
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
@@ -482,23 +432,14 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       // إضافة حدث عند اكتمال تحميل الخريطة
       map.current.on('load', () => {
-        // تحديث المدينة المحددة إلى الرياض
-        setSelectedCity('الرياض');
-
-        // تصفية المحطات في منطقة الرياض
-        if (riyadh) {
-          try {
-            const riyadhStations = stations.filter(station => {
-              return station.region.includes('Riyadh') || station.region.includes('الرياض');
-            });
-
-            if (riyadhStations.length > 0) {
-              setFilteredStations(riyadhStations);
-            }
-          } catch (error) {
-            console.error("Error filtering stations on map load:", error);
-          }
-        }
+        // Start with empty filters
+        setSelectedCity('');
+        setFilteredStations([]);
+        
+        toast({
+          title: language === 'ar' ? 'مرحبًا بك في خريطة المحطات' : 'Welcome to the stations map',
+          description: language === 'ar' ? 'يرجى اختيار مدينة لعرض المحطات' : 'Please select a city to view stations',
+        });
       });
     }
 
@@ -508,7 +449,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         map.current = null;
       }
     };
-  }, []);
+  }, [language]);
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -516,7 +457,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         {/* City Selector Component */}
         <div className="flex-1">
           <CitySelector
-            cities={saudiCities}
+            cities={cities}
             selectedCity={selectedCity}
             onCityChange={handleCityChange}
             language={language}
@@ -550,6 +491,34 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       <div className="relative flex-grow">
         <div ref={mapContainer} className="map-container h-[500px] rounded-lg shadow-lg"></div>
+
+        {/* Show "Select a city" message when no city is selected */}
+        {!selectedCity && filteredStations.length === 0 && !isLoadingLocation && (
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm p-6 rounded-lg shadow-lg text-center">
+            <h3 className="text-xl font-bold text-noor-purple mb-2">
+              {language === 'ar' ? 'اختر مدينة' : 'Select a City'}
+            </h3>
+            <p className="text-gray-700 mb-4">
+              {language === 'ar' 
+                ? 'يرجى اختيار مدينة من القائمة المنسدلة لعرض المحطات' 
+                : 'Please select a city from the dropdown to view stations'}
+            </p>
+          </div>
+        )}
+
+        {/* Loading indicator */}
+        {(isLoadingLocation || isLoadingNearest) && (
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm p-6 rounded-lg shadow-lg">
+            <div className="flex flex-col items-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-noor-purple mb-4"></div>
+              <p className="text-noor-purple font-bold">
+                {isLoadingLocation 
+                  ? (language === 'ar' ? 'جاري تحديد موقعك...' : 'Detecting your location...')
+                  : (language === 'ar' ? 'جاري البحث عن أقرب محطة...' : 'Finding nearest station...')}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Station Popup Component - Only show when a station is selected */}
         {selectedStation && (

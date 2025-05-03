@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SaudiCity } from './types';
+import { SaudiCity } from '@/types/station';
 
 interface CitySelectorProps {
   cities: SaudiCity[];

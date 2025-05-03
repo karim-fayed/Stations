@@ -6,7 +6,7 @@ import Header from "@/components/Header";
 import InteractiveMap from "@/components/InteractiveMap";
 import GasStationList from "@/components/GasStationList";
 import { GasStation } from "@/types/station";
-import { fetchStations, fetchStationsByRegion } from "@/services/stationService";
+import { fetchStations } from "@/services/stationService";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -21,7 +21,7 @@ const Index = () => {
   const [filteredStations, setFilteredStations] = useState<GasStation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState<string>('all');
+  const [selectedRegion, setSelectedRegion] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('map');
 
   // جلب بيانات المحطات عند تحميل الصفحة
@@ -31,7 +31,8 @@ const Index = () => {
         setIsLoading(true);
         const data = await fetchStations();
         setStations(data);
-        setFilteredStations(data);
+        // Start with empty filtered stations instead of showing all
+        setFilteredStations([]);
         setError(null);
       } catch (err) {
         console.error("Error loading stations:", err);
@@ -42,30 +43,7 @@ const Index = () => {
     };
 
     loadStations();
-  }, [language]);
-
-  // تصفية المحطات حسب المنطقة المحددة
-  useEffect(() => {
-    const filterStations = async () => {
-      try {
-        if (selectedRegion === 'all') {
-          setFilteredStations(stations);
-        } else {
-          const filteredData = await fetchStationsByRegion(selectedRegion);
-          setFilteredStations(filteredData);
-        }
-      } catch (err) {
-        console.error("Error filtering stations:", err);
-      }
-    };
-
-    filterStations();
-  }, [selectedRegion, stations]);
-
-  // تغيير اللغة - لم يعد مستخدماً بعد إضافة سياق اللغة
-  const handleLanguageChange = (lang: 'ar' | 'en') => {
-    // لا نحتاج لهذه الدالة بعد الآن، ولكن نحتفظ بها للتوافق مع المكونات الحالية
-  };
+  }, [language, t]);
 
   // تغيير المحطة المحددة
   const handleSelectStation = (station: GasStation | null) => {
@@ -99,7 +77,11 @@ const Index = () => {
         </Link>
       </div>
 
-      <Header language={language} onChangeLanguage={handleLanguageChange} />
+      <Header 
+        onChangeLanguage={(lang) => {
+          // This is handled by the LanguageContext
+        }} 
+      />
 
       <main className="flex-grow container mx-auto p-4 md:p-6">
 
@@ -127,7 +109,7 @@ const Index = () => {
                 selectedStation={selectedStation}
                 onSelectStation={handleSelectStation}
                 language={language}
-                stations={filteredStations}
+                stations={stations}
               />
             </TabsContent>
 

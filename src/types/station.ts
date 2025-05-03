@@ -1,4 +1,3 @@
-
 export interface GasStation {
   id: string;
   name: string;
@@ -66,3 +65,13 @@ export interface AuthState {
   session: any | null;
   loading: boolean;
 }
+
+// Add SaudiCity interface here so it doesn't conflict with other code
+export interface SaudiCity {
+  name: string;
+  nameEn: string;
+  latitude: number;
+  longitude: number;
+  zoom: number;
+}
+

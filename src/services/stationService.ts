@@ -1,54 +1,111 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { GasStation } from "@/types/station";
 
 // جلب المحطات
 export const fetchStations = async (): Promise<GasStation[]> => {
-  const { data, error } = await supabase
-    .from("stations")
-    .select("*");
+  try {
+    const { data, error } = await supabase
+      .from("stations")
+      .select("*");
 
-  if (error) {
-    console.error("Error fetching stations:", error);
-    throw error;
+    if (error) {
+      console.error("Error fetching stations:", error);
+      throw error;
+    }
+
+    return data as GasStation[];
+  } catch (err) {
+    console.error("Error in fetchStations:", err);
+    throw new Error(err instanceof Error ? err.message : "Unknown error fetching stations");
   }
-
-  return data as GasStation[];
 };
 
 // جلب المحطات حسب المنطقة
 export const fetchStationsByRegion = async (region: string): Promise<GasStation[]> => {
-  if (region === 'all') {
-    return fetchStations();
+  try {
+    if (region === 'all') {
+      return fetchStations();
+    }
+
+    const { data, error } = await supabase
+      .from("stations")
+      .select("*")
+      .eq("region", region);
+
+    if (error) {
+      console.error(`Error fetching stations for region ${region}:`, error);
+      throw error;
+    }
+
+    return data as GasStation[];
+  } catch (err) {
+    console.error("Error in fetchStationsByRegion:", err);
+    throw new Error(err instanceof Error ? err.message : `Unknown error fetching stations for region ${region}`);
   }
-
-  const { data, error } = await supabase
-    .from("stations")
-    .select("*")
-    .eq("region", region);
-
-  if (error) {
-    console.error(`Error fetching stations for region ${region}:`, error);
-    throw error;
-  }
-
-  return data as GasStation[];
 };
 
 // جلب محطة معينة
 export const fetchStation = async (id: string): Promise<GasStation> => {
-  const { data, error } = await supabase
-    .from("stations")
-    .select("*")
-    .eq("id", id)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from("stations")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-  if (error) {
-    console.error(`Error fetching station with id ${id}:`, error);
-    throw error;
+    if (error) {
+      console.error(`Error fetching station with id ${id}:`, error);
+      throw error;
+    }
+
+    return data as GasStation;
+  } catch (err) {
+    console.error("Error in fetchStation:", err);
+    throw new Error(err instanceof Error ? err.message : `Unknown error fetching station with ID: ${id}`);
   }
+};
 
-  return data as GasStation;
+// جلب جميع المدن
+export const fetchCities = async () => {
+  try {
+    const { data, error } = await supabase
+      .from("cities")
+      .select("*");
+
+    if (error) {
+      console.error("Error fetching cities:", error);
+      throw error;
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Error in fetchCities:", err);
+    throw new Error(err instanceof Error ? err.message : "Unknown error fetching cities");
+  }
+};
+
+// جلب المحطات بناءً على المدينة
+export const fetchStationsByCity = async (cityName: string): Promise<GasStation[]> => {
+  try {
+    if (!cityName || cityName === '') {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("stations")
+      .select("*")
+      .eq("region", cityName);
+
+    if (error) {
+      console.error(`Error fetching stations for city ${cityName}:`, error);
+      throw error;
+    }
+
+    return data as GasStation[];
+  } catch (err) {
+    console.error("Error in fetchStationsByCity:", err);
+    throw new Error(err instanceof Error ? err.message : `Unknown error fetching stations for city ${cityName}`);
+  }
 };
 
 // التحقق من وجود محطة مكررة
@@ -243,29 +300,22 @@ export const fetchNearestStations = async (
   limit: number = 5
 ): Promise<GasStation[]> => {
   try {
-    // Get all stations first
-    const { data, error } = await supabase.from("stations").select("*");
+    const { data, error } = await supabase
+      .rpc("find_nearest_stations", { 
+        lat: latitude, 
+        lng: longitude,
+        limit_count: limit 
+      });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error finding nearest stations:", error);
+      throw error;
+    }
 
-    // Calculate distance for each station (in meters) - Haversine formula
-    const stations = data.map((station) => {
-      const distance = calculateDistance(
-        latitude,
-        longitude,
-        station.latitude,
-        station.longitude
-      );
-      return { ...station, distance_meters: Math.round(distance * 1000) };
-    });
-
-    // Sort stations by distance
-    stations.sort((a, b) => (a.distance_meters || 0) - (b.distance_meters || 0));
-
-    return stations.slice(0, limit) as GasStation[];
-  } catch (error) {
-    console.error("Error fetching nearest stations:", error);
-    throw error;
+    return data as GasStation[];
+  } catch (err) {
+    console.error("Error in fetchNearestStations:", err);
+    throw new Error(err instanceof Error ? err.message : "Unknown error finding nearest stations");
   }
 };
 
@@ -472,7 +522,7 @@ export const deleteDuplicateStations = async (stations: GasStation[]): Promise<{
     // تجميع المحطات المكررة في مجموعات
     const duplicateGroups: Map<string, GasStation[]> = new Map();
 
-    // تجميع المحطات المكررة حسب الاسم
+    // تجم��ع المحطات المكررة حسب الاسم
     stations.forEach(station => {
       if (duplicateMap.get(station.id)) {
         const key = station.name.toLowerCase();
