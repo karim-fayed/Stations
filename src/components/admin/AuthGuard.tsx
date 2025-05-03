@@ -1,5 +1,5 @@
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import useAuthState from "@/hooks/useAuthState";
 import LoadingSpinner from "@/components/ui/loading-spinner";
@@ -12,6 +12,17 @@ interface AuthGuardProps {
 const AuthGuard = ({ children, requireOwner = false }: AuthGuardProps) => {
   const { authState, loading, userRole } = useAuthState();
   const location = useLocation();
+
+  useEffect(() => {
+    // Add debugging for auth issues
+    console.log("AuthGuard rendering with:", { 
+      isAuthenticated: authState?.isAuthenticated, 
+      loading, 
+      userRole,
+      requireOwner,
+      currentPath: location.pathname
+    });
+  }, [authState, loading, userRole, requireOwner, location]);
 
   if (loading) {
     return <LoadingSpinner />;

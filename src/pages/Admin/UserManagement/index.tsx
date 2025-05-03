@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, Link } from "react-router-dom";
@@ -8,9 +9,11 @@ import DeleteUserDialog from "./components/DeleteUserDialog";
 import { useUserManagement, User } from "./hooks/useUserManagement";
 import { Loader2, Home, ArrowLeft, Plus } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const UserManagement = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const {
     users,
     loading,
@@ -32,19 +35,25 @@ const UserManagement = () => {
   useEffect(() => {
     const checkPermissions = async () => {
       setCheckingPermissions(true);
-
-      // إذا كان المستخدم ليس مالكًا، قم بتوجيهه إلى لوحة التحكم
-      if (currentUser && currentUser.role !== 'owner') {
-        navigate('/admin/dashboard');
+      
+      try {
+        // إذا كان المستخدم ليس مالكًا، قم بتوجيهه إلى لوحة التحكم
+        if (currentUser && currentUser.role !== 'owner') {
+          navigate('/admin/dashboard');
+        }
+      } catch (error) {
+        console.error("Error checking user permissions:", error);
+      } finally {
+        setCheckingPermissions(false);
       }
-
-      setCheckingPermissions(false);
     };
 
     if (currentUser !== null) {
       checkPermissions();
+    } else if (!loading) {
+      setCheckingPermissions(false);
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, loading]);
 
   const handleOpenPasswordDialog = (user: User) => {
     setSelectedUser(user);
@@ -79,6 +88,7 @@ const UserManagement = () => {
     return (
       <div className="container mx-auto py-8 flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-noor-purple" />
+        <span className="ml-2 text-noor-purple">جاري التحميل...</span>
       </div>
     );
   }

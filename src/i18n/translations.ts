@@ -1,3 +1,4 @@
+
 // Define the structure of the translations
 export interface Translations {
   [key: string]: {
@@ -118,6 +119,23 @@ export const translations: Translations = {
     allRightsReserved: {
       ar: "جميع الحقوق محفوظة",
       en: "All rights reserved"
+    },
+    // Adding missing translations
+    home: {
+      ar: "الرئيسية",
+      en: "Home"
+    },
+    language: {
+      ar: "اللغة",
+      en: "Language"
+    },
+    arabic: {
+      ar: "العربية",
+      en: "Arabic"
+    },
+    english: {
+      ar: "الإنجليزية",
+      en: "English"
     }
   },
   errors: {
