@@ -5,16 +5,16 @@ import { useLanguage } from "@/i18n/LanguageContext";
 const LoginHeader = () => {
   const { t } = useLanguage();
   return (
-    <div className="text-center mb-6">
+    <div className="text-center mb-8">
       <img
-        src="/lovable-uploads/5ec2160b-7bc2-4387-87e5-5f1f264a0aa1.png"
+        src="/lovable-uploads/7d04d515-ba22-4ed7-9bba-9b93a0f1eba3.png"
         alt="Noor Stations Logo"
-        className="mx-auto h-28 w-auto mb-4"
+        className="mx-auto h-24 w-auto"
       />
-      <h2 className="mt-2 text-5xl font-bold text-gray-900 mb-2">
+      <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
         {t('login', 'title')}
       </h2>
-      <p className="mt-2 text-xl text-gray-600">
+      <p className="mt-2 text-sm text-gray-600">
         {t('login', 'subtitle')}
       </p>
     </div>
