@@ -7,9 +7,9 @@ const LoginHeader = () => {
   return (
     <div className="text-center mb-0">
       <img
-        src="/lovable-uploads/682544b4-087b-4c88-953b-36902a93d35b.png"
+        src="/lovable-uploads/27c1f136-856b-4b61-b332-3cea9403770a.png"
         alt="Noor Stations Logo"
-        className="mx-auto h-28 w-auto mb-4"
+        className="mx-auto h-32 w-auto mb-4"
       />
       <h2 className="mt-2 text-4xl font-bold text-gray-900 mb-2">
         {t('login', 'title')}
