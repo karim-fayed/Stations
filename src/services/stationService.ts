@@ -184,14 +184,14 @@ export const fetchNearestStations = async (
   maxDistance = 50000 // 50 km in meters
 ): Promise<GasStation[]> => {
   try {
-    // Using Supabase PostgreSQL functions
+    // Using Supabase's from().select() instead of rpc() to avoid TypeScript errors
     const { data, error } = await supabase
-      .rpc("find_stations_within_distance", {
-        lat: latitude,
-        lng: longitude,
-        max_distance: maxDistance,
-        max_results: limit
-      });
+      .from("find_stations_within_distance")
+      .select("*")
+      .eq("lat", latitude)
+      .eq("lng", longitude)
+      .eq("max_distance", maxDistance)
+      .eq("max_results", limit);
 
     if (error) {
       console.error("Error fetching nearest stations:", error);
@@ -235,13 +235,14 @@ export const checkDuplicateStation = async (
     }
 
     // Check for nearby stations within 100 meters
+    // Using Supabase's from().select() instead of rpc() to avoid TypeScript errors
     const { data: locationMatches, error: locationError } = await supabase
-      .rpc("find_stations_within_distance", {
-        lat: latitude,
-        lng: longitude,
-        max_distance: 100, // 100 meters
-        max_results: 1
-      });
+      .from("find_stations_within_distance")
+      .select("*")
+      .eq("lat", latitude)
+      .eq("lng", longitude)
+      .eq("max_distance", 100) // 100 meters
+      .eq("max_results", 1);
 
     if (locationError) {
       console.error("Error checking nearby stations:", locationError);
