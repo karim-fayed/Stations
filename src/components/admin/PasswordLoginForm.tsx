@@ -19,19 +19,36 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Function to prevent spaces in input
+  const preventSpaces = (value: string) => {
+    return value.replace(/\s/g, '');
+  };
+
+  // Handle email change with space prevention
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = preventSpaces(e.target.value);
+    setEmail(value);
+  };
+
+  // Handle password change with space prevention
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = preventSpaces(e.target.value);
+    setPassword(value);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // Make sure to trim the email and password to avoid whitespace issues
-      const trimmedEmail = email.trim();
-      const trimmedPassword = password.trim();
+      // No need to trim as we're already preventing spaces in the inputs
+      const cleanEmail = email;
+      const cleanPassword = password;
       
-      console.log("Login attempt with email:", trimmedEmail);
+      console.log("Login attempt with email:", cleanEmail);
       
       // Validate inputs
-      if (!trimmedEmail || !trimmedPassword) {
+      if (!cleanEmail || !cleanPassword) {
         toast({
           title: "خطأ في البيانات",
           description: "الرجاء إدخال البريد الإلكتروني وكلمة المرور",
@@ -46,8 +63,8 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       
       // Attempt to sign in with email and password
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: trimmedEmail,
-        password: trimmedPassword,
+        email: cleanEmail,
+        password: cleanPassword,
       });
       
       if (error) {
@@ -159,7 +176,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
           autoComplete="email"
           required
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={handleEmailChange}
           placeholder="admin@example.com"
           className="w-full"
           dir="ltr"
@@ -178,7 +195,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
             autoComplete="current-password"
             required
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={handlePasswordChange}
             className="w-full pr-10"
             dir="ltr"
           />
@@ -218,7 +235,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
           <p className="font-mono text-green-700">karim-it@outlook.sa / |l0v3N@fes</p>
           <p className="font-mono text-green-700">a@a.com / Password123!</p>
         </div>
-        <p className="text-xs text-gray-500 mt-2">تأكد من إدخال البيانات بشكل صحيح بدون مسافات إضافية</p>
+        <p className="text-xs text-gray-500 mt-2">البيانات بشكل صحيح بدون مسافات إضافية</p>
       </div>
     </form>
   );

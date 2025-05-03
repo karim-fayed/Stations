@@ -23,14 +23,19 @@ serve(async (req) => {
     // Parse request body
     const { email, password, name } = await req.json();
     
-    if (!email || !password) {
+    // Clean inputs by removing any spaces
+    const cleanEmail = email ? email.replace(/\s/g, '') : '';
+    const cleanPassword = password ? password.replace(/\s/g, '') : '';
+    const cleanName = name ? name.trim() : 'Admin';
+    
+    if (!cleanEmail || !cleanPassword) {
       throw new Error("Email and password are required");
     }
 
     // Create the admin user
     const { data: userData, error: createError } = await supabaseClient.auth.admin.createUser({
-      email,
-      password,
+      email: cleanEmail,
+      password: cleanPassword,
       email_confirm: true // Auto-confirm the email
     });
 
@@ -45,7 +50,7 @@ serve(async (req) => {
         .insert({
           id: userData.user.id,
           email: userData.user.email,
-          name: name || "Admin",
+          name: cleanName,
           role: "admin",
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()

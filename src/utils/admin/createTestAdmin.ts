@@ -8,17 +8,21 @@ import { createAdminUser } from "./createAdminUser";
  */
 export async function createTestAdmin() {
   try {
-    // بيانات اعتماد مستخدم 1
+    // بيانات اعتماد مستخدم 1 - تأكد من عدم وجود مسافات
     const adminEmail = "karim-it@outlook.sa";
     const adminPassword = "|l0v3N@fes";
     
-    // بيانات اعتماد مستخدم 2
+    // بيانات اعتماد مستخدم 2 - تأكد من عدم وجود مسافات
     const testEmail = "admin@example.com";
     const testPassword = "Admin123!";
     
-    // بيانات اعتماد مستخدم 3
+    // بيانات اعتماد مستخدم 3 - تأكد من عدم وجود مسافات
     const testEmail3 = "a@a.com";
     const testPassword3 = "Password123!";
+    
+    // مستخدم اختبار جديد - بيانات واضحة وبدون مسافات
+    const testEmail4 = "test@example.com";
+    const testPassword4 = "Test123!";
 
     console.log("محاولة إنشاء أو التحقق من المستخدمين المشرفين");
 
@@ -30,6 +34,9 @@ export async function createTestAdmin() {
     
     // إنشاء مستخدم الاختبار الثالث
     await createAdminUser(testEmail3, testPassword3, "Test Admin 3");
+    
+    // إنشاء مستخدم الاختبار الرابع - واضح وسهل
+    await createAdminUser(testEmail4, testPassword4, "Test Admin 4");
     
     // تسجيل الخروج بعد إنشاء/التحقق من المستخدمين
     await supabase.auth.signOut();

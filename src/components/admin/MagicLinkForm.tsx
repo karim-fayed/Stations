@@ -16,11 +16,22 @@ const MagicLinkForm = ({ email, setEmail }: MagicLinkFormProps) => {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const { toast } = useToast();
 
+  // Function to prevent spaces in input
+  const preventSpaces = (value: string) => {
+    return value.replace(/\s/g, '');
+  };
+
+  // Handle email change with space prevention
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = preventSpaces(e.target.value);
+    setEmail(value);
+  };
+
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!email || !email.trim()) {
+    if (!email) {
       toast({
         title: "يرجى إدخال البريد الإلكتروني",
         description: "يجب إدخال بريدك الإلكتروني لإرسال رابط الدخول",
@@ -31,16 +42,16 @@ const MagicLinkForm = ({ email, setEmail }: MagicLinkFormProps) => {
     }
 
     try {
-      // Make sure to trim the email to avoid whitespace issues
-      const trimmedEmail = email.trim();
+      // No need to trim since we're already preventing spaces
+      const cleanEmail = email;
       
-      console.log("Sending magic link to:", trimmedEmail);
+      console.log("Sending magic link to:", cleanEmail);
       
       // First sign out to clear any existing session
       await supabase.auth.signOut();
       
       const { data, error } = await supabase.auth.signInWithOtp({
-        email: trimmedEmail,
+        email: cleanEmail,
       });
 
       if (error) {
@@ -78,7 +89,7 @@ const MagicLinkForm = ({ email, setEmail }: MagicLinkFormProps) => {
           type="email"
           required
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={handleEmailChange}
           placeholder="admin@example.com"
           className="w-full"
           dir="ltr"
@@ -115,7 +126,7 @@ const MagicLinkForm = ({ email, setEmail }: MagicLinkFormProps) => {
           <p className="font-mono text-green-700">karim-it@outlook.sa</p>
           <p className="font-mono text-green-700">a@a.com</p>
         </div>
-        <p className="text-xs text-gray-500 mt-2">تأكد من إدخال البريد الإلكتروني بشكل صحيح بدون مسافات إضافية</p>
+        <p className="text-xs text-gray-500 mt-2">البيانات بشكل صحيح بدون مسافات إضافية</p>
       </div>
     </form>
   );
