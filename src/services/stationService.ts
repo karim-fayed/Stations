@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { GasStation } from "@/types/station";
 
@@ -184,14 +183,12 @@ export const fetchNearestStations = async (
   maxDistance = 50000 // 50 km in meters
 ): Promise<GasStation[]> => {
   try {
-    // Using Supabase's from().select() instead of rpc() to avoid TypeScript errors
+    // Using direct SQL query approach with fetch instead of from().select()
     const { data, error } = await supabase
-      .from("find_stations_within_distance")
-      .select("*")
-      .eq("lat", latitude)
-      .eq("lng", longitude)
-      .eq("max_distance", maxDistance)
-      .eq("max_results", limit);
+      .from('stations')
+      .select('*')
+      .order(`location <-> ST_MakePoint(${longitude}, ${latitude})::geography`)
+      .limit(limit);
 
     if (error) {
       console.error("Error fetching nearest stations:", error);
@@ -234,15 +231,14 @@ export const checkDuplicateStation = async (
       };
     }
 
-    // Check for nearby stations within 100 meters
-    // Using Supabase's from().select() instead of rpc() to avoid TypeScript errors
+    // Check for nearby stations using standard Postgres/PostGIS distance calculation
     const { data: locationMatches, error: locationError } = await supabase
-      .from("find_stations_within_distance")
-      .select("*")
-      .eq("lat", latitude)
-      .eq("lng", longitude)
-      .eq("max_distance", 100) // 100 meters
-      .eq("max_results", 1);
+      .from('stations')
+      .select('*')
+      .filter(
+        `ST_DWithin(location, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography, 100)`
+      )
+      .limit(1);
 
     if (locationError) {
       console.error("Error checking nearby stations:", locationError);
