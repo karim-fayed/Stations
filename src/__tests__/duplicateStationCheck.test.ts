@@ -1,6 +1,8 @@
 
 import { checkDuplicateStation } from '../services/stationService';
 import { supabase } from '../integrations/supabase/client';
+import { jest, describe, test, expect, beforeEach } from '@jest/globals';
+import { GasStation } from '../types/station';
 
 // Mock supabase client
 jest.mock('../integrations/supabase/client', () => ({
@@ -15,6 +17,13 @@ const mockedFrom = supabase.from as jest.Mock;
 const mockedSelect = jest.fn().mockReturnThis();
 const mockedEq = jest.fn().mockReturnThis();
 const mockedMaybeSingle = jest.fn();
+
+// Define expected type for checkDuplicateStation result
+interface DuplicateCheckResult {
+  isDuplicate: boolean;
+  duplicateStation?: GasStation;
+  duplicateType?: 'name' | 'location';
+}
 
 // Group tests
 describe('checkDuplicateStation', () => {
@@ -39,7 +48,7 @@ describe('checkDuplicateStation', () => {
     });
     (supabase.rpc as jest.Mock).mockImplementation(() => mockedRpc);
 
-    const result = await checkDuplicateStation('New Station', 24.774265, 46.738586);
+    const result = await checkDuplicateStation('New Station', 24.774265, 46.738586) as DuplicateCheckResult;
     
     // Verify the function was called with the correct parameters
     expect(mockedFrom).toHaveBeenCalledWith('stations');
@@ -74,7 +83,7 @@ describe('checkDuplicateStation', () => {
     });
     (supabase.rpc as jest.Mock).mockImplementation(() => mockedRpc);
 
-    const result = await checkDuplicateStation('New Station', 24.774265, 46.738586);
+    const result = await checkDuplicateStation('New Station', 24.774265, 46.738586) as DuplicateCheckResult;
     
     expect(result.isDuplicate).toBe(true);
     expect(result.duplicateStation).toEqual(mockStation);
@@ -105,7 +114,7 @@ describe('checkDuplicateStation', () => {
     });
     (supabase.rpc as jest.Mock).mockImplementation(() => mockedRpc);
 
-    const result = await checkDuplicateStation('New Station', 24.774265, 46.738586);
+    const result = await checkDuplicateStation('New Station', 24.774265, 46.738586) as DuplicateCheckResult;
     
     expect(result.isDuplicate).toBe(true);
     expect(result.duplicateStation).toEqual(nearbyStation);

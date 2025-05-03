@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -9,10 +10,21 @@ import { motion } from "framer-motion";
 import ChangePasswordForm from "./components/ChangePasswordForm";
 import ProfileInfo from "./components/ProfileInfo";
 
+interface UserProfile {
+  id: string;
+  email: string;
+  profile?: {
+    name?: string;
+    role?: string;
+    created_at?: string;
+    updated_at?: string;
+  };
+}
+
 const ProfilePage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,9 +43,9 @@ const ProfilePage = () => {
           return;
         }
 
-        // الحصول على معلومات المستخدم من جدول المستخدمين
+        // Get user profile from admin_profiles table instead of users
         const { data: userData, error } = await supabase
-          .from("users")
+          .from("admin_profiles")
           .select("*")
           .eq("id", user.id)
           .single();
@@ -48,7 +60,11 @@ const ProfilePage = () => {
           return;
         }
 
-        setUser(userData);
+        setUser({
+          id: user.id,
+          email: user.email || '',
+          profile: userData
+        });
       } catch (error) {
         console.error("Error:", error);
         toast({
@@ -135,7 +151,7 @@ const ProfilePage = () => {
                 <CardTitle className="text-noor-purple">تغيير كلمة المرور</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <ChangePasswordForm userId={user?.id} />
+                <ChangePasswordForm userId={user?.id || ''} />
               </CardContent>
             </Card>
           </motion.div>

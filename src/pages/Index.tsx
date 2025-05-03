@@ -77,11 +77,7 @@ const Index = () => {
         </Link>
       </div>
 
-      <Header 
-        onChangeLanguage={(lang) => {
-          // This is handled by the LanguageContext
-        }} 
-      />
+      <Header />
 
       <main className="flex-grow container mx-auto p-4 md:p-6">
 

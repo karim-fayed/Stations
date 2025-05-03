@@ -8,6 +8,7 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (language: Language) => void;
   t: (section: string, key: string) => string;
+  dir: 'rtl' | 'ltr';
 }
 
 // Create the context with default values
@@ -15,6 +16,7 @@ const LanguageContext = createContext<LanguageContextType>({
   language: 'ar',
   setLanguage: () => {},
   t: () => '',
+  dir: 'rtl',
 });
 
 // Create provider component
@@ -35,8 +37,11 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  // Determine text direction based on language
+  const dir: 'rtl' | 'ltr' = language === 'ar' ? 'rtl' : 'ltr';
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, dir }}>
       {children}
     </LanguageContext.Provider>
   );

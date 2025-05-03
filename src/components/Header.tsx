@@ -6,9 +6,7 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import { Link } from "react-router-dom";
 import HomeSidebar from "./HomeSidebar";
 
-interface HeaderProps {}
-
-const Header: React.FC<HeaderProps> = () => {
+const Header = () => {
   const { language, t, dir } = useLanguage();
 
   return (
