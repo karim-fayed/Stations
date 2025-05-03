@@ -31,75 +31,59 @@ export const translations: Translations = {
   },
   login: {
     title: {
-      ar: "لوحة تحكم المشرفين",
-      en: "Admin Dashboard"
+      ar: "تسجيل الدخول",
+      en: "Login"
     },
     subtitle: {
-      ar: "الرجاء تسجيل الدخول للوصول إلى لوحة التحكم",
-      en: "Please login to access the dashboard"
-    },
-    loginTitle: {
-      ar: "تسجيل الدخول",
-      en: "Login"
-    },
-    loginSubtitle: {
-      ar: "أدخل بيانات حسابك للوصول إلى لوحة التحكم",
-      en: "Enter your account details to access the dashboard"
-    },
-    email: {
-      ar: "البريد الإلكتروني",
-      en: "Email"
-    },
-    password: {
-      ar: "كلمة المرور",
-      en: "Password"
-    },
-    loginButton: {
-      ar: "تسجيل الدخول",
-      en: "Login"
-    },
-    loggingIn: {
-      ar: "جاري تسجيل الدخول...",
-      en: "Logging in..."
-    },
-    loginSuccess: {
-      ar: "تم تسجيل الدخول بنجاح",
-      en: "Login successful"
-    },
-    redirecting: {
-      ar: "جاري التوجيه...",
-      en: "Redirecting..."
-    },
-    loginError: {
-      ar: "خطأ في تسجيل الدخول",
-      en: "Login error"
-    },
-    invalidCredentials: {
-      ar: "بيانات الدخول غير صحيحة",
-      en: "Invalid credentials"
+      ar: "قم بتسجيل الدخول للوصول إلى لوحة التحكم",
+      en: "Sign in to access the dashboard"
     },
     error: {
       ar: "خطأ",
       en: "Error"
     },
     enterCredentials: {
-      ar: "يرجى إدخال البريد الإلكتروني وكلمة المرور",
-      en: "Please enter your email and password"
+      ar: "الرجاء إدخال البريد الإلكتروني وكلمة المرور",
+      en: "Please enter email and password"
     },
-    testAccounts: {
-      ar: "للتجربة استخدم أي من الحسابات التالية:",
-      en: "For testing, use any of the following accounts:"
+    loginError: {
+      ar: "خطأ في تسجيل الدخول",
+      en: "Login Error"
     },
-    checkingSession: {
-      ar: "جاري التحقق من الجلسة...",
-      en: "Checking session..."
+    invalidCredentials: {
+      ar: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+      en: "Invalid email or password"
+    },
+    loginSuccess: {
+      ar: "تم تسجيل الدخول بنجاح",
+      en: "Login Successful"
+    },
+    redirecting: {
+      ar: "جاري التحويل إلى لوحة التحكم",
+      en: "Redirecting to dashboard"
     },
     notAdmin: {
       ar: "هذا الحساب ليس لديه صلاحيات إدارية",
       en: "This account does not have admin privileges"
+    },
+    loggingIn: {
+      ar: "جاري تسجيل الدخول...",
+      en: "Logging in..."
+    },
+    loginButton: {
+      ar: "تسجيل الدخول",
+      en: "Login"
+    },
+    checkingSession: {
+      ar: "جاري التحقق من الجلسة...",
+      en: "Checking session..."
     }
   },
   common: {
+    alert: {
+      ar: "تنبيه",
+      en: "Alert"
+    },
     email: {
       ar: "البريد الإلكتروني",
       en: "Email"
@@ -108,36 +92,12 @@ export const translations: Translations = {
       ar: "كلمة المرور",
       en: "Password"
     },
-    alert: {
-      ar: "تنبيه",
-      en: "Alert"
-    },
-    appName: {
-      ar: "محطات نور",
-      en: "Noor Stations"
-    },
-    allRightsReserved: {
-      ar: "جميع الحقوق محفوظة",
-      en: "All rights reserved"
-    },
-    // Adding missing translations
-    home: {
-      ar: "الرئيسية",
-      en: "Home"
-    },
-    language: {
-      ar: "اللغة",
-      en: "Language"
-    },
-    arabic: {
-      ar: "العربية",
-      en: "Arabic"
-    },
-    english: {
-      ar: "الإنجليزية",
-      en: "English"
+    copyright: {
+      ar: "محطات نور 2025 - جميع الحقوق محفوظة",
+      en: "Noor Stations 2025 - All Rights Reserved"
     }
   },
+  // Additional sections can be added here
   errors: {
     networkError: {
       ar: "خطأ في الاتصال بالشبكة",

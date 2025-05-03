@@ -1,9 +1,9 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import PasswordLoginForm from "./PasswordLoginForm";
+import LoginTabs from "./LoginTabs";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const AuthForm = () => {
@@ -11,7 +11,6 @@ const AuthForm = () => {
   const { toast } = useToast();
   const { t } = useLanguage();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [email, setEmail] = useState('');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -79,22 +78,20 @@ const AuthForm = () => {
   }
 
   return (
-    <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-sm border border-gray-100">
-      <div className="mb-6 text-center">
-        <h3 className="text-xl font-medium">{t('login', 'loginTitle')}</h3>
-        <p className="text-sm text-gray-600 mt-1">{t('login', 'loginSubtitle')}</p>
-      </div>
-      
-      <PasswordLoginForm email={email} setEmail={setEmail} />
-      
-      <div className="mt-5 text-center text-xs text-gray-500">
-        <p>{t('login', 'testAccounts')}</p>
-      </div>
-      
-      <div className="mt-6 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
-        © {t('common', 'appName')} {new Date().getFullYear()} - {t('common', 'allRightsReserved')}
-      </div>
-    </div>
+    <Card className="w-full max-w-md border-none shadow-lg rounded-lg">
+      <CardContent className="p-6">
+        <div className="text-center mb-6">
+          <h2 className="text-3xl font-bold">{t('login', 'title')}</h2>
+          <p className="text-gray-600 mt-1">
+            {t('login', 'subtitle')}
+          </p>
+        </div>
+        <LoginTabs />
+        <p className="text-xs text-gray-500 text-center mt-8">
+          © {t('common', 'copyright')}
+        </p>
+      </CardContent>
+    </Card>
   );
 };
 

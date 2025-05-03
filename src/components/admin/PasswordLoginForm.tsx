@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Mail, Lock } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -63,7 +63,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       // First sign out to clear any existing session
       await supabase.auth.signOut();
 
-      // Set up credentials
+      // Set up testing credentials for development
       let emailToUse = cleanEmail;
       let passwordToUse = cleanPassword;
 
@@ -175,29 +175,34 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <div className="relative">
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={handleEmailChange}
-            placeholder={t('common', 'email')}
-            className="w-full pr-8 text-right"
-            dir="rtl"
-          />
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <Mail className="h-4 w-4 text-gray-400" />
-          </div>
-        </div>
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+          {t('common', 'email')}
+        </label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={handleEmailChange}
+          placeholder="admin@example.com"
+          className="w-full"
+          dir="ltr"
+        />
       </div>
 
       <div className="space-y-2">
+        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+          {t('common', 'password')}
+        </label>
         <div className="relative">
           <Input
             id="password"
@@ -207,19 +212,26 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
             required
             value={password}
             onChange={handlePasswordChange}
-            placeholder={t('common', 'password')}
-            className="w-full pr-8 text-right"
-            dir="rtl"
+            className="w-full pr-10"
+            dir="ltr"
           />
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <Lock className="h-4 w-4 text-gray-400" />
-          </div>
+          <button
+            type="button"
+            onClick={togglePasswordVisibility}
+            className="absolute inset-y-0 right-0 flex items-center pr-3"
+          >
+            {showPassword ? (
+              <EyeOff className="h-4 w-4 text-gray-400" />
+            ) : (
+              <Eye className="h-4 w-4 text-gray-400" />
+            )}
+          </button>
         </div>
       </div>
 
       <Button
         type="submit"
-        className="w-full bg-noor-purple hover:bg-noor-purple/90 py-2 h-12 text-base"
+        className="w-full bg-noor-purple hover:bg-noor-purple/90"
         disabled={isLoading}
       >
         {isLoading ? (
@@ -232,14 +244,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
         )}
       </Button>
 
-      <div className="text-sm text-center mt-3 text-gray-600">
-        <p className="mb-2">{t('login', 'testAccounts')}</p>
-        <div className="space-y-1 text-xs text-gray-500 font-mono">
-          <p>admin@example.com</p>
-          <p>karim-it@outlook.sa</p>
-          <p>a@a.com</p>
-        </div>
-      </div>
+
     </form>
   );
 };
