@@ -20,7 +20,6 @@ export async function createAdminUser(email: string, password: string, name: str
     const cleanedPassword = cleanString(password);
     const cleanedName = name.trim();
 
-<<<<<<< HEAD
     console.log(`محاولة إنشاء مستخدم مشرف: ${cleanedEmail}`);
 
     // First try using the edge function handler
@@ -34,11 +33,6 @@ export async function createAdminUser(email: string, password: string, name: str
     console.log(`فشل استخدام edge function، محاولة استخدام طريقة العميل...`);
 
     // Fallback to client-side method if edge function fails
-=======
-    console.log("Attempting to create admin user with:", cleanedEmail);
-
-    // For development/test purposes only
->>>>>>> 180db556a54ffa0cc39b8c6790a152795592ec67
     // Try to sign up with the credentials
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: cleanedEmail,

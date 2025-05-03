@@ -18,7 +18,6 @@ export async function createTestAdmin() {
 
     console.log("محاولة إنشاء مستخدمين اختباريين جدد");
 
-<<<<<<< HEAD
     // إنشاء المستخدمين المشرفين
     for (const user of testUsers) {
       console.log(`محاولة إنشاء المستخدم: ${user.email}`);
@@ -87,31 +86,6 @@ export async function createTestAdmin() {
           console.log(`محاولة إنشاء المستخدم ${user.email} عبر createAdminUser...`);
           await createAdminUser(user.email, user.password, user.name);
         }
-=======
-    // إنشاء المستخدم المشرف بطريقة Edge Function
-    try {
-      const response = await fetch('/api/create-admin-account', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: testEmail,
-          password: testPassword,
-          name: "Test Admin"
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.log("خطأ في استدعاء edge function:", errorData);
-        
-        // If edge function fails, try client method
-        await createAdminUser(testEmail, testPassword, "Test Admin");
-      } else {
-        const result = await response.json();
-        console.log("تم إنشاء المستخدم بنجاح:", result);
->>>>>>> 180db556a54ffa0cc39b8c6790a152795592ec67
       }
     }
 

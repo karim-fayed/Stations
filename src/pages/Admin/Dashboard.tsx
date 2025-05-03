@@ -154,12 +154,7 @@ const Dashboard = () => {
       // تجاوز التحقق من المحطات المكررة
       const { data, error } = await supabase
         .from("stations")
-        .insert({
-          ...pendingAddStation,
-          latitude: pendingAddStation.latitude as number,
-          longitude: pendingAddStation.longitude as number,
-          name: pendingAddStation.name as string,
-        })
+        .insert(pendingAddStation)
         .select()
         .single();
 
