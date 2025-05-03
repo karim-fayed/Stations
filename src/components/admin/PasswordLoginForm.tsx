@@ -63,9 +63,11 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       // First sign out to clear any existing session
       await supabase.auth.signOut();
 
-      // Set up credentials
+      // Set up testing credentials for development
       let emailToUse = cleanEmail;
       let passwordToUse = cleanPassword;
+
+      // تم إزالة الاختصارات بناءً على طلب المستخدم لتحسين الأمان
 
       // Attempt to sign in with email and password
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -178,9 +180,9 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <label htmlFor="email" className="block text-base font-medium text-gray-700 text-right">
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
           {t('common', 'email')}
         </label>
         <Input
@@ -192,13 +194,13 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
           value={email}
           onChange={handleEmailChange}
           placeholder="admin@example.com"
-          className="w-full text-left h-12 rounded-lg"
+          className="w-full"
           dir="ltr"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="block text-base font-medium text-gray-700 text-right">
+        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
           {t('common', 'password')}
         </label>
         <div className="relative">
@@ -210,18 +212,18 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
             required
             value={password}
             onChange={handlePasswordChange}
-            className="w-full pr-10 h-12 rounded-lg"
+            className="w-full pr-10"
             dir="ltr"
           />
           <button
             type="button"
             onClick={togglePasswordVisibility}
-            className="absolute inset-y-0 left-0 flex items-center pl-3"
+            className="absolute inset-y-0 right-0 flex items-center pr-3"
           >
             {showPassword ? (
-              <EyeOff className="h-5 w-5 text-gray-400" />
+              <EyeOff className="h-4 w-4 text-gray-400" />
             ) : (
-              <Eye className="h-5 w-5 text-gray-400" />
+              <Eye className="h-4 w-4 text-gray-400" />
             )}
           </button>
         </div>
@@ -229,18 +231,20 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
 
       <Button
         type="submit"
-        className="w-full bg-noor-purple hover:bg-noor-purple/90 text-white py-6 text-lg rounded-lg h-auto"
+        className="w-full bg-noor-purple hover:bg-noor-purple/90"
         disabled={isLoading}
       >
         {isLoading ? (
           <>
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             {t('login', 'loggingIn')}
           </>
         ) : (
           t('login', 'loginButton')
         )}
       </Button>
+
+
     </form>
   );
 };
