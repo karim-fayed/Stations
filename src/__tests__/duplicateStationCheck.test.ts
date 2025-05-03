@@ -16,8 +16,15 @@ jest.mock('../integrations/supabase/client', () => ({
 const mockedFrom = supabase.from as jest.Mock;
 const mockedSelect = jest.fn().mockReturnThis();
 const mockedEq = jest.fn().mockReturnThis();
+
+// Define proper types for Supabase responses
+type PostgrestResponse<T> = {
+  data: T | null;
+  error: any | null;
+};
+
 // Define the proper return type for maybeSingle
-const mockedMaybeSingle = jest.fn();
+const mockedMaybeSingle = jest.fn<Promise<PostgrestResponse<GasStation | null>>, []>();
 
 // Define expected type for checkDuplicateStation result
 interface DuplicateCheckResult {
