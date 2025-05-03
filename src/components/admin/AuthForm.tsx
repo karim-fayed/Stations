@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import LoginTabs from "./LoginTabs";
@@ -66,7 +66,7 @@ const AuthForm = () => {
     };
 
     checkAuth();
-  }, [navigate, toast, t]);
+  }, [navigate, toast]);
 
   if (isCheckingAuth) {
     return (
@@ -78,19 +78,21 @@ const AuthForm = () => {
   }
 
   return (
-    <Card className="w-full max-w-md border-none shadow-lg rounded-lg">
-      <CardContent className="p-6">
-        <div className="text-center mb-6">
-          <h2 className="text-3xl font-bold">{t('login', 'title')}</h2>
-          <p className="text-gray-600 mt-1">
-            {t('login', 'subtitle')}
-          </p>
-        </div>
+    <Card className="w-full max-w-md">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl">{t('login', 'loginTitle')}</CardTitle>
+        <CardDescription>
+          {t('login', 'loginSubtitle')}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         <LoginTabs />
-        <p className="text-xs text-gray-500 text-center mt-8">
-          © {t('common', 'copyright')}
-        </p>
       </CardContent>
+      <CardFooter className="flex justify-center pt-4">
+        <p className="text-sm text-gray-500">
+          © {t('common', 'appName')} {new Date().getFullYear()} - {t('common', 'allRightsReserved')}
+        </p>
+      </CardFooter>
     </Card>
   );
 };
