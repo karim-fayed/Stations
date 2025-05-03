@@ -58,10 +58,14 @@ export const useUserManagement = () => {
         throw new Error("يرجى إدخال البريد الإلكتروني وكلمة المرور");
       }
 
+      // إزالة المسافات من البريد الإلكتروني وكلمة المرور
+      const cleanedEmail = newUser.email.trim().replace(/\s/g, '');
+      const cleanedPassword = newUser.password.trim().replace(/\s/g, '');
+
       // Create the new user in Auth
       const { data, error } = await supabase.auth.signUp({
-        email: newUser.email.trim(),
-        password: newUser.password.trim(),
+        email: cleanedEmail,
+        password: cleanedPassword,
         options: {
           data: {
             name: newUser.name || newUser.email,
@@ -76,7 +80,7 @@ export const useUserManagement = () => {
 
       toast({
         title: "تم إنشاء المستخدم بنجاح",
-        description: `تم إنشاء حساب لـ ${newUser.email}`,
+        description: `تم إنشاء حساب لـ ${cleanedEmail}`,
       });
       
       // Refresh user list
