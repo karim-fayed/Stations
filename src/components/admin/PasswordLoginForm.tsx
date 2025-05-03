@@ -67,8 +67,6 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       let emailToUse = cleanEmail;
       let passwordToUse = cleanPassword;
 
-      // تم إزالة الاختصارات بناءً على طلب المستخدم لتحسين الأمان
-
       // Attempt to sign in with email and password
       const { data, error } = await supabase.auth.signInWithPassword({
         email: emailToUse,
@@ -180,9 +178,9 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="email" className="block text-sm font-medium text-gray-700 text-right">
           {t('common', 'email')}
         </label>
         <Input
@@ -194,13 +192,13 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
           value={email}
           onChange={handleEmailChange}
           placeholder="admin@example.com"
-          className="w-full"
+          className="w-full text-left"
           dir="ltr"
         />
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="password" className="block text-sm font-medium text-gray-700 text-right">
           {t('common', 'password')}
         </label>
         <div className="relative">

@@ -78,21 +78,19 @@ const AuthForm = () => {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle className="text-2xl text-center">{t('login', 'title')}</CardTitle>
-        <CardDescription className="text-center">
-          {t('login', 'subtitle')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <Card className="w-full max-w-md border-none shadow-md">
+      <CardContent className="p-6">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold">تسجيل الدخول</h2>
+          <p className="text-gray-600 mt-1">
+            قم بتسجيل الدخول للوصول إلى لوحة التحكم
+          </p>
+        </div>
         <LoginTabs />
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <p className="text-sm text-gray-500">
-          © {t('common', 'appName')} {new Date().getFullYear()} - {t('common', 'allRightsReserved')}
+        <p className="text-xs text-gray-500 text-center mt-8">
+          © محطات نور 2025 - جميع الحقوق محفوظة
         </p>
-      </CardFooter>
+      </CardContent>
     </Card>
   );
 };
