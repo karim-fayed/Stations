@@ -1,5 +1,7 @@
+
 import { checkDuplicateStation } from '../services/stationService';
 import { supabase } from '../integrations/supabase/client';
+import type { jest } from '@jest/globals';
 
 // Mock supabase client
 jest.mock('../integrations/supabase/client', () => ({
@@ -12,6 +14,13 @@ jest.mock('../integrations/supabase/client', () => ({
   }
 }));
 
+// Create proper TypeScript types for the mocked functions
+const mockedFrom = supabase.from as jest.MockedFunction<typeof supabase.from>;
+const mockedSelect = jest.fn().mockReturnThis();
+const mockedEq = jest.fn().mockReturnThis();
+const mockedMaybeSingle = jest.fn();
+const mockedRpc = jest.fn().mockReturnThis();
+
 describe('Duplicate Station Check', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -19,10 +28,10 @@ describe('Duplicate Station Check', () => {
 
   test('should detect duplicate station by name', async () => {
     // Mock a duplicate station by name
-    (supabase.from as jest.Mock).mockReturnThis();
-    (supabase.select as jest.Mock).mockReturnThis();
-    (supabase.eq as jest.Mock).mockReturnThis();
-    (supabase.maybeSingle as jest.Mock).mockResolvedValue({
+    mockedFrom.mockReturnThis();
+    mockedSelect.mockReturnThis();
+    mockedEq.mockReturnThis();
+    mockedMaybeSingle.mockResolvedValue({
       data: {
         id: '123',
         name: 'Test Station',
@@ -34,27 +43,34 @@ describe('Duplicate Station Check', () => {
       error: null
     });
 
+    // Apply mocks to supabase object
+    (supabase.from as jest.Mock).mockImplementation(() => ({
+      select: mockedSelect,
+      eq: mockedEq,
+      maybeSingle: mockedMaybeSingle
+    }));
+
     const result = await checkDuplicateStation('Test Station', 24.774265, 46.738586);
     
     expect(result.isDuplicate).toBe(true);
     expect(result.duplicateStation).toBeDefined();
     expect(result.duplicateStation?.name).toBe('Test Station');
     expect(supabase.from).toHaveBeenCalledWith('stations');
-    expect(supabase.eq).toHaveBeenCalledWith('name', 'Test Station');
+    expect(mockedEq).toHaveBeenCalledWith('name', 'Test Station');
   });
 
   test('should detect duplicate station by location', async () => {
     // Mock no duplicate by name
-    (supabase.from as jest.Mock).mockReturnThis();
-    (supabase.select as jest.Mock).mockReturnThis();
-    (supabase.eq as jest.Mock).mockReturnThis();
-    (supabase.maybeSingle as jest.Mock).mockResolvedValue({
+    mockedFrom.mockReturnThis();
+    mockedSelect.mockReturnThis();
+    mockedEq.mockReturnThis();
+    mockedMaybeSingle.mockResolvedValue({
       data: null,
       error: null
     });
 
     // Mock a duplicate by location
-    (supabase.rpc as jest.Mock).mockResolvedValue({
+    mockedRpc.mockResolvedValue({
       data: [{
         id: '456',
         name: 'Nearby Station',
@@ -66,6 +82,14 @@ describe('Duplicate Station Check', () => {
       }],
       error: null
     });
+
+    // Apply mocks to supabase object
+    (supabase.from as jest.Mock).mockImplementation(() => ({
+      select: mockedSelect,
+      eq: mockedEq,
+      maybeSingle: mockedMaybeSingle
+    }));
+    (supabase.rpc as jest.Mock).mockImplementation(mockedRpc);
 
     const result = await checkDuplicateStation('New Station', 24.774265, 46.738586);
     
@@ -82,16 +106,16 @@ describe('Duplicate Station Check', () => {
 
   test('should not detect duplicate when no match', async () => {
     // Mock no duplicate by name
-    (supabase.from as jest.Mock).mockReturnThis();
-    (supabase.select as jest.Mock).mockReturnThis();
-    (supabase.eq as jest.Mock).mockReturnThis();
-    (supabase.maybeSingle as jest.Mock).mockResolvedValue({
+    mockedFrom.mockReturnThis();
+    mockedSelect.mockReturnThis();
+    mockedEq.mockReturnThis();
+    mockedMaybeSingle.mockResolvedValue({
       data: null,
       error: null
     });
 
     // Mock no duplicate by location (distance > 100m)
-    (supabase.rpc as jest.Mock).mockResolvedValue({
+    mockedRpc.mockResolvedValue({
       data: [{
         id: '789',
         name: 'Far Station',
@@ -104,6 +128,14 @@ describe('Duplicate Station Check', () => {
       error: null
     });
 
+    // Apply mocks to supabase object
+    (supabase.from as jest.Mock).mockImplementation(() => ({
+      select: mockedSelect,
+      eq: mockedEq,
+      maybeSingle: mockedMaybeSingle
+    }));
+    (supabase.rpc as jest.Mock).mockImplementation(mockedRpc);
+
     const result = await checkDuplicateStation('New Station', 24.774265, 46.738586);
     
     expect(result.isDuplicate).toBe(false);
@@ -112,13 +144,20 @@ describe('Duplicate Station Check', () => {
 
   test('should handle errors gracefully', async () => {
     // Mock an error
-    (supabase.from as jest.Mock).mockReturnThis();
-    (supabase.select as jest.Mock).mockReturnThis();
-    (supabase.eq as jest.Mock).mockReturnThis();
-    (supabase.maybeSingle as jest.Mock).mockResolvedValue({
+    mockedFrom.mockReturnThis();
+    mockedSelect.mockReturnThis();
+    mockedEq.mockReturnThis();
+    mockedMaybeSingle.mockResolvedValue({
       data: null,
       error: new Error('Database error')
     });
+
+    // Apply mocks to supabase object
+    (supabase.from as jest.Mock).mockImplementation(() => ({
+      select: mockedSelect,
+      eq: mockedEq,
+      maybeSingle: mockedMaybeSingle
+    }));
 
     await expect(checkDuplicateStation('Test Station', 24.774265, 46.738586))
       .rejects.toThrow();
