@@ -66,7 +66,7 @@ const AuthForm = () => {
     };
 
     checkAuth();
-  }, [navigate, toast]);
+  }, [navigate, toast, t]);
 
   if (isCheckingAuth) {
     return (

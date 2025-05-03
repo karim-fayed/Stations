@@ -77,6 +77,22 @@ export const translations: Translations = {
     checkingSession: {
       ar: "جاري التحقق من الجلسة...",
       en: "Checking session..."
+    },
+    email: {
+      ar: "البريد الإلكتروني",
+      en: "Email"
+    },
+    password: {
+      ar: "كلمة المرور",
+      en: "Password"
+    },
+    forgotPassword: {
+      ar: "نسيت كلمة المرور؟",
+      en: "Forgot password?"
+    },
+    rememberMe: {
+      ar: "تذكرني",
+      en: "Remember me"
     }
   },
   common: {
@@ -95,6 +111,46 @@ export const translations: Translations = {
     copyright: {
       ar: "محطات نور 2025 - جميع الحقوق محفوظة",
       en: "Noor Stations 2025 - All Rights Reserved"
+    },
+    loading: {
+      ar: "جاري التحميل...",
+      en: "Loading..."
+    },
+    error: {
+      ar: "خطأ",
+      en: "Error"
+    },
+    success: {
+      ar: "تم بنجاح",
+      en: "Success"
+    },
+    warning: {
+      ar: "تحذير",
+      en: "Warning"
+    },
+    info: {
+      ar: "معلومات",
+      en: "Information"
+    },
+    save: {
+      ar: "حفظ",
+      en: "Save"
+    },
+    cancel: {
+      ar: "إلغاء",
+      en: "Cancel"
+    },
+    delete: {
+      ar: "حذف",
+      en: "Delete"
+    },
+    edit: {
+      ar: "تعديل",
+      en: "Edit"
+    },
+    add: {
+      ar: "إضافة",
+      en: "Add"
     }
   },
   // Additional sections can be added here
