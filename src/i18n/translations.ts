@@ -457,7 +457,7 @@ export const translations: Translations = {
   // ترجمات تسجيل الدخول
   login: {
     title: {
-      ar: 'تسجيل الدخول',
+      ar: 'لوحة تحكم المشرفين',
       en: 'Login'
     },
     subtitle: {
