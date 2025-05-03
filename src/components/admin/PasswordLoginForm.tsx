@@ -68,6 +68,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       if (cleanEmail === "test") {
         emailToUse = "test@example.com";
         passwordToUse = "Test123!";
+        console.log("Using test credentials:", emailToUse, passwordToUse);
       }
       
       // Attempt to sign in with email and password

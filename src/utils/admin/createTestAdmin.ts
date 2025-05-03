@@ -31,6 +31,9 @@ export async function createTestAdmin() {
       if (!response.ok) {
         const errorData = await response.json();
         console.log("خطأ في استدعاء edge function:", errorData);
+        
+        // If edge function fails, try client method
+        await createAdminUser(testEmail, testPassword, "Test Admin");
       } else {
         const result = await response.json();
         console.log("تم إنشاء المستخدم بنجاح:", result);

@@ -19,6 +19,8 @@ export async function createAdminUser(email: string, password: string, name: str
     const cleanedPassword = cleanString(password);
     const cleanedName = name.trim();
 
+    console.log("Attempting to create admin user with:", cleanedEmail);
+
     // For development/test purposes only
     // Try to sign up with the credentials
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
