@@ -63,7 +63,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       // First sign out to clear any existing session
       await supabase.auth.signOut();
 
-      // Set up testing credentials for development
+      // Set up credentials
       let emailToUse = cleanEmail;
       let passwordToUse = cleanPassword;
 
@@ -243,8 +243,6 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
           t('login', 'loginButton')
         )}
       </Button>
-
-
     </form>
   );
 };

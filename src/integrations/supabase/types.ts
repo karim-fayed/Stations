@@ -60,6 +60,39 @@ export type Database = {
         }
         Relationships: []
       }
+      cities: {
+        Row: {
+          created_at: string | null
+          id: string
+          latitude: number
+          longitude: number
+          name_ar: string
+          name_en: string
+          updated_at: string | null
+          zoom: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          latitude: number
+          longitude: number
+          name_ar: string
+          name_en: string
+          updated_at?: string | null
+          zoom?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          name_ar?: string
+          name_en?: string
+          updated_at?: string | null
+          zoom?: number | null
+        }
+        Relationships: []
+      }
       spatial_ref_sys: {
         Row: {
           auth_name: string | null
@@ -120,7 +153,7 @@ export type Database = {
         Update: {
           additional_info?: string | null
           created_at?: string | null
-          fuel_types?: string
+          fuel_types?: string | null
           id?: string
           latitude?: number
           location?: unknown | null
@@ -440,6 +473,10 @@ export type Database = {
       }
       execute_sql: {
         Args: { query: string }
+        Returns: undefined
+      }
+      extract_cities_from_stations: {
+        Args: Record<PropertyKey, never>
         Returns: undefined
       }
       find_nearest_stations: {
