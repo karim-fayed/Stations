@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface PasswordLoginFormProps {
   email: string;
@@ -18,6 +19,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   // Function to prevent spaces in input
   const preventSpaces = (value: string) => {
@@ -44,46 +46,43 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       // Make sure there are no spaces in credentials
       const cleanEmail = email.trim();
       const cleanPassword = password.trim();
-      
+
       console.log("Login attempt with email:", cleanEmail);
-      
+
       // Validate inputs
       if (!cleanEmail || !cleanPassword) {
         toast({
-          title: "خطأ في البيانات",
-          description: "الرجاء إدخال البريد الإلكتروني وكلمة المرور",
+          title: t('login', 'error'),
+          description: t('login', 'enterCredentials'),
           variant: "destructive",
         });
         setIsLoading(false);
         return;
       }
-      
+
       // First sign out to clear any existing session
       await supabase.auth.signOut();
-      
+
       // Set up testing credentials for development
       let emailToUse = cleanEmail;
       let passwordToUse = cleanPassword;
-      
-      if (cleanEmail === "test") {
-        emailToUse = "test@example.com";
-        passwordToUse = "Test123!";
-      }
-      
+
+      // تم إزالة الاختصارات بناءً على طلب المستخدم لتحسين الأمان
+
       // Attempt to sign in with email and password
       const { data, error } = await supabase.auth.signInWithPassword({
         email: emailToUse,
         password: passwordToUse,
       });
-      
+
       if (error) {
         console.error("Login error:", error);
-        
+
         // Handle specific error cases
         if (error.message.includes("Invalid login credentials")) {
           toast({
-            title: "خطأ في تسجيل الدخول",
-            description: "بيانات الدخول غير صحيحة. يرجى التأكد من البريد الإلكتروني وكلمة المرور",
+            title: t('login', 'loginError'),
+            description: t('login', 'invalidCredentials'),
             variant: "destructive",
           });
         } else if (error.message.includes("rate limit")) {
@@ -99,17 +98,17 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
             variant: "destructive",
           });
         }
-        
+
         setIsLoading(false);
         return;
       }
-      
+
       console.log("Login successful:", data);
-      
+
       // Check if we have a session
       if (data.session) {
         console.log("User authenticated:", data.user);
-        
+
         try {
           // Check if user is in admin_users table
           const { data: adminData, error: adminError } = await supabase
@@ -117,15 +116,15 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
             .select('*')
             .eq('id', data.user.id)
             .single();
-          
+
           if (adminError) {
             console.error("Error checking admin status:", adminError);
-            
+
             if (adminError.code === 'PGRST116') { // No rows found
               await supabase.auth.signOut(); // Sign out if not an admin
               toast({
-                title: "تنبيه",
-                description: "هذا الحساب لا يملك صلاحيات المشرف",
+                title: t('common', 'alert'),
+                description: t('login', 'notAdmin'),
                 variant: "destructive",
               });
               setIsLoading(false);
@@ -137,12 +136,12 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
         } catch (adminCheckError) {
           console.error("Error during admin check:", adminCheckError);
         }
-        
+
         toast({
-          title: "تم تسجيل الدخول بنجاح",
-          description: "جاري تحويلك إلى لوحة التحكم",
+          title: t('login', 'loginSuccess'),
+          description: t('login', 'redirecting'),
         });
-        
+
         // Redirect to dashboard
         setTimeout(() => {
           navigate("/admin/dashboard");
@@ -155,14 +154,22 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
           variant: "destructive",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Unexpected login error:", error);
-      
-      toast({
-        title: "خطأ في تسجيل الدخول",
-        description: error.message || "حدث خطأ غير متوقع أثناء تسجيل الدخول",
-        variant: "destructive",
-      });
+
+      if (error instanceof Error) {
+        toast({
+          title: "خطأ في تسجيل الدخول",
+          description: error.message || "حدث خطأ غير متوقع أثناء تسجيل الدخول",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "خطأ في تسجيل الدخول",
+          description: "حدث خطأ غير متوقع أثناء تسجيل الدخول",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -176,7 +183,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-          البريد الإلكتروني
+          {t('common', 'email')}
         </label>
         <Input
           id="email"
@@ -194,7 +201,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
 
       <div className="space-y-2">
         <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-          كلمة المرور
+          {t('common', 'password')}
         </label>
         <div className="relative">
           <Input
@@ -222,28 +229,22 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
         </div>
       </div>
 
-      <Button 
-        type="submit" 
-        className="w-full bg-noor-purple hover:bg-noor-purple/90" 
+      <Button
+        type="submit"
+        className="w-full bg-noor-purple hover:bg-noor-purple/90"
         disabled={isLoading}
       >
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            جاري التسجيل...
+            {t('login', 'loggingIn')}
           </>
         ) : (
-          "تسجيل الدخول"
+          t('login', 'loginButton')
         )}
       </Button>
 
-      <div className="text-sm text-center mt-4 p-3 bg-gray-50 rounded-md border border-gray-200">
-        <p className="font-medium text-gray-700 mb-2">حسابات للاختبار:</p>
-        <div className="space-y-1">
-          <p className="font-mono text-green-700">test</p>
-          <p className="font-mono text-green-700 text-xs">(اختصار لـ test@example.com / Test123!)</p>
-        </div>
-      </div>
+
     </form>
   );
 };

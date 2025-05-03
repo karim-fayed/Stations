@@ -11,11 +11,12 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { UserCircle } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const Index = () => {
   // الحالات (States)
   const [selectedStation, setSelectedStation] = useState<GasStation | null>(null);
-  const [language, setLanguage] = useState<'ar' | 'en'>('ar'); // Default to Arabic
+  const { language, t } = useLanguage();
   const [stations, setStations] = useState<GasStation[]>([]);
   const [filteredStations, setFilteredStations] = useState<GasStation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,9 +35,7 @@ const Index = () => {
         setError(null);
       } catch (err) {
         console.error("Error loading stations:", err);
-        setError(language === 'ar' 
-          ? "حدث خطأ أثناء تحميل بيانات المحطات" 
-          : "Error loading station data");
+        setError(t('home', 'loadingError'));
       } finally {
         setIsLoading(false);
       }
@@ -63,9 +62,9 @@ const Index = () => {
     filterStations();
   }, [selectedRegion, stations]);
 
-  // تغيير اللغة
+  // تغيير اللغة - لم يعد مستخدماً بعد إضافة سياق اللغة
   const handleLanguageChange = (lang: 'ar' | 'en') => {
-    setLanguage(lang);
+    // لا نحتاج لهذه الدالة بعد الآن، ولكن نحتفظ بها للتوافق مع المكونات الحالية
   };
 
   // تغيير المحطة المحددة
@@ -83,27 +82,27 @@ const Index = () => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className={`min-h-screen flex flex-col ${language === 'ar' ? 'rtl' : 'ltr'}`}
-      dir={language === 'ar' ? 'rtl' : 'ltr'} // إضافة خاصية dir للتحكم في اتجاه الصفحة
+      className="min-h-screen flex flex-col"
     >
       <Toaster />
-      
+
+      <div className="absolute top-4 right-4 z-10">
+        <Link to="/admin/login">
+          <Button variant="outline" className="flex items-center gap-2 bg-white/80 hover:bg-white">
+            <UserCircle size={18} />
+            <span className="hidden sm:inline">{t('home', 'adminPanel')}</span>
+          </Button>
+        </Link>
+      </div>
+
       <Header language={language} onChangeLanguage={handleLanguageChange} />
-      
+
       <main className="flex-grow container mx-auto p-4 md:p-6">
-        <div className="flex justify-end mb-4">
-          <Link to="/admin/login">
-            <Button variant="outline" className="flex items-center gap-2">
-              <UserCircle size={18} />
-              {language === 'ar' ? 'لوحة التحكم' : 'Admin Panel'}
-            </Button>
-          </Link>
-        </div>
-        
+
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-noor-purple"></div>
@@ -116,24 +115,24 @@ const Index = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="map">
-                {language === 'ar' ? 'الخريطة' : 'Map'}
+                {t('home', 'map')}
               </TabsTrigger>
               <TabsTrigger value="list">
-                {language === 'ar' ? 'قائمة المحطات' : 'Stations List'}
+                {t('home', 'stationsList')}
               </TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="map" className="min-h-[500px]">
-              <InteractiveMap 
+              <InteractiveMap
                 selectedStation={selectedStation}
                 onSelectStation={handleSelectStation}
                 language={language}
                 stations={filteredStations}
               />
             </TabsContent>
-            
+
             <TabsContent value="list">
-              <GasStationList 
+              <GasStationList
                 stations={stations}
                 onSelectStation={handleSelectStation}
                 selectedStation={selectedStation}
@@ -143,7 +142,7 @@ const Index = () => {
           </Tabs>
         )}
       </main>
-      
+
       <footer className={`bg-noor-purple text-white p-4`}>
         <div className="container mx-auto text-center">
           <p>

@@ -102,11 +102,11 @@ html, body, #root {
 
 /* تنسيق مخصص للـ Mapbox */
 .mapboxgl-popup-content {
-  @apply rounded-lg shadow-lg p-4 border border-gray-200;
+  @apply rounded-lg shadow-lg p-0 border border-purple-100 overflow-hidden;
 }
 
 .mapboxgl-popup-close-button {
-  @apply right-2 top-2 text-lg;
+  @apply right-2 top-2 text-lg text-white z-10;
 }
 
 .mapboxgl-ctrl-logo {
@@ -132,5 +132,34 @@ html, body, #root {
 
 .marker-selected {
   animation: pulse 1.5s infinite;
+}
+
+/* أنيميشن دوران للشعار */
+@keyframes rotation {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.welcome-logo {
+  width: 25px;
+  height: 25px;
+  margin-right: 5px;
+  margin-left: 5px;
+  animation: 8s linear 0s infinite normal none running rotation;
+}
+
+/* تعديل الهوامش حسب اتجاه اللغة */
+.rtl .welcome-logo {
+  margin-right: 5px;
+  margin-left: 0;
+}
+
+.ltr .welcome-logo {
+  margin-left: 5px;
+  margin-right: 0;
 }
 

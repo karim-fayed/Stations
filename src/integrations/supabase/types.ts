@@ -88,7 +88,7 @@ export type Database = {
         Row: {
           additional_info: string | null
           created_at: string | null
-          fuel_types: string
+          fuel_types: string | null
           id: string
           latitude: number
           location: unknown | null
@@ -104,7 +104,7 @@ export type Database = {
         Insert: {
           additional_info?: string | null
           created_at?: string | null
-          fuel_types: string
+          fuel_types?: string | null
           id?: string
           latitude: number
           location?: unknown | null

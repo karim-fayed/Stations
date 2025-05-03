@@ -14,7 +14,8 @@ interface DeleteStationDialogProps {
   isOpen: boolean;
   stationName: string;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (id?: string) => void;
+  stationId?: string;
 }
 
 const DeleteStationDialog = ({
@@ -22,7 +23,12 @@ const DeleteStationDialog = ({
   stationName,
   onClose,
   onConfirm,
+  stationId,
 }: DeleteStationDialogProps) => {
+  const handleConfirm = () => {
+    onConfirm(stationId);
+    onClose(); // إغلاق النافذة بعد تأكيد الحذف
+  };
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="rtl">
@@ -32,17 +38,17 @@ const DeleteStationDialog = ({
             هل أنت متأكد من رغبتك في حذف محطة "{stationName}"؟ هذا الإجراء لا يمكن التراجع عنه.
           </DialogDescription>
         </DialogHeader>
-        
+
         <DialogFooter className="flex gap-2 justify-end mt-4">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={onClose}
           >
             إلغاء
           </Button>
-          <Button 
+          <Button
             variant="destructive"
-            onClick={onConfirm}
+            onClick={handleConfirm}
           >
             نعم، حذف المحطة
           </Button>

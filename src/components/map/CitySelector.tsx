@@ -21,11 +21,11 @@ const CitySelector: React.FC<CitySelectorProps> = ({
   };
 
   return (
-    <div className={`mb-4 ${language === 'ar' ? 'text-right' : 'text-left'}`}>
-      <Select 
-        value={selectedCity} 
+    <div className={`${language === 'ar' ? 'text-right' : 'text-left'}`}>
+      <Select
+        value={selectedCity}
         onValueChange={onCityChange}
-        dir={language === 'ar' ? 'rtl' : 'ltr'} 
+        dir={language === 'ar' ? 'rtl' : 'ltr'}
       >
         <SelectTrigger className="w-full">
           <SelectValue placeholder={texts.selectCity} />

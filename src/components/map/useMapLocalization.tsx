@@ -26,6 +26,9 @@ export const useMapLocalization = (language: 'ar' | 'en'): MapTexts => {
     name: language === 'ar' ? 'الاسم:' : 'Name:',
     clickForDetails: language === 'ar' ? 'اضغط للتفاصيل' : 'Click for details',
     selectCity: language === 'ar' ? 'اختر مدينة' : 'Select City',
+    searchStation: language === 'ar' ? 'البحث عن محطة...' : 'Search for a station...',
+    noResults: language === 'ar' ? 'لا توجد نتائج للبحث' : 'No search results',
+    searchResults: language === 'ar' ? 'نتائج البحث' : 'Search results',
   }), [language]);
 
   return texts;

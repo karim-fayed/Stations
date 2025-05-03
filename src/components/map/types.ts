@@ -2,7 +2,7 @@
 export interface SaudiCity {
   name: string;
   nameEn: string;
-  latitude: number; 
+  latitude: number;
   longitude: number;
   zoom: number;
 }
@@ -30,4 +30,7 @@ export interface MapTexts {
   name: string;
   clickForDetails: string;
   selectCity: string;
+  searchStation: string;
+  noResults: string;
+  searchResults: string;
 }

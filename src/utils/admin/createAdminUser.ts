@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { SupabaseUserResponse } from "./types";
+import { createAdminAccountHandler } from "@/api/createAdminAccountHandler";
 
 /**
  * Clean a string by removing spaces
@@ -19,7 +20,19 @@ export async function createAdminUser(email: string, password: string, name: str
     const cleanedPassword = cleanString(password);
     const cleanedName = name.trim();
 
-    // For development/test purposes only
+    console.log(`محاولة إنشاء مستخدم مشرف: ${cleanedEmail}`);
+
+    // First try using the edge function handler
+    const result = await createAdminAccountHandler(cleanedEmail, cleanedPassword, cleanedName);
+
+    if (result.success) {
+      console.log(`تم إنشاء/تحديث المستخدم المشرف بنجاح: ${cleanedEmail}`);
+      return;
+    }
+
+    console.log(`فشل استخدام edge function، محاولة استخدام طريقة العميل...`);
+
+    // Fallback to client-side method if edge function fails
     // Try to sign up with the credentials
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: cleanedEmail,
@@ -40,7 +53,7 @@ export async function createAdminUser(email: string, password: string, name: str
           email: cleanedEmail,
           password: cleanedPassword
         });
-        
+
         if (signInData?.user) {
           // User exists and credentials are valid
           await addUserToAdminTable(signInData.user.id, cleanedEmail, cleanedName);
@@ -54,10 +67,10 @@ export async function createAdminUser(email: string, password: string, name: str
       }
     } else if (signUpData?.user?.id) {
       console.log(`تم إنشاء المستخدم المشرف بنجاح: ${cleanedEmail}`);
-      
+
       // Add the user to admin_users table
       await addUserToAdminTable(signUpData.user.id, cleanedEmail, cleanedName);
-      
+
       // Sign out after creating the user
       await supabase.auth.signOut();
     }
@@ -70,27 +83,27 @@ export async function createAdminUser(email: string, password: string, name: str
  * يضيف مستخدمًا إلى جدول admin_users
  */
 export async function addUserToAdminTable(
-  userId: string, 
-  email: string, 
+  userId: string,
+  email: string,
   name: string = "Admin"
 ): Promise<void> {
   try {
     // Remove any spaces from email
     const cleanedEmail = cleanString(email);
     const cleanedName = name.trim();
-    
+
     // First check if the user already exists in the admin_users table
     const { data: existingUser } = await supabase
       .from('admin_users')
       .select('*')
       .eq('id', userId)
       .single();
-      
+
     if (existingUser) {
       console.log(`المستخدم موجود بالفعل في جدول admin_users: ${cleanedEmail}`);
       return;
     }
-    
+
     // Add the user to admin_users table
     const { error } = await supabase
       .from('admin_users')
@@ -102,7 +115,7 @@ export async function addUserToAdminTable(
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
-      
+
     if (error) {
       console.error(`خطأ في إضافة المستخدم إلى جدول admin_users: ${error.message}`);
     } else {
@@ -117,22 +130,22 @@ export async function addUserToAdminTable(
  * يتأكد من وجود المستخدم في جدول admin_users
  */
 export async function ensureUserInAdminTable(
-  userId: string, 
-  email: string, 
+  userId: string,
+  email: string,
   name: string = "Admin"
 ): Promise<void> {
   try {
     // Remove any spaces from email
     const cleanedEmail = cleanString(email);
     const cleanedName = name.trim();
-    
+
     // Check if user exists in admin_users table
     const { data: adminUserInTable, error: fetchError } = await supabase
       .from('admin_users')
       .select('*')
       .eq('id', userId)
       .single();
-      
+
     if (fetchError || !adminUserInTable) {
       // إضافة المستخدم إلى جدول admin_users إذا لم يكن موجودًا
       await addUserToAdminTable(userId, cleanedEmail, cleanedName);

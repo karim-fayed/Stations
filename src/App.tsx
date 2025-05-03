@@ -6,9 +6,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import Index from "./pages/Index";
+import Services from "./pages/Services";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
 import LoginPage from "./pages/Admin/Login";
 import Dashboard from "./pages/Admin/Dashboard";
 import UserManagement from "./pages/Admin/UserManagement";
+import ProfilePage from "./pages/Admin/Profile";
 import NotFound from "./pages/NotFound";
 import { ensureAdminExists } from "./utils/admin";
 import AuthGuard from "@/components/admin/AuthGuard";
@@ -30,6 +34,9 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/admin/login" element={<LoginPage />} />
             <Route path="/admin/dashboard" element={
               <AuthGuard>
@@ -37,8 +44,13 @@ const App = () => {
               </AuthGuard>
             } />
             <Route path="/admin/users" element={
-              <AuthGuard>
+              <AuthGuard requireOwner={true}>
                 <UserManagement />
+              </AuthGuard>
+            } />
+            <Route path="/admin/profile" element={
+              <AuthGuard>
+                <ProfilePage />
               </AuthGuard>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

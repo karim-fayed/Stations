@@ -8,6 +8,14 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    proxy: {
+      // Proxy API requests to Supabase Edge Functions
+      '/api/create-admin-account': {
+        target: 'https://jtnqcyouncjoebqcalzh.supabase.co/functions/v1/create-admin-account',
+        changeOrigin: true,
+        rewrite: (path) => '',
+      }
+    }
   },
   plugins: [
     react(),

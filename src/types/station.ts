@@ -6,7 +6,7 @@ export interface GasStation {
   sub_region: string;
   latitude: number;
   longitude: number;
-  fuel_types: string;
+  fuel_types?: string;
   additional_info?: string;
   created_at?: string;
   updated_at?: string;
@@ -22,7 +22,7 @@ export interface AdminState {
 export interface SaudiCity {
   name: string;
   nameEn: string;
-  latitude: number; 
+  latitude: number;
   longitude: number;
   zoom: number;
 }
