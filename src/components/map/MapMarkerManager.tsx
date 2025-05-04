@@ -46,7 +46,7 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
     // إنشاء مُعلّم لكل محطة
     stations.forEach(station => {
       // إنشاء عنصر HTML للمُعلّمة بشكل دبوس
-      const el = document.createElement('div');
+      const el = document.createElement('div') as HTMLDivElement;
       const isSelected = selectedStation?.id === station.id;
       
       // تعيين الأنماط CSS للدبوس
@@ -90,12 +90,12 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
       if (popupElement) {
         const closeButton = popupElement.querySelector('.mapboxgl-popup-close-button');
         if (closeButton) {
-          closeButton.innerHTML = '×';
-          closeButton.style.fontSize = '16px';
-          closeButton.style.fontWeight = 'bold';
-          closeButton.style.color = 'white';
-          closeButton.style.top = '8px';
-          closeButton.style.right = '8px';
+          (closeButton as HTMLElement).innerHTML = '×';
+          (closeButton as HTMLElement).style.fontSize = '16px';
+          (closeButton as HTMLElement).style.fontWeight = 'bold';
+          (closeButton as HTMLElement).style.color = 'white';
+          (closeButton as HTMLElement).style.top = '8px';
+          (closeButton as HTMLElement).style.right = '8px';
         }
       }
       
