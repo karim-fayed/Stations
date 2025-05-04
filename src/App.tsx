@@ -1,6 +1,6 @@
 
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import './App.css';
 import Index from './pages/Index';
 import About from './pages/About';
@@ -11,7 +11,7 @@ import Login from './pages/Admin/Login';
 import Dashboard from './pages/Admin/Dashboard';
 import Profile from './pages/Admin/Profile';
 import UserManagement from './pages/Admin/UserManagement';
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/toaster";
 import AuthGuard from './components/admin/AuthGuard';
 import LoadingSpinner from './components/ui/loading-spinner';
 import { DatabaseMaintenance } from './pages/Admin';
@@ -29,7 +29,6 @@ function App() {
           <Route path="/admin" element={<AuthGuard><Dashboard /></AuthGuard>} />
           <Route path="/admin/profile" element={<AuthGuard><Profile /></AuthGuard>} />
           <Route path="/admin/users" element={<AuthGuard><UserManagement /></AuthGuard>} />
-          {/* Add the new route for Database Maintenance */}
           <Route path="/admin/db-maintenance" element={<AuthGuard><DatabaseMaintenance /></AuthGuard>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
