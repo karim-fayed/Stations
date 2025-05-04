@@ -75,15 +75,29 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
         });
       }
 
-      // إنشاء popup للمحطة
+      // إنشاء popup للمحطة مع إضافة زر للإغلاق
       const popup = new mapboxgl.Popup({
-        closeButton: false,
+        closeButton: true, // إظهار زر الإغلاق
         closeOnClick: false,
         offset: 25,
         className: 'station-popup',
-        maxWidth: '300px', // تعيين العرض الأقصى للنافذة المنبثقة
-        anchor: 'bottom', // جعل النافذة المنبثقة تظهر فوق الدبوس دائمًا
+        maxWidth: '300px',
+        anchor: 'bottom',
       }).setDOMContent(createPopupContent(station));
+      
+      // تخصيص زر الإغلاق
+      const popupElement = popup.getElement();
+      if (popupElement) {
+        const closeButton = popupElement.querySelector('.mapboxgl-popup-close-button');
+        if (closeButton) {
+          closeButton.innerHTML = '×';
+          closeButton.style.fontSize = '16px';
+          closeButton.style.fontWeight = 'bold';
+          closeButton.style.color = 'white';
+          closeButton.style.top = '8px';
+          closeButton.style.right = '8px';
+        }
+      }
       
       popupsRef.current.push(popup);
 
@@ -111,17 +125,19 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
         }
 
         // إغلاق أي نافذة منبثقة نشطة
-        if (activePopupRef.current) {
+        if (activePopupRef.current && activePopupRef.current !== popup) {
           activePopupRef.current.remove();
         }
 
-        // تغيير مظهر الدبوس عند التحويم عليه (بدون تحريكه للأعلى)
+        // تغيير مظهر الدبوس عند التحويم عليه
         el.style.filter = 'drop-shadow(0 6px 10px rgba(0, 0, 0, 0.4))';
         
-        // إظهار النافذة المنبثقة
-        popup.addTo(map);
-        popupVisible = true;
-        activePopupRef.current = popup;
+        // إظهار النافذة المنبثقة بشكل ثابت
+        if (!popupVisible) {
+          popup.addTo(map);
+          popupVisible = true;
+          activePopupRef.current = popup;
+        }
       });
       
       // إضافة حدث النقر
@@ -143,11 +159,18 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
         onSelectStation(station);
       });
 
-      // إضافة حدث نقر للنافذة المنبثقة نفسها
-      const popupElement = popup.getElement();
-      if (popupElement) {
-        popupElement.addEventListener('click', (e) => {
-          // منع انتشار الحدث لإبقاء النافذة المنبثقة مفتوحة
+      // إضافة حدث إغلاق النافذة المنبثقة
+      popup.on('close', () => {
+        popupVisible = false;
+        if (activePopupRef.current === popup) {
+          activePopupRef.current = null;
+        }
+      });
+
+      // إضافة حدث نقر للنافذة المنبثقة نفسها (لمنع الإغلاق عند النقر عليها)
+      const popupContentElement = popup.getElement();
+      if (popupContentElement) {
+        popupContentElement.addEventListener('click', (e) => {
           e.stopPropagation();
         });
       }
@@ -198,6 +221,25 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
         border-radius: 10px;
         overflow: hidden;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25) !important;
+      }
+      
+      /* تخصيص زر الإغلاق */
+      .station-popup .mapboxgl-popup-close-button {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        line-height: 1;
+        z-index: 10;
+        transition: background-color 0.2s;
+      }
+      
+      .station-popup .mapboxgl-popup-close-button:hover {
+        background-color: rgba(0, 0, 0, 0.4);
       }
       
       @keyframes fadeIn {

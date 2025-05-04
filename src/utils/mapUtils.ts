@@ -12,26 +12,48 @@ export const createPopupContent = (station: GasStation, texts: MapTexts, languag
   const content = document.createElement('div');
   content.className = 'px-3 py-2';
   content.dir = language === 'ar' ? 'rtl' : 'ltr';
+  
+  // Check language for layout direction
+  const isRTL = language === 'ar';
+  
   content.innerHTML = `
     <div class="bg-gradient-to-r from-noor-purple to-noor-light-purple p-2 -mt-2 -mx-3 mb-2 rounded-t-lg">
       <div class="font-bold text-white text-center">${station.name}</div>
     </div>
     <div class="grid grid-cols-2 gap-1 text-center mb-2">
-      <div class="text-xs font-medium text-noor-purple">${texts.region}:</div>
-      <div class="text-xs text-gray-700">${station.region}</div>
+      ${isRTL ? `
+        <div class="text-xs text-gray-700 text-left">${station.region}</div>
+        <div class="text-xs font-medium text-noor-purple text-right">${texts.region}</div>
 
-      <div class="text-xs font-medium text-noor-purple">${texts.subRegion}:</div>
-      <div class="text-xs text-gray-700">${station.sub_region}</div>
+        <div class="text-xs text-gray-700 text-left">${station.sub_region}</div>
+        <div class="text-xs font-medium text-noor-purple text-right">${texts.subRegion}</div>
 
-      ${station.fuel_types ? `
-      <div class="text-xs font-medium text-noor-purple">${texts.fuelTypes}:</div>
-      <div class="text-xs text-gray-700">${station.fuel_types}</div>
-      ` : ''}
+        ${station.fuel_types ? `
+        <div class="text-xs text-gray-700 text-left">${station.fuel_types}</div>
+        <div class="text-xs font-medium text-noor-purple text-right">${texts.fuelTypes}</div>
+        ` : ''}
 
-      ${distance ? `
-      <div class="text-xs font-medium text-noor-purple">${texts.distance}:</div>
-      <div class="text-xs text-gray-700">${distance}</div>
-      ` : ''}
+        ${distance ? `
+        <div class="text-xs text-gray-700 text-left">${distance}</div>
+        <div class="text-xs font-medium text-noor-purple text-right">${texts.distance}</div>
+        ` : ''}
+      ` : `
+        <div class="text-xs font-medium text-noor-purple">${texts.region}</div>
+        <div class="text-xs text-gray-700">${station.region}</div>
+
+        <div class="text-xs font-medium text-noor-purple">${texts.subRegion}</div>
+        <div class="text-xs text-gray-700">${station.sub_region}</div>
+
+        ${station.fuel_types ? `
+        <div class="text-xs font-medium text-noor-purple">${texts.fuelTypes}</div>
+        <div class="text-xs text-gray-700">${station.fuel_types}</div>
+        ` : ''}
+
+        ${distance ? `
+        <div class="text-xs font-medium text-noor-purple">${texts.distance}</div>
+        <div class="text-xs text-gray-700">${distance}</div>
+        ` : ''}
+      `}
     </div>
     <button class="w-full mt-1 px-2 py-1.5 text-xs bg-noor-orange text-white rounded hover:bg-noor-orange/90 transition-all font-medium">${texts.clickForDetails}</button>
   `;
