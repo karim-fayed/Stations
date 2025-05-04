@@ -160,3 +160,9 @@ export const translations: Record<string, Record<string, string>> = {
     maintenance: "صيانة قاعدة البيانات",
   }
 };
+
+// Add the Language enum if it doesn't exist
+export enum Language {
+  ENGLISH = 'en',
+  ARABIC = 'ar'
+}

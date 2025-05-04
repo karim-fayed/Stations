@@ -1,11 +1,36 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { GasStation } from "@/types/station";
 
-const DashboardTabs = () => {
-  const { t } = useTranslation();
+// Custom translation hook to avoid direct dependency on react-i18next
+const useCustomTranslation = () => {
+  // Return a simple translation function that returns the key as value
+  // This is a temporary solution until we properly set up i18next
+  const t = (key: string) => {
+    const translations: Record<string, string> = {
+      'overview': 'Overview',
+      'stations': 'Stations',
+      'users': 'Users',
+      'maintenance': 'Maintenance',
+      'manageUsers': 'Manage Users'
+    };
+    return translations[key] || key;
+  };
+  
+  return { t };
+};
+
+interface DashboardTabsProps {
+  stations?: GasStation[];
+  onEdit?: (station: GasStation) => void;
+  onDelete?: (station: GasStation) => void;
+}
+
+const DashboardTabs: React.FC<DashboardTabsProps> = ({ stations = [], onEdit, onDelete }) => {
+  const { t } = useCustomTranslation();
 
   return (
     <div className="flex flex-col-reverse md:flex-row">
