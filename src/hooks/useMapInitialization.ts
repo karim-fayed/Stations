@@ -14,34 +14,70 @@ export const useMapInitialization = (language: Language) => {
   useEffect(() => {
     if (map.current) return; // Avoid re-initialization
 
+    // Configure Mapbox error handling to prevent console flooding
+    mapboxgl.setRTLTextPlugin(
+      'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.2.3/mapbox-gl-rtl-text.js',
+      null,
+      true // Lazy load the RTL plugin
+    );
+
     if (mapContainer.current) {
-      // Center initially on Saudi Arabia
-      const initialCenter: [number, number] = [45.079, 23.885]; // Center of Saudi Arabia
-      const initialZoom = 5;
+      try {
+        // Center initially on Saudi Arabia
+        const initialCenter: [number, number] = [45.079, 23.885]; // Center of Saudi Arabia
+        const initialZoom = 5;
 
-      // Set Mapbox token
-      mapboxgl.accessToken = MAPBOX_TOKEN;
+        // Set Mapbox token
+        mapboxgl.accessToken = MAPBOX_TOKEN;
 
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: initialCenter,
-        zoom: initialZoom,
-        attributionControl: false,
-      });
-
-      // Add map controls
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-      map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-      map.current.addControl(new mapboxgl.ScaleControl({ maxWidth: 200, unit: 'metric' }), 'bottom-right');
-
-      // Add event listener when map loads
-      map.current.on('load', () => {
-        toast({
-          title: language === Language.ARABIC ? 'مرحبًا بك في خريطة المحطات' : 'Welcome to the stations map',
-          description: language === Language.ARABIC ? 'يرجى اختيار مدينة لعرض المحطات' : 'Please select a city to view stations',
+        // Create map with optimized configuration
+        map.current = new mapboxgl.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/streets-v12',
+          center: initialCenter,
+          zoom: initialZoom,
+          attributionControl: false,
+          // Add optimized rendering settings
+          renderWorldCopies: false,
+          preserveDrawingBuffer: false,
+          antialias: false,
+          maxZoom: 18,
+          minZoom: 3,
         });
-      });
+
+        // Add map controls but delay until the map loads
+        map.current.on('load', () => {
+          if (map.current) {
+            // Add map controls
+            map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+            map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+            map.current.addControl(new mapboxgl.ScaleControl({ maxWidth: 200, unit: 'metric' }), 'bottom-right');
+            
+            // Show welcome toast
+            toast({
+              title: language === Language.ARABIC ? 'مرحبًا بك في خريطة المحطات' : 'Welcome to the stations map',
+              description: language === Language.ARABIC ? 'يرجى اختيار مدينة لعرض المحطات' : 'Please select a city to view stations',
+            });
+
+            console.log("Map style fully loaded");
+          }
+        });
+
+        // Handle map errors
+        map.current.on('error', (e) => {
+          // Only log critical map errors
+          if (e.error && e.error.status !== 401 && e.error.status !== 404) {
+            console.error('Mapbox error:', e.error);
+          }
+        });
+      } catch (error) {
+        console.error('Error initializing map:', error);
+        toast({
+          title: language === Language.ARABIC ? 'خطأ في تحميل الخريطة' : 'Map loading error',
+          description: language === Language.ARABIC ? 'حدث خطأ أثناء تحميل الخريطة' : 'Error loading the map',
+          variant: 'destructive',
+        });
+      }
     }
 
     return () => {
