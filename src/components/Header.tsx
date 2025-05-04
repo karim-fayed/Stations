@@ -5,6 +5,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { Link } from "react-router-dom";
 import HomeSidebar from "./HomeSidebar";
+import { UserCircle } from "lucide-react"; // Add the import for UserCircle icon
 
 const Header = () => {
   const { language, t, dir } = useLanguage();
