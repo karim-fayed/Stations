@@ -33,7 +33,7 @@ const MapSearchBar: React.FC<MapSearchBarProps> = ({
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder={texts.searchStations}
+          placeholder={texts.searchStation}
           className={`pr-10 ${language === 'ar' ? 'text-right' : 'text-left'}`}
           dir={language === 'ar' ? 'rtl' : 'ltr'}
         />

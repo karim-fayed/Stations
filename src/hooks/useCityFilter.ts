@@ -155,10 +155,11 @@ export const useCityFilter = (
   // Detect if device is likely low performance
   const detectLowPerformanceDevice = useCallback(() => {
     // Check for various indicators of low-performance devices
-    const isLowMemory = navigator.deviceMemory !== undefined && navigator.deviceMemory < 4;
+    // نستخدم طرق بديلة لتحديد أداء الجهاز لأن deviceMemory غير متاح في جميع المتصفحات
     const isSlowCPU = navigator.hardwareConcurrency !== undefined && navigator.hardwareConcurrency <= 4;
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
-    return isLowMemory || isSlowCPU;
+    return isSlowCPU || isMobile;
   }, []);
 
   // Clear city filter cache

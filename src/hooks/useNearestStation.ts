@@ -69,7 +69,7 @@ export const useNearestStation = ({
         if (map.current) {
           // First check if the map needs to be moved significantly
           const currentCenter = map.current.getCenter();
-          const stationLocation = [nearestStations[0].longitude, nearestStations[0].latitude];
+          const stationLocation = [nearestStations[0].longitude, nearestStations[0].latitude] as [number, number]; // تحديد النوع بشكل صريح
           
           // Calculate distance to determine zoom behavior
           const distanceFactor = Math.sqrt(

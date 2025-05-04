@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import mapboxgl from 'mapbox-gl';  // إضافة استيراد mapboxgl هنا
 import { GasStation, SaudiCity } from '@/types/station';
 import { useToast } from "@/hooks/use-toast";
 
