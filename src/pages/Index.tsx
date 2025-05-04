@@ -12,6 +12,9 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import mapboxgl from 'mapbox-gl';
 import { MAPBOX_TOKEN } from '@/utils/environment';
 import { Language } from "@/i18n/translations";
+import { Button } from "@/components/ui/button"; 
+import { UserCircle } from "lucide-react"; 
+import { Link } from "react-router-dom";
 
 const Index = () => {
   // الحالات (States)
@@ -74,15 +77,23 @@ const Index = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col max-h-screen overflow-hidden"
     >
       <Toaster />
 
-      {/* Remove the duplicate admin button from here, it's already in the Header */}
-
       <Header />
 
-      <main className="flex-grow container mx-auto px-2 sm:px-4 py-2 sm:py-4">
+      <main className="flex-grow container mx-auto px-2 sm:px-4 py-2 sm:py-4 overflow-hidden">
+        {/* زر لوحة التحكم للشاشات الكبيرة */}
+        <div className="hidden md:flex justify-end mb-2">
+          <Link to="/admin/login">
+            <Button variant="outline" className="flex items-center gap-2">
+              <UserCircle size={18} />
+              {language === 'ar' ? 'لوحة التحكم' : 'Admin Panel'}
+            </Button>
+          </Link>
+        </div>
+
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-noor-purple"></div>
@@ -92,7 +103,7 @@ const Index = () => {
             {error}
           </div>
         ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full">
             <TabsList className="grid w-full grid-cols-2 mb-3 sm:mb-4">
               <TabsTrigger value="map" className="text-sm sm:text-base py-1.5 sm:py-2">
                 {t('home', 'map')}
@@ -102,7 +113,7 @@ const Index = () => {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="map" className="h-[70vh] sm:h-[75vh]">
+            <TabsContent value="map" className="h-[60vh] sm:h-[65vh] md:h-[70vh] lg:h-[60vh] xl:h-[65vh]">
               <InteractiveMap
                 selectedStation={selectedStation}
                 onSelectStation={handleSelectStation}
@@ -115,7 +126,7 @@ const Index = () => {
               />
             </TabsContent>
 
-            <TabsContent value="list" className="h-[70vh] sm:h-[75vh] overflow-auto">
+            <TabsContent value="list" className="h-[60vh] sm:h-[65vh] md:h-[70vh] lg:h-[60vh] xl:h-[65vh] overflow-auto">
               <GasStationList
                 stations={stations}
                 onSelectStation={handleSelectStation}

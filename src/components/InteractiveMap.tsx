@@ -178,7 +178,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       </div>
 
       <div className="relative flex-grow">
-        <div ref={mapContainer} className="map-container h-[70vh] rounded-lg shadow-lg"></div>
+        <div ref={mapContainer} className="map-container h-[50vh] md:h-[55vh] lg:h-[45vh] xl:h-[50vh] rounded-lg shadow-lg"></div>
 
         {/* Reset map button */}
         <div className="absolute top-2 left-2 z-10">
