@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +7,7 @@ import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { motion } from "framer-motion";
 
 interface PasswordLoginFormProps {
   email: string;
@@ -180,81 +182,127 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
 
   const isRTL = language === 'ar';
 
+  const inputVariants = {
+    focus: { 
+      boxShadow: "0 0 0 3px rgba(102, 51, 204, 0.3)",
+      borderColor: "rgba(102, 51, 204, 0.5)", 
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
+    <motion.form 
+      onSubmit={handleSubmit} 
+      className="space-y-5"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="space-y-3">
         <div className="relative">
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1 text-right">
-            البريد الإلكتروني
-          </label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={handleEmailChange}
-            placeholder="أدخل البريد الإلكتروني"
-            className={`w-full ${isRTL ? 'pr-10' : 'pl-10'} text-right`}
-            dir="rtl"
-          />
-          <Mail
-            className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <div className="relative">
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1 text-right">
-            كلمة المرور
-          </label>
-          <Input
-            id="password"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={handlePasswordChange}
-            placeholder="أدخل كلمة المرور"
-            className={`w-full pr-10 ${isRTL ? 'pl-10' : 'pl-0'} text-right`}
-            dir="rtl"
-          />
-          <Lock
-            className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`}
-          />
-          <button
-            type="button"
-            onClick={togglePasswordVisibility}
-            className={`absolute inset-y-0 flex items-center ${isRTL ? 'left-3' : 'right-3'}`}
-            aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+          <motion.label 
+            htmlFor="email" 
+            className="block text-sm font-medium text-white/90 mb-1.5 text-right"
+            initial={{ x: -5, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.3 }}
           >
-            {showPassword ? (
-              <EyeOff className="h-4 w-4 text-gray-400" />
-            ) : (
-              <Eye className="h-4 w-4 text-gray-400" />
-            )}
-          </button>
+            البريد الإلكتروني
+          </motion.label>
+          <motion.div
+            className="relative"
+            whileHover={{ scale: 1.01 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={handleEmailChange}
+              placeholder="أدخل البريد الإلكتروني"
+              className={`w-full ${isRTL ? 'pr-10' : 'pl-10'} text-right bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-white/50 focus:bg-white/15`}
+              dir="rtl"
+            />
+            <Mail
+              className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 text-white/60 ${isRTL ? 'right-3' : 'left-3'}`}
+            />
+          </motion.div>
         </div>
       </div>
 
-      <Button
-        type="submit"
-        className="w-full bg-purple-600 hover:bg-purple-700 mt-4"
-        disabled={isLoading}
+      <div className="space-y-3">
+        <div className="relative">
+          <motion.label 
+            htmlFor="password" 
+            className="block text-sm font-medium text-white/90 mb-1.5 text-right"
+            initial={{ x: -5, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.3 }}
+          >
+            كلمة المرور
+          </motion.label>
+          <motion.div
+            className="relative"
+            whileHover={{ scale: 1.01 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Input
+              id="password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={handlePasswordChange}
+              placeholder="أدخل كلمة المرور"
+              className={`w-full pr-10 ${isRTL ? 'pl-10' : 'pl-0'} text-right bg-white/10 backdrop-blur-sm border-white/20 text-white placeholder:text-white/50 focus:bg-white/15`}
+              dir="rtl"
+            />
+            <Lock
+              className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 text-white/60 ${isRTL ? 'right-3' : 'left-3'}`}
+            />
+            <motion.button
+              type="button"
+              onClick={togglePasswordVisibility}
+              className={`absolute inset-y-0 flex items-center ${isRTL ? 'left-3' : 'right-3'}`}
+              aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+              whileTap={{ scale: 0.95 }}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4 text-white/60" />
+              ) : (
+                <Eye className="h-4 w-4 text-white/60" />
+              )}
+            </motion.button>
+          </motion.div>
+        </div>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
       >
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            جاري تسجيل الدخول...
-          </>
-        ) : (
-          "تسجيل الدخول"
-        )}
-      </Button>
-    </form>
+        <Button
+          type="submit"
+          className="w-full mt-6 bg-noor-purple hover:bg-noor-purple/90 text-white border-none"
+          disabled={isLoading}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              جاري تسجيل الدخول...
+            </>
+          ) : (
+            "تسجيل الدخول"
+          )}
+        </Button>
+      </motion.div>
+    </motion.form>
   );
 };
 

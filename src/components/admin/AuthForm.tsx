@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -5,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import LoginTabs from "./LoginTabs";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { motion } from "framer-motion";
 
 const AuthForm = () => {
   const navigate = useNavigate();
@@ -71,27 +73,62 @@ const AuthForm = () => {
   if (isCheckingAuth) {
     return (
       <div className="flex flex-col items-center justify-center p-6">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-noor-purple mb-2"></div>
-        <div>{t('login', 'checkingSession')}</div>
+        <motion.div 
+          animate={{ 
+            rotate: 360,
+            borderColor: ['rgb(102, 51, 204, 0)', 'rgb(102, 51, 204, 0.7)', 'rgb(102, 51, 204, 0)'] 
+          }}
+          transition={{ 
+            duration: 1.5, 
+            repeat: Infinity,
+            ease: "linear" 
+          }}
+          className="rounded-full h-10 w-10 border-t-4 border-l-4 mb-3"
+        ></motion.div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-white/90"
+        >
+          {t('login', 'checkingSession')}
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <Card className="w-full max-w-md shadow-lg border-0">
+    <Card className="w-full max-w-md bg-transparent border-none shadow-none">
       <CardHeader className="text-center pb-2">
-        <CardTitle className="text-2xl">تسجيل الدخول</CardTitle>
-        <CardDescription>
-          أدخل بيانات حسابك للوصول إلى لوحة التحكم
-        </CardDescription>
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+        >
+          <CardTitle className="text-2xl text-white">تسجيل الدخول</CardTitle>
+          <CardDescription className="text-white/70">
+            أدخل بيانات حسابك للوصول إلى لوحة التحكم
+          </CardDescription>
+        </motion.div>
       </CardHeader>
       <CardContent>
-        <LoginTabs />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+        >
+          <LoginTabs />
+        </motion.div>
       </CardContent>
       <CardFooter className="flex justify-center pt-4">
-        <p className="text-sm text-gray-500">
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+          className="text-sm text-white/50"
+        >
           © محطات نور {new Date().getFullYear()} - جميع الحقوق محفوظة
-        </p>
+        </motion.p>
       </CardFooter>
     </Card>
   );
