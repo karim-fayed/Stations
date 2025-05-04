@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Toaster } from "@/components/ui/toaster";
@@ -11,11 +10,9 @@ import { UserCircle, Mail, Phone, MapPin, Clock, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useTranslation } from '@/hooks/useTranslation';
 
 const Contact = () => {
-  const { language } = useLanguage();
-  const { t } = useTranslation();
+  const { language, t } = useLanguage();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
@@ -55,22 +52,22 @@ const Contact = () => {
       icon: <Phone size={24} />,
       titleAr: 'اتصل بنا',
       titleEn: 'Call Us',
-      contentAr: '+966 8003033313',
-      contentEn: '+966 8003033313',
+      contentAr: '+966 12 345 6789',
+      contentEn: '+966 12 345 6789',
     },
     {
       icon: <Mail size={24} />,
       titleAr: 'البريد الإلكتروني',
       titleEn: 'Email',
-      contentAr: 'info@noor.com.sa',
-      contentEn: 'info@noor.com.sa',
+      contentAr: 'info@noor-stations.com',
+      contentEn: 'info@noor-stations.com',
     },
     {
       icon: <MapPin size={24} />,
       titleAr: 'العنوان',
       titleEn: 'Address',
-      contentAr: 'نجران، المملكة العربية السعودية',
-      contentEn: 'Najran, Saudi Arabia',
+      contentAr: 'الرياض، المملكة العربية السعودية',
+      contentEn: 'Riyadh, Saudi Arabia',
     },
     {
       icon: <Clock size={24} />,
@@ -94,7 +91,7 @@ const Contact = () => {
         <Link to="/admin/login">
           <Button variant="outline" className="flex items-center gap-2 bg-white/80 hover:bg-white">
             <UserCircle size={18} />
-            <span className="hidden sm:inline">{t('common.adminPanel')}</span>
+            <span className="hidden sm:inline">{t('home', 'adminPanel')}</span>
           </Button>
         </Link>
       </div>

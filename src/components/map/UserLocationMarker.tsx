@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import mapboxgl from 'mapbox-gl';
 
 interface UserLocationMarkerProps {
@@ -10,72 +10,42 @@ interface UserLocationMarkerProps {
 const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocation }) => {
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const accuracyCircleRef = useRef<mapboxgl.Source | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
   
-  // Check if map is loaded
+  // Update user location marker whenever location changes
   useEffect(() => {
-    if (!map) return;
-    
-    const handleMapLoad = () => {
-      console.log("Map style fully loaded");
-      setMapLoaded(true);
-    };
-
-    // If the map is already loaded
-    if (map.loaded()) {
-      setMapLoaded(true);
-    } else {
-      // Listen for the load event
-      map.on('load', handleMapLoad);
-    }
-    
-    return () => {
-      if (map) {
-        map.off('load', handleMapLoad);
-      }
-    };
-  }, [map]);
-  
-  // Update user location marker whenever location or map loaded state changes
-  useEffect(() => {
-    if (!map) {
-      return;
-    }
-    
-    // Clean up function for removing map elements
-    const cleanUpMapLayers = () => {
-      if (!map) return;
-      
-      // Clean up marker
+    if (!map || !userLocation) {
+      // Remove existing markers when location is not available
       if (userMarkerRef.current) {
         userMarkerRef.current.remove();
         userMarkerRef.current = null;
       }
       
-      // Clean up accuracy circle layer and source safely
-      try {
-        if (map.getLayer('accuracy-circle-layer')) {
-          map.removeLayer('accuracy-circle-layer');
-        }
-        
-        if (map.getSource('accuracy-circle')) {
-          map.removeSource('accuracy-circle');
-          accuracyCircleRef.current = null;
-        }
-      } catch (error) {
-        console.error("Error cleaning up map layers:", error);
+      // Remove accuracy circle layer and source
+      if (map && map.getLayer('accuracy-circle-layer')) {
+        map.removeLayer('accuracy-circle-layer');
       }
-    };
-    
-    // If no user location, clean up and return
-    if (!userLocation) {
-      cleanUpMapLayers();
+      
+      if (map && map.getSource('accuracy-circle')) {
+        map.removeSource('accuracy-circle');
+        accuracyCircleRef.current = null;
+      }
       return;
     }
 
-    // Clean up existing elements before adding new ones
-    cleanUpMapLayers();
+    // Remove existing markers
+    if (userMarkerRef.current) {
+      userMarkerRef.current.remove();
+    }
     
+    // Remove accuracy circle layer and source if they exist
+    if (map.getLayer('accuracy-circle-layer')) {
+      map.removeLayer('accuracy-circle-layer');
+    }
+    
+    if (map.getSource('accuracy-circle')) {
+      map.removeSource('accuracy-circle');
+    }
+
     // Create user location dot
     const markerEl = document.createElement('div');
     markerEl.className = 'user-location-marker';
@@ -109,71 +79,51 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocati
     pulsingDot.appendChild(pulse1);
     pulsingDot.appendChild(markerEl);
 
-    try {
-      // Add the marker to the map
-      userMarkerRef.current = new mapboxgl.Marker({
-        element: pulsingDot,
-        anchor: 'center'
-      })
-        .setLngLat([userLocation.longitude, userLocation.latitude])
-        .addTo(map);
+    // Add the marker to the map
+    userMarkerRef.current = new mapboxgl.Marker({
+      element: pulsingDot,
+      anchor: 'center'
+    })
+      .setLngLat([userLocation.longitude, userLocation.latitude])
+      .addTo(map);
 
-      // Only add the accuracy circle if the map style is loaded
-      if (mapLoaded && userLocation.accuracy && userLocation.accuracy > 0) {
-        try {
-          // Add a circle representing the accuracy if the map is loaded
-          if (map.loaded()) {
-            // Clean up any existing layers and sources first
-            if (map.getLayer('accuracy-circle-layer')) {
-              map.removeLayer('accuracy-circle-layer');
-            }
-            
-            if (map.getSource('accuracy-circle')) {
-              map.removeSource('accuracy-circle');
-            }
-            
-            // Add a circle representing the accuracy
-            map.addSource('accuracy-circle', {
-              'type': 'geojson',
-              'data': {
-                'type': 'Feature',
-                'properties': {
-                  'accuracy': userLocation.accuracy
-                },
-                'geometry': {
-                  'type': 'Point',
-                  'coordinates': [userLocation.longitude, userLocation.latitude]
-                }
-              }
-            });
-
-            accuracyCircleRef.current = map.getSource('accuracy-circle');
-
-            // Add a circle layer using the accuracy radius
-            map.addLayer({
-              'id': 'accuracy-circle-layer',
-              'type': 'circle',
-              'source': 'accuracy-circle',
-              'paint': {
-                'circle-radius': {
-                  'stops': [
-                    [0, 0],
-                    [20, userLocation.accuracy]  // Mapbox converts meters to pixels based on zoom level
-                  ],
-                  'base': 2
-                },
-                'circle-color': 'rgba(66, 133, 244, 0.15)',
-                'circle-stroke-width': 1,
-                'circle-stroke-color': 'rgba(66, 133, 244, 0.4)'
-              }
-            });
+    // If accuracy is available, add accuracy circle
+    if (userLocation.accuracy && userLocation.accuracy > 0) {
+      // Add a circle representing the accuracy
+      map.addSource('accuracy-circle', {
+        'type': 'geojson',
+        'data': {
+          'type': 'Feature',
+          'properties': {
+            'accuracy': userLocation.accuracy
+          },
+          'geometry': {
+            'type': 'Point',
+            'coordinates': [userLocation.longitude, userLocation.latitude]
           }
-        } catch (error) {
-          console.error("Error adding accuracy circle:", error);
         }
-      }
-    } catch (error) {
-      console.error("Error setting up user location marker:", error);
+      });
+
+      accuracyCircleRef.current = map.getSource('accuracy-circle');
+
+      // Add a circle layer using the accuracy radius
+      map.addLayer({
+        'id': 'accuracy-circle-layer',
+        'type': 'circle',
+        'source': 'accuracy-circle',
+        'paint': {
+          'circle-radius': {
+            'stops': [
+              [0, 0],
+              [20, userLocation.accuracy]  // Mapbox converts meters to pixels based on zoom level
+            ],
+            'base': 2
+          },
+          'circle-color': 'rgba(66, 133, 244, 0.15)',
+          'circle-stroke-width': 1,
+          'circle-stroke-color': 'rgba(66, 133, 244, 0.4)'
+        }
+      });
     }
 
     // Add ripple animation style dynamically
@@ -200,10 +150,18 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocati
 
     return () => {
       document.head.removeChild(styleEl);
-      cleanUpMapLayers();
+      if (map) {
+        if (map.getLayer('accuracy-circle-layer')) {
+          map.removeLayer('accuracy-circle-layer');
+        }
+        
+        if (map.getSource('accuracy-circle')) {
+          map.removeSource('accuracy-circle');
+        }
+      }
     };
 
-  }, [map, userLocation, mapLoaded]);
+  }, [map, userLocation]);
 
   return null; // This component doesn't render any visible UI
 };

@@ -22,7 +22,6 @@ import UserLocationMarker from './map/UserLocationMarker';
 import MapAnimation from './map/MapAnimation';
 import MapSearchBar from './map/MapSearchBar';
 import MapOverlays from './map/MapOverlays';
-import MapboxTokenInput from './map/MapboxTokenInput';
 import { Button } from '@/components/ui/button';
 
 // Import utils
@@ -35,7 +34,6 @@ interface InteractiveMapProps {
   stations: GasStation[];
   initBackgroundLocation?: boolean;
   onLocationInitialized?: () => void;
-  onMapLoadError?: () => void;
 }
 
 const InteractiveMap: React.FC<InteractiveMapProps> = ({
@@ -44,37 +42,17 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   language,
   stations,
   initBackgroundLocation = false,
-  onLocationInitialized,
-  onMapLoadError
+  onLocationInitialized
 }) => {
   const [selectedCity, setSelectedCity] = useState<string>('');
   const { toast } = useToast();
-  const [mapInitError, setMapInitError] = useState<boolean>(false);
 
   // Load localization and cities data
   const texts = useMapLocalization(language);
   const { cities } = useSaudiCities();
 
-  // Initialize map with error handling
-  const { mapContainer, map, tokenError, refreshWithNewToken, mapInitialized } = useMapInitialization(language);
-
-  // Handle token update
-  const handleTokenSaved = () => {
-    refreshWithNewToken();
-  };
-
-  // Check for map initialization errors
-  useEffect(() => {
-    const checkMapInitialization = setTimeout(() => {
-      if (!map.current && mapContainer.current && !tokenError) {
-        console.error("Map failed to initialize");
-        setMapInitError(true);
-        if (onMapLoadError) onMapLoadError();
-      }
-    }, 5000); // Give it 5 seconds to initialize
-
-    return () => clearTimeout(checkMapInitialization);
-  }, [map, onMapLoadError, tokenError]);
+  // Initialize map
+  const { mapContainer, map } = useMapInitialization(language);
 
   // Setup search functionality
   const { 
@@ -110,23 +88,23 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     stopBackgroundLocationTracking
   } = useMapLocation(map, onSelectStation, texts, language);
 
-  // Start background location tracking when map is loaded
+  // بدء تحديد الموقع في الخلفية عند تحميل الخريطة
   useEffect(() => {
-    if (initBackgroundLocation && map.current && mapInitialized) {
+    if (initBackgroundLocation && map.current) {
       console.log("Starting background location tracking");
       startBackgroundLocationTracking();
       
-      // Notify parent component that location tracking has started
+      // إخطار المكون الأب أننا بدأنا تحديد الموقع
       if (onLocationInitialized) {
         onLocationInitialized();
       }
     }
     
     return () => {
-      // Stop background location tracking when component is unmounted
+      // إيقاف تحديد الموقع عند إزالة المكون
       stopBackgroundLocationTracking();
     };
-  }, [initBackgroundLocation, map.current, mapInitialized, startBackgroundLocationTracking, stopBackgroundLocationTracking, onLocationInitialized]);
+  }, [initBackgroundLocation, map.current]);
 
   // Create popup content handler
   const handleCreatePopupContent = (station: GasStation) => {
@@ -157,43 +135,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     clearSearch();
     clearCityCache();
   };
-
-  // Show token input if token error
-  if (tokenError) {
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center">
-        <MapboxTokenInput language={language} onTokenSaved={handleTokenSaved} />
-      </div>
-    );
-  }
-
-  if (mapInitError) {
-    return (
-      <div className="w-full h-[500px] flex flex-col items-center justify-center text-center p-6 bg-gray-50 rounded-lg border border-gray-200">
-        <div className="mb-4 text-red-600">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-        </div>
-        <h3 className="text-xl font-semibold mb-2">
-          {language === 'ar' ? 'لم نتمكن من تحميل الخريطة' : 'Unable to load the map'}
-        </h3>
-        <p className="text-gray-600 mb-4">
-          {language === 'ar' 
-            ? 'هناك مشكلة في تحميل الخريطة. يرجى التحقق من اتصال الإنترنت الخاص بك أو المحاولة مرة أخرى لاحقًا.'
-            : 'There was a problem loading the map. Please check your internet connection or try again later.'}
-        </p>
-        <Button 
-          onClick={() => window.location.reload()}
-          className="bg-noor-purple hover:bg-purple-800"
-        >
-          {language === 'ar' ? 'إعادة تحميل الصفحة' : 'Reload page'}
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -271,23 +212,19 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       />
 
       {/* Hidden marker management components */}
-      {map.current && (
-        <>
-          <MapMarkerManager
-            map={map.current}
-            stations={filteredStations}
-            selectedStation={selectedStation}
-            onSelectStation={onSelectStation}
-            language={language}
-            createPopupContent={handleCreatePopupContent}
-          />
+      <MapMarkerManager
+        map={map.current}
+        stations={filteredStations}
+        selectedStation={selectedStation}
+        onSelectStation={onSelectStation}
+        language={language}
+        createPopupContent={handleCreatePopupContent}
+      />
 
-          <UserLocationMarker
-            map={map.current}
-            userLocation={userLocation}
-          />
-        </>
-      )}
+      <UserLocationMarker
+        map={map.current}
+        userLocation={userLocation}
+      />
 
       <MapAnimation enable={true} />
     </div>
