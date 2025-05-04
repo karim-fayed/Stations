@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -44,10 +45,11 @@ export async function directPasswordChange(
 
     // 3. استخدام Edge Function لتحديث كلمة المرور
     try {
-      const { data, error } = await supabase.functions.invoke('update-password', {
+      const { data, error } = await supabase.functions.invoke('update-user-password', {
         body: JSON.stringify({
           userId: userId,
-          password: newPassword
+          password: newPassword,
+          requesterId: userId
         }),
       });
 
