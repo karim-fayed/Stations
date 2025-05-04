@@ -10,7 +10,7 @@ const MapContainer: React.FC<MapContainerProps> = ({ mapContainerRef }) => {
   return (
     <div 
       ref={mapContainerRef} 
-      className="map-container h-[50vh] md:h-[55vh] lg:h-[45vh] xl:h-[50vh] rounded-lg shadow-lg"
+      className="map-container h-full w-full rounded-none"
     />
   );
 };

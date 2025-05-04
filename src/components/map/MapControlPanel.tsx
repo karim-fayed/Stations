@@ -15,7 +15,7 @@ const MapControlPanel: React.FC<MapControlPanelProps> = ({ onResetMap, language 
       <Button
         variant="outline" 
         size="icon"
-        className="bg-white hover:bg-gray-100 shadow-md"
+        className="bg-white hover:bg-gray-100 shadow-sm"
         onClick={onResetMap}
         title={language === 'ar' ? 'إعادة تعيين الخريطة' : 'Reset map'}
       >

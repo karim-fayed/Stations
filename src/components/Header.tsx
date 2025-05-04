@@ -1,119 +1,88 @@
 
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuList } from "@/components/ui/navigation-menu";
 import { useLanguage } from "@/i18n/LanguageContext";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { Link } from "react-router-dom";
 import HomeSidebar from "./HomeSidebar";
-import { UserCircle } from "lucide-react"; // Add the import for UserCircle icon
+import { UserCircle } from "lucide-react"; 
 
 const Header = () => {
   const { language, t, dir } = useLanguage();
+  const isRTL = language === 'ar';
 
   return (
-    <header className={`w-full bg-gradient-to-r from-noor-purple to-noor-orange py-2 sm:py-4 px-2 sm:px-4 md:px-6`} dir={dir}>
+    <header className={`w-full bg-gradient-to-r from-noor-purple to-noor-orange py-1`} dir={dir}>
       <div className="container mx-auto">
-        <div className="relative flex items-center justify-center mb-2 sm:mb-4">
-          <h1 className="text-white text-lg sm:text-xl md:text-2xl font-bold text-center flex items-center justify-center">
-            {language === 'ar' ? (
-              <>
-                <div className="relative ml-2">
-                  <img
-                    src="https://noor.com.sa/wp-content/themes/noor/images/apple-touch-icon-72x72.png"
-                    alt="Noor Logo"
-                    className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 animate-spin-slow"
-                    style={{ animationDuration: '15s' }}
-                  />
-                  <div className="absolute inset-0 bg-white rounded-full blur-md opacity-30 animate-pulse" style={{ animationDuration: '3s' }}></div>
-                </div>
-                <span className="hidden xs:inline">مرحباً بك في محطات نور</span>
-                <span className="xs:hidden">محطات نور</span>
-              </>
-            ) : (
-              <>
-                <div className="relative mr-2">
-                  <img
-                    src="https://noor.com.sa/wp-content/themes/noor/images/apple-touch-icon-72x72.png"
-                    alt="Noor Logo"
-                    className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 animate-spin-slow"
-                    style={{ animationDuration: '15s' }}
-                  />
-                  <div className="absolute inset-0 bg-white rounded-full blur-md opacity-30 animate-pulse" style={{ animationDuration: '3s' }}></div>
-                </div>
-                <span className="hidden xs:inline">Welcome to Noor Stations</span>
-                <span className="xs:hidden">Noor Stations</span>
-              </>
-            )}
-          </h1>
-
-          {/* نقل زر القائمة الجانبية إلى الجهة المناسبة حسب اللغة */}
-          <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} top-1/2 transform -translate-y-1/2`}>
-            <div className="md:hidden">
-              <HomeSidebar />
-            </div>
+        {/* Logo and Welcome Message */}
+        <div className="flex items-center justify-center py-2 relative">
+          <div className="flex items-center">
+            <img
+              src="https://noor.com.sa/wp-content/themes/noor/images/apple-touch-icon-72x72.png"
+              alt="Noor Logo"
+              className="h-6 w-6 sm:h-8 sm:w-8 animate-spin-slow"
+              style={{ animationDuration: '15s' }}
+            />
+            <h1 className="text-white text-lg sm:text-xl md:text-2xl font-bold mx-2">
+              {isRTL ? 'مرحباً بك في محطات نور' : 'Welcome to Noor Stations'}
+            </h1>
           </div>
-
-          {/* إضافة زر لوحة التحكم في نفس الصف مع زر القائمة */}
-          <div className={`absolute ${language === 'ar' ? 'right-0' : 'left-0'} top-1/2 transform -translate-y-1/2`}>
-            <Link to="/admin/login" className="md:hidden">
-              <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-white">
-                <UserCircle size={18} className="text-white" />
+          
+          {/* Admin Panel Button - Right side */}
+          <div className="absolute top-1/2 transform -translate-y-1/2" style={{ [isRTL ? 'left' : 'right']: 0 }}>
+            <Link to="/admin/login">
+              <Button variant="secondary" size="sm" className="bg-white text-noor-purple hover:bg-white/90 rounded-md">
+                <UserCircle className="h-4 w-4 mr-1" />
+                {isRTL ? 'لوحة التحكم' : 'Admin Panel'}
               </Button>
             </Link>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between">
-          <div className="flex items-center">
-            {/* Logo placeholder */}
-            <div className="w-6 h-6 sm:w-8 sm:h-8"></div>
-          </div>
+        {/* Navigation */}
+        <div className="flex justify-center">
+          <NavigationMenu>
+            <NavigationMenuList className="flex space-x-1 sm:space-x-2">
+              <NavigationMenuItem>
+                <Link to="/">
+                  <Button variant="ghost" className="text-white text-sm h-8 px-3">
+                    {isRTL ? 'الصفحة الرئيسية' : 'Home'}
+                  </Button>
+                </Link>
+              </NavigationMenuItem>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:block w-full md:w-auto mt-2 md:mt-0">
-            <NavigationMenu className="flex-col md:flex-row">
-              <NavigationMenuList className="flex flex-col md:flex-row gap-1 md:gap-2">
-                <NavigationMenuItem>
-                  <Link to="/">
-                    <Button variant="ghost" className="text-white text-sm h-8 px-2 md:h-10 md:px-4">
-                      {t('common', 'home')}
-                    </Button>
-                  </Link>
-                </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/about">
+                  <Button variant="ghost" className="text-white text-sm h-8 px-3">
+                    {isRTL ? 'عن نور' : 'About'}
+                  </Button>
+                </Link>
+              </NavigationMenuItem>
 
-                <NavigationMenuItem>
-                  <Link to="/services">
-                    <Button variant="ghost" className="text-white text-sm h-8 px-2 md:h-10 md:px-4">
-                      {language === 'ar' ? 'الخدمات' : 'Services'}
-                    </Button>
-                  </Link>
-                </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/services">
+                  <Button variant="ghost" className="text-white text-sm h-8 px-3">
+                    {isRTL ? 'الخدمات' : 'Services'}
+                  </Button>
+                </Link>
+              </NavigationMenuItem>
 
-                <NavigationMenuItem>
-                  <Link to="/about">
-                    <Button variant="ghost" className="text-white text-sm h-8 px-2 md:h-10 md:px-4">
-                      {language === 'ar' ? 'عن نور' : 'About Noor'}
-                    </Button>
-                  </Link>
-                </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/contact">
+                  <Button variant="ghost" className="text-white text-sm h-8 px-3">
+                    {isRTL ? 'اتصل بنا' : 'Contact'}
+                  </Button>
+                </Link>
+              </NavigationMenuItem>
 
-                <NavigationMenuItem>
-                  <Link to="/contact">
-                    <Button variant="ghost" className="text-white text-sm h-8 px-2 md:h-10 md:px-4">
-                      {language === 'ar' ? 'اتصل بنا' : 'Contact Us'}
-                    </Button>
-                  </Link>
-                </NavigationMenuItem>
-
-                <NavigationMenuItem>
-                  <LanguageSwitcher
-                    variant="secondary"
-                    className="bg-white text-noor-purple hover:bg-white/90 text-sm h-8 px-2 md:h-10 md:px-4"
-                  />
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
-          </div>
+              <NavigationMenuItem>
+                <Button variant="outline" className="text-white border-white text-sm h-8 px-3" asChild>
+                  <LanguageSwitcher />
+                </Button>
+              </NavigationMenuItem>
+            </NavigationMenuList>
+          </NavigationMenu>
         </div>
       </div>
     </header>

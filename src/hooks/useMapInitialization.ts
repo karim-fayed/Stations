@@ -33,7 +33,7 @@ export const useMapInitialization = (language: Language) => {
       // Add map controls
       map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
       map.current.addControl(new mapboxgl.FullscreenControl(), 'top-right');
-      map.current.addControl(new mapboxgl.ScaleControl(), 'bottom-right');
+      map.current.addControl(new mapboxgl.ScaleControl({ maxWidth: 200, unit: 'metric' }), 'bottom-right');
 
       // Add event listener when map loads
       map.current.on('load', () => {
