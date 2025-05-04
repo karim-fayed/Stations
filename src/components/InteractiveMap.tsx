@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { GasStation } from '@/types/station';
 import { useToast } from "@/hooks/use-toast";
@@ -90,11 +90,12 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     stopBackgroundLocationTracking
   } = useMapLocation(map, onSelectStation, texts, language);
 
-  // Initialize background location tracking
+  // Initialize background location tracking with better parameters
   const initializeBackgroundLocation = useCallback(() => {
     if (initBackgroundLocation && map.current && !locationInitialized) {
-      console.log("Starting background location tracking");
-      startBackgroundLocationTracking();
+      console.log("Starting background location tracking with optimization");
+      // Start with higher accuracy requirement (500m) and longer interval (5 minutes)
+      startBackgroundLocationTracking(500, 300000);
       setLocationInitialized(true);
       
       // Notify parent component that location tracking has started
@@ -102,9 +103,9 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         onLocationInitialized();
       }
     }
-  }, [initBackgroundLocation, map.current, locationInitialized, startBackgroundLocationTracking, onLocationInitialized]);
+  }, [initBackgroundLocation, map, locationInitialized, startBackgroundLocationTracking, onLocationInitialized]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Slight delay to ensure map is fully initialized
     if (map.current && initBackgroundLocation && !locationInitialized) {
       const timer = setTimeout(() => {

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useBackgroundLocation } from './useBackgroundLocation';
 import { Language } from '@/i18n/translations';
@@ -26,6 +26,7 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
   const [userLocation, setUserLocation] = useState<LocationState | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [locationAttempts, setLocationAttempts] = useState(0);
+  const geoRequestRef = useRef<number | null>(null);
   const { toast } = useToast();
   
   // استخدام hook تحديد الموقع في الخلفية
@@ -38,7 +39,7 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
   
   // تحديث الموقع عندما تتغير البيانات من تحديد الموقع في الخلفية
   useEffect(() => {
-    if (locationData && !userLocation) {
+    if (locationData && (!userLocation || locationData.accuracy < (userLocation.accuracy || Infinity))) {
       const { latitude, longitude, accuracy } = locationData;
       setUserLocation({ latitude, longitude, accuracy });
       
@@ -50,7 +51,7 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
   }, [locationData]);
   
   // تحديد الموقع على الخريطة
-  const moveMapToLocation = (latitude: number, longitude: number, zoom?: number) => {
+  const moveMapToLocation = useCallback((latitude: number, longitude: number, zoom?: number) => {
     if (map.current) {
       map.current.flyTo({
         center: [longitude, latitude],
@@ -59,10 +60,16 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
         duration: 1000
       });
     }
-  };
+  }, [map]);
 
   // تحسين أداء الحصول على الموقع الدقيق للمستخدم
-  const getUserLocation = () => {
+  const getUserLocation = useCallback(() => {
+    // إلغاء أي طلبات جارية
+    if (geoRequestRef.current) {
+      navigator.geolocation.clearWatch(geoRequestRef.current);
+      geoRequestRef.current = null;
+    }
+    
     setIsLoadingLocation(true);
 
     toast({
@@ -174,8 +181,8 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
           
           // محاولة استخدام موقع تقريبي إذا كان متاحًا
           if (locationData) {
-            const { latitude, longitude } = locationData;
-            setUserLocation({ latitude, longitude, accuracy: 1000 }); // دقة منخفضة
+            const { latitude, longitude, accuracy } = locationData;
+            setUserLocation({ latitude, longitude, accuracy });
             moveMapToLocation(latitude, longitude, 14); // تكبير أقل للموقع التقريبي
             
             toast({
@@ -221,7 +228,7 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
     return () => {
       clearTimeout(overallTimeoutId);
     };
-  };
+  }, [locationAttempts, language, texts, toast, isLoadingLocation, locationData, moveMapToLocation]);
 
   return {
     userLocation,
