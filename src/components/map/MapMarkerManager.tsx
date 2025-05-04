@@ -32,10 +32,33 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
     createPopupContent
   });
 
+  // Check if map is loaded before updating markers
+  const [mapLoaded, setMapLoaded] = React.useState(false);
+
+  useEffect(() => {
+    if (!map) return;
+    
+    if (map.loaded()) {
+      setMapLoaded(true);
+    } else {
+      const onLoadHandler = () => {
+        console.log("Map loaded in MapMarkerManager");
+        setMapLoaded(true);
+      };
+      
+      map.on('load', onLoadHandler);
+      return () => {
+        map.off('load', onLoadHandler);
+      };
+    }
+  }, [map]);
+
   // Update markers when stations or selected station changes
   useEffect(() => {
-    updateMarkers();
-  }, [stations, selectedStation, updateMarkers]);
+    if (mapLoaded) {
+      updateMarkers();
+    }
+  }, [stations, selectedStation, mapLoaded, updateMarkers]);
 
   return (
     <>

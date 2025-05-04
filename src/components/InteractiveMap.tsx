@@ -52,7 +52,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const { cities } = useSaudiCities();
 
   // Initialize map
-  const { mapContainer, map } = useMapInitialization(language);
+  const { mapContainer, map, mapLoaded } = useMapInitialization(language);
 
   // Setup search functionality
   const { 
@@ -90,7 +90,8 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   // بدء تحديد الموقع في الخلفية عند تحميل الخريطة
   useEffect(() => {
-    if (initBackgroundLocation && map.current) {
+    // Only start background tracking if map is loaded and initBackgroundLocation is true
+    if (initBackgroundLocation && map.current && mapLoaded) {
       console.log("Starting background location tracking");
       startBackgroundLocationTracking();
       
@@ -104,7 +105,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       // إيقاف تحديد الموقع عند إزالة المكون
       stopBackgroundLocationTracking();
     };
-  }, [initBackgroundLocation, map.current]);
+  }, [initBackgroundLocation, map.current, mapLoaded, startBackgroundLocationTracking, stopBackgroundLocationTracking, onLocationInitialized]);
 
   // Create popup content handler
   const handleCreatePopupContent = (station: GasStation) => {
@@ -211,20 +212,24 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         language={language}
       />
 
-      {/* Hidden marker management components */}
-      <MapMarkerManager
-        map={map.current}
-        stations={filteredStations}
-        selectedStation={selectedStation}
-        onSelectStation={onSelectStation}
-        language={language}
-        createPopupContent={handleCreatePopupContent}
-      />
+      {/* Hidden marker management components - Only render when map is loaded */}
+      {map.current && mapLoaded && (
+        <>
+          <MapMarkerManager
+            map={map.current}
+            stations={filteredStations}
+            selectedStation={selectedStation}
+            onSelectStation={onSelectStation}
+            language={language}
+            createPopupContent={handleCreatePopupContent}
+          />
 
-      <UserLocationMarker
-        map={map.current}
-        userLocation={userLocation}
-      />
+          <UserLocationMarker
+            map={map.current}
+            userLocation={userLocation}
+          />
+        </>
+      )}
 
       <MapAnimation enable={true} />
     </div>
