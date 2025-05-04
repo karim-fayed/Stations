@@ -22,6 +22,7 @@ import UserLocationMarker from './map/UserLocationMarker';
 import MapAnimation from './map/MapAnimation';
 import MapSearchBar from './map/MapSearchBar';
 import MapOverlays from './map/MapOverlays';
+import MapboxTokenInput from './map/MapboxTokenInput';
 import { Button } from '@/components/ui/button';
 
 // Import utils
@@ -55,12 +56,17 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const { cities } = useSaudiCities();
 
   // Initialize map with error handling
-  const { mapContainer, map } = useMapInitialization(language);
+  const { mapContainer, map, tokenError, refreshWithNewToken, mapInitialized } = useMapInitialization(language);
+
+  // Handle token update
+  const handleTokenSaved = () => {
+    refreshWithNewToken();
+  };
 
   // Check for map initialization errors
   useEffect(() => {
     const checkMapInitialization = setTimeout(() => {
-      if (!map.current && mapContainer.current) {
+      if (!map.current && mapContainer.current && !tokenError) {
         console.error("Map failed to initialize");
         setMapInitError(true);
         if (onMapLoadError) onMapLoadError();
@@ -68,7 +74,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     }, 5000); // Give it 5 seconds to initialize
 
     return () => clearTimeout(checkMapInitialization);
-  }, [map, onMapLoadError]);
+  }, [map, onMapLoadError, tokenError]);
 
   // Setup search functionality
   const { 
@@ -106,7 +112,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   // Start background location tracking when map is loaded
   useEffect(() => {
-    if (initBackgroundLocation && map.current) {
+    if (initBackgroundLocation && map.current && mapInitialized) {
       console.log("Starting background location tracking");
       startBackgroundLocationTracking();
       
@@ -120,7 +126,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       // Stop background location tracking when component is unmounted
       stopBackgroundLocationTracking();
     };
-  }, [initBackgroundLocation, map.current, startBackgroundLocationTracking, stopBackgroundLocationTracking, onLocationInitialized]);
+  }, [initBackgroundLocation, map.current, mapInitialized, startBackgroundLocationTracking, stopBackgroundLocationTracking, onLocationInitialized]);
 
   // Create popup content handler
   const handleCreatePopupContent = (station: GasStation) => {
@@ -151,6 +157,15 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     clearSearch();
     clearCityCache();
   };
+
+  // Show token input if token error
+  if (tokenError) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center">
+        <MapboxTokenInput language={language} onTokenSaved={handleTokenSaved} />
+      </div>
+    );
+  }
 
   if (mapInitError) {
     return (

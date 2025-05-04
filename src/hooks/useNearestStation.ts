@@ -40,10 +40,10 @@ export const useNearestStation = ({
     setIsLoadingNearest(true);
     
     // Show searching toast
-    const searchToastId = toast({
+    toast({
       title: language === 'ar' ? 'جاري البحث' : 'Searching',
       description: language === 'ar' ? 'البحث عن أقرب محطة...' : 'Finding nearest station...',
-    }).id;
+    });
 
     try {
       console.log(`Finding nearest station to ${lat}, ${lng}`);
@@ -69,7 +69,7 @@ export const useNearestStation = ({
         if (map.current) {
           // First check if the map needs to be moved significantly
           const currentCenter = map.current.getCenter();
-          const stationLocation = [nearestStations[0].longitude, nearestStations[0].latitude] as [number, number]; // تحديد النوع بشكل صريح
+          const stationLocation = [nearestStations[0].longitude, nearestStations[0].latitude] as [number, number];
           
           // Calculate distance to determine zoom behavior
           const distanceFactor = Math.sqrt(
