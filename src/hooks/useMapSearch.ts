@@ -77,6 +77,7 @@ export const useMapSearch = (
     searchTerm,
     setSearchTerm,
     debouncedSearchTerm,
+    setDebouncedSearchTerm,  // Expose this function to fix the error
     filteredStations,
     setFilteredStations
   };
