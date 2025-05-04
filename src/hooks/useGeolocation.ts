@@ -2,9 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { useBackgroundLocation } from './useBackgroundLocation';
+import { Language } from '@/i18n/translations';
 
 interface GeolocationOptions {
-  language: 'ar' | 'en';
+  language: Language;
   texts: {
     locationDetecting: string;
     pleaseWait: string;
@@ -96,8 +97,8 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
         // إذا لم تكن الدقة جيدة بما فيه الكفاية، نستمر في المتابعة
         if (accuracy > 30 && locationAttempts < 3) {
           toast({
-            title: language === 'ar' ? 'جاري تحسين الدقة...' : 'Improving accuracy...',
-            description: language === 'ar' 
+            title: language === Language.ARABIC ? 'جاري تحسين الدقة...' : 'Improving accuracy...',
+            description: language === Language.ARABIC 
               ? `تم تحديد موقعك بدقة ${accuracy.toFixed(1)} متر، محاولة تحسين...` 
               : `Location detected with ${accuracy.toFixed(1)}m accuracy, trying to improve...`,
           });
@@ -118,7 +119,7 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
 
         toast({
           title: texts.locationDetected,
-          description: language === 'ar' 
+          description: language === Language.ARABIC 
             ? `تم تحديد موقعك بدقة ${accuracy.toFixed(1)} متر`
             : `Your location detected with ${accuracy.toFixed(1)}m accuracy`,
         });
@@ -133,15 +134,15 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
         
         switch(error.code) {
           case error.PERMISSION_DENIED:
-            errorMsg = language === 'ar' ? 'تم رفض إذن تحديد الموقع' : 'Location permission denied';
+            errorMsg = language === Language.ARABIC ? 'تم رفض إذن تحديد الموقع' : 'Location permission denied';
             shouldRetry = false;
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMsg = language === 'ar' ? 'معلومات الموقع غير متوفرة' : 'Location information unavailable';
+            errorMsg = language === Language.ARABIC ? 'معلومات الموقع غير متوفرة' : 'Location information unavailable';
             shouldRetry = locationAttempts < 3;
             break;
           case error.TIMEOUT:
-            errorMsg = language === 'ar' ? 'انتهت مهلة طلب تحديد الموقع' : 'Location request timed out';
+            errorMsg = language === Language.ARABIC ? 'انتهت مهلة طلب تحديد الموقع' : 'Location request timed out';
             shouldRetry = locationAttempts < 3;
             break;
           default:
@@ -153,8 +154,8 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
           // إعادة المحاولة مع مهلة أطول
           setLocationAttempts(prev => prev + 1);
           toast({
-            title: language === 'ar' ? 'إعادة محاولة تحديد الموقع' : 'Retrying location detection',
-            description: language === 'ar' ? `محاولة ${locationAttempts + 1}/3...` : `Trying attempt ${locationAttempts + 1}/3...`,
+            title: language === Language.ARABIC ? 'إعادة محاولة تحديد الموقع' : 'Retrying location detection',
+            description: language === Language.ARABIC ? `محاولة ${locationAttempts + 1}/3...` : `Trying attempt ${locationAttempts + 1}/3...`,
           });
           // الانتظار قليلاً قبل إعادة المحاولة
           setTimeout(getUserLocation, 1000);
@@ -175,8 +176,8 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
       if (isLoadingLocation) {
         navigator.geolocation.clearWatch(watchId);
         toast({
-          title: language === 'ar' ? 'استغرق وقتًا طويلاً' : 'Taking too long',
-          description: language === 'ar' ? 'قد تكون دقة GPS منخفضة في موقعك الحالي' : 'GPS accuracy might be low in your current location',
+          title: language === Language.ARABIC ? 'استغرق وقتًا طويلاً' : 'Taking too long',
+          description: language === Language.ARABIC ? 'قد تكون دقة GPS منخفضة في موقعك الحالي' : 'GPS accuracy might be low in your current location',
           variant: 'default',
         });
         setIsLoadingLocation(false);

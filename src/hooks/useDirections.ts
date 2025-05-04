@@ -2,9 +2,10 @@
 import { useToast } from "@/hooks/use-toast";
 import { GasStation } from '@/types/station';
 import { MapTexts } from '@/components/map/types';
+import { Language } from '@/i18n/translations';
 
 interface DirectionsOptions {
-  language: 'ar' | 'en';
+  language: Language;
   texts: MapTexts;
 }
 

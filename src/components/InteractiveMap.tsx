@@ -4,6 +4,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { GasStation } from '@/types/station';
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCcw } from "lucide-react";
+import { Language } from '@/i18n/translations';
 
 // Import custom hooks
 import { useMapInitialization } from '@/hooks/useMapInitialization';
@@ -30,7 +31,7 @@ import { createPopupContent, resetMap } from '@/utils/mapUtils';
 interface InteractiveMapProps {
   selectedStation: GasStation | null;
   onSelectStation: (station: GasStation | null) => void;
-  language: 'ar' | 'en';
+  language: Language;
   stations: GasStation[];
   initBackgroundLocation?: boolean;
   onLocationInitialized?: () => void;
@@ -171,7 +172,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             size="icon"
             className="bg-white hover:bg-gray-100 shadow-md"
             onClick={handleResetMap}
-            title={language === 'ar' ? 'إعادة تعيين الخريطة' : 'Reset map'}
+            title={language === Language.ARABIC ? 'إعادة تعيين الخريطة' : 'Reset map'}
           >
             <RefreshCcw className="h-4 w-4" />
           </Button>

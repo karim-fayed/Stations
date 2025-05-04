@@ -3,8 +3,9 @@ import { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MAPBOX_TOKEN } from '@/utils/environment';
 import { useToast } from "@/hooks/use-toast";
+import { Language } from '@/i18n/translations';
 
-export const useMapInitialization = (language: 'ar' | 'en') => {
+export const useMapInitialization = (language: Language) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const { toast } = useToast();
@@ -37,8 +38,8 @@ export const useMapInitialization = (language: 'ar' | 'en') => {
       // Add event listener when map loads
       map.current.on('load', () => {
         toast({
-          title: language === 'ar' ? 'مرحبًا بك في خريطة المحطات' : 'Welcome to the stations map',
-          description: language === 'ar' ? 'يرجى اختيار مدينة لعرض المحطات' : 'Please select a city to view stations',
+          title: language === Language.ARABIC ? 'مرحبًا بك في خريطة المحطات' : 'Welcome to the stations map',
+          description: language === Language.ARABIC ? 'يرجى اختيار مدينة لعرض المحطات' : 'Please select a city to view stations',
         });
       });
     }
