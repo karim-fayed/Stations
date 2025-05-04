@@ -12,8 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { UserCircle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
-import mapboxgl from 'mapbox-gl';
-import { MAPBOX_TOKEN } from '@/utils/environment';
 import { useTranslation } from "@/hooks/useTranslation";
 import { useToast } from "@/hooks/use-toast";
 
@@ -29,23 +27,8 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('map');
-  const mapRef = useRef<mapboxgl.Map | null>(null);
   const locationInitializedRef = useRef<boolean>(false);
-
-  // بدء تحديد الموقع في الخلفية عند تحميل التطبيق
-  useEffect(() => {
-    try {
-      // نهيئ mapboxgl قبل تحميل الخريطة
-      mapboxgl.accessToken = MAPBOX_TOKEN;
-    } catch (err) {
-      console.error("Error initializing Mapbox:", err);
-      toast({
-        title: language === 'ar' ? 'خطأ في تهيئة الخريطة' : 'Map initialization error',
-        description: language === 'ar' ? 'يرجى تحديث الصفحة' : 'Please refresh the page',
-        variant: 'destructive'
-      });
-    }
-  }, []);
+  const mapLoadErrorCount = useRef<number>(0);
 
   // جلب بيانات المحطات عند تحميل الصفحة
   useEffect(() => {
@@ -71,7 +54,7 @@ const Index = () => {
     };
 
     loadStations();
-  }, [language, t]);
+  }, [language, t, toast]);
 
   // تغيير المحطة المحددة
   const handleSelectStation = (station: GasStation | null) => {
@@ -85,6 +68,21 @@ const Index = () => {
   // تغيير المنطقة المحددة
   const handleRegionChange = (region: string) => {
     setSelectedRegion(region);
+  };
+
+  // Handle map load error
+  const handleMapLoadError = () => {
+    mapLoadErrorCount.current += 1;
+    
+    if (mapLoadErrorCount.current > 2) {
+      // After multiple failures, switch to list view
+      setActiveTab('list');
+      toast({
+        title: language === 'ar' ? 'مشكلة في تحميل الخريطة' : 'Map loading problem',
+        description: language === 'ar' ? 'تم تحويلك لقائمة المحطات' : 'Switched to stations list view',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (
@@ -160,6 +158,7 @@ const Index = () => {
                         onLocationInitialized={() => {
                           locationInitializedRef.current = true;
                         }}
+                        onMapLoadError={handleMapLoadError}
                       />
                     </div>
                   </TabsContent>

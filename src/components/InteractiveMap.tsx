@@ -34,6 +34,7 @@ interface InteractiveMapProps {
   stations: GasStation[];
   initBackgroundLocation?: boolean;
   onLocationInitialized?: () => void;
+  onMapLoadError?: () => void;
 }
 
 const InteractiveMap: React.FC<InteractiveMapProps> = ({
@@ -42,17 +43,32 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   language,
   stations,
   initBackgroundLocation = false,
-  onLocationInitialized
+  onLocationInitialized,
+  onMapLoadError
 }) => {
   const [selectedCity, setSelectedCity] = useState<string>('');
   const { toast } = useToast();
+  const [mapInitError, setMapInitError] = useState<boolean>(false);
 
   // Load localization and cities data
   const texts = useMapLocalization(language);
   const { cities } = useSaudiCities();
 
-  // Initialize map
+  // Initialize map with error handling
   const { mapContainer, map } = useMapInitialization(language);
+
+  // Check for map initialization errors
+  useEffect(() => {
+    const checkMapInitialization = setTimeout(() => {
+      if (!map.current && mapContainer.current) {
+        console.error("Map failed to initialize");
+        setMapInitError(true);
+        if (onMapLoadError) onMapLoadError();
+      }
+    }, 5000); // Give it 5 seconds to initialize
+
+    return () => clearTimeout(checkMapInitialization);
+  }, [map, onMapLoadError]);
 
   // Setup search functionality
   const { 
@@ -135,6 +151,34 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     clearSearch();
     clearCityCache();
   };
+
+  if (mapInitError) {
+    return (
+      <div className="w-full h-[500px] flex flex-col items-center justify-center text-center p-6 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="mb-4 text-red-600">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h3 className="text-xl font-semibold mb-2">
+          {language === 'ar' ? 'لم نتمكن من تحميل الخريطة' : 'Unable to load the map'}
+        </h3>
+        <p className="text-gray-600 mb-4">
+          {language === 'ar' 
+            ? 'هناك مشكلة في تحميل الخريطة. يرجى التحقق من اتصال الإنترنت الخاص بك أو المحاولة مرة أخرى لاحقًا.'
+            : 'There was a problem loading the map. Please check your internet connection or try again later.'}
+        </p>
+        <Button 
+          onClick={() => window.location.reload()}
+          className="bg-noor-purple hover:bg-purple-800"
+        >
+          {language === 'ar' ? 'إعادة تحميل الصفحة' : 'Reload page'}
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full flex flex-col">
