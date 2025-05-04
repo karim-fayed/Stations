@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface UserTableProps {
   users: User[];
@@ -84,7 +85,18 @@ const UserTable: React.FC<UserTableProps> = ({
                             </SelectContent>
                           </Select>
                           {user.role === 'owner' && (
-                            <ShieldAlert className="h-4 w-4 text-orange-500" title="هذا المستخدم لديه صلاحيات مالك" />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <ShieldAlert className="h-4 w-4 text-orange-500" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>هذا المستخدم لديه صلاحيات مالك</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                         </div>
                       ) : (
@@ -93,7 +105,18 @@ const UserTable: React.FC<UserTableProps> = ({
                             {user.role === 'owner' ? 'مالك' : 'مشرف'}
                           </span>
                           {user.role === 'owner' && (
-                            <ShieldAlert className="h-4 w-4 text-orange-500" title="هذا المستخدم لديه صلاحيات مالك" />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span>
+                                    <ShieldAlert className="h-4 w-4 text-orange-500" />
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>هذا المستخدم لديه صلاحيات مالك</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                         </div>
                       )}
