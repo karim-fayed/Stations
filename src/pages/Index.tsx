@@ -92,8 +92,7 @@ const Index = () => {
 
       <Header />
 
-      <main className="flex-grow container mx-auto p-4 md:p-6">
-
+      <main className="flex-grow container mx-auto px-1 sm:px-4 py-2 sm:py-4">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-noor-purple"></div>
@@ -104,7 +103,7 @@ const Index = () => {
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsList className="grid w-full grid-cols-2 mb-2 sm:mb-4">
               <TabsTrigger value="map">
                 {t('home', 'map')}
               </TabsTrigger>
@@ -113,7 +112,7 @@ const Index = () => {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="map" className="min-h-[500px]">
+            <TabsContent value="map" className="h-[75vh]">
               <InteractiveMap
                 selectedStation={selectedStation}
                 onSelectStation={handleSelectStation}
@@ -126,7 +125,7 @@ const Index = () => {
               />
             </TabsContent>
 
-            <TabsContent value="list">
+            <TabsContent value="list" className="h-[75vh] overflow-auto">
               <GasStationList
                 stations={stations}
                 onSelectStation={handleSelectStation}
@@ -138,7 +137,7 @@ const Index = () => {
         )}
       </main>
 
-      <footer className={`bg-noor-purple text-white p-4`}>
+      <footer className={`bg-noor-purple text-white py-2`}>
         <div className="container mx-auto text-center">
           <p>
             {isRTL

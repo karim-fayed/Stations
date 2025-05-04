@@ -11,7 +11,7 @@ import { useMapInitialization } from '@/hooks/useMapInitialization';
 import { useMapLocation } from '@/hooks/useMapLocation';
 import { useMapSearch } from '@/hooks/useMapSearch';
 import { useCityFilter } from '@/hooks/useCityFilter';
-import { useMapLocalization } from '@/components/map/useMapLocalization'; // Changed from useMapLocalization.ts
+import { useMapLocalization } from '@/components/map/useMapLocalization';
 import { useSaudiCities } from './map/useSaudiCities';
 
 // Import modular components
@@ -163,7 +163,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       </div>
 
       <div className="relative flex-grow">
-        <div ref={mapContainer} className="map-container h-[500px] rounded-lg shadow-lg"></div>
+        <div ref={mapContainer} className="map-container h-[70vh] rounded-lg shadow-lg"></div>
 
         {/* Reset map button */}
         <div className="absolute top-2 left-2 z-10">
