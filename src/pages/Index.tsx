@@ -70,6 +70,8 @@ const Index = () => {
     setSelectedRegion(region);
   };
 
+  const isRTL = language === Language.ARABIC;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -83,7 +85,7 @@ const Index = () => {
         <Link to="/admin/login">
           <Button variant="outline" className="flex items-center gap-2 bg-white/80 hover:bg-white">
             <UserCircle size={18} />
-            <span className="hidden sm:inline">{t('home', 'adminPanel')}</span>
+            <span className="hidden sm:inline">{t('common', 'adminPanel')}</span>
           </Button>
         </Link>
       </div>
@@ -139,7 +141,7 @@ const Index = () => {
       <footer className={`bg-noor-purple text-white p-4`}>
         <div className="container mx-auto text-center">
           <p>
-            {language === Language.ARABIC
+            {isRTL
               ? '© 2025 محطات نور. جميع الحقوق محفوظة.'
               : '© 2025 Noor Stations. All rights reserved.'}
           </p>

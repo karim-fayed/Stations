@@ -4,6 +4,7 @@ import { Search, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapTexts } from './types';
+import { Language } from '@/i18n/translations';
 
 interface MapSearchBarProps {
   searchTerm: string;
@@ -11,7 +12,7 @@ interface MapSearchBarProps {
   debouncedSearchTerm: string;
   filteredStations: any[];
   texts: MapTexts;
-  language: 'ar' | 'en';
+  language: Language;
   isSearching?: boolean;
 }
 
@@ -25,17 +26,18 @@ const MapSearchBar: React.FC<MapSearchBarProps> = ({
   isSearching = false
 }) => {
   const hasSearchResults = debouncedSearchTerm !== '' && filteredStations.length > 0;
+  const isRTL = language === Language.ARABIC;
 
   return (
-    <div className={`relative flex-1 ${language === 'ar' ? 'text-right' : 'text-left'}`}>
+    <div className={`relative flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
       <div className="flex items-center relative">
         <Input
           type="text"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder={texts.searchStation}
-          className={`pr-10 ${language === 'ar' ? 'text-right' : 'text-left'}`}
-          dir={language === 'ar' ? 'rtl' : 'ltr'}
+          className={`pr-10 ${isRTL ? 'text-right' : 'text-left'}`}
+          dir={isRTL ? 'rtl' : 'ltr'}
         />
         <div className="absolute inset-y-0 right-0 flex items-center mr-3">
           {isSearching ? (
@@ -57,8 +59,8 @@ const MapSearchBar: React.FC<MapSearchBarProps> = ({
 
       {hasSearchResults && (
         <div className="absolute bottom-0 transform translate-y-full mt-1 w-full bg-white dark:bg-gray-800 py-1 text-sm rounded-md shadow-md z-50">
-          <div className={`px-3 py-1.5 text-xs ${language === 'ar' ? 'text-right' : 'text-left'}`}>
-            {language === 'ar'
+          <div className={`px-3 py-1.5 text-xs ${isRTL ? 'text-right' : 'text-left'}`}>
+            {isRTL
               ? `تم العثور على ${filteredStations.length} نتيجة`
               : `Found ${filteredStations.length} results`}
           </div>

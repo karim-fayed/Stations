@@ -1,11 +1,11 @@
 
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { Language, translations } from './translations';
+import { Language, translations, TranslationSchema } from './translations';
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (section: string, key: string, params?: Record<string, string | number>) => string;
+  t: (section: keyof TranslationSchema, key: string, params?: Record<string, string | number>) => string;
   dir: string;
 }
 
@@ -19,13 +19,13 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   // استخدام اللغة المخزنة في localStorage أو اللغة العربية كافتراضي
   const [language, setLanguageState] = useState<Language>(() => {
     const savedLanguage = localStorage.getItem('language') as Language;
-    return savedLanguage ? (savedLanguage as Language) : Language.ARABIC;
+    return savedLanguage === Language.ENGLISH ? Language.ENGLISH : Language.ARABIC;
   });
 
   // تحديث اتجاه الصفحة عند تغيير اللغة
   useEffect(() => {
     document.documentElement.dir = language === Language.ARABIC ? 'rtl' : 'ltr';
-    document.documentElement.lang = language;
+    document.documentElement.lang = language === Language.ARABIC ? 'ar' : 'en';
     localStorage.setItem('language', language);
   }, [language]);
 
@@ -34,9 +34,16 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
     setLanguageState(lang);
   };
 
-  // دالة الترجمة
-  const t = (section: string, key: string, params?: Record<string, string | number>): string => {
-    let text = translations[section]?.[key]?.[language] || `${section}.${key}`;
+  // دالة الترجمة المحسنة
+  const t = (section: keyof TranslationSchema, key: string, params?: Record<string, string | number>): string => {
+    const sectionData = translations[language][section] as Record<string, string>;
+    
+    if (!sectionData || !sectionData[key]) {
+      console.warn(`Missing translation: ${String(section)}.${key} for language ${language}`);
+      return `${String(section)}.${key}`;
+    }
+    
+    let text = sectionData[key];
     
     // استبدال المعلمات في النص
     if (params) {
