@@ -8,9 +8,6 @@ import GasStationList from "@/components/GasStationList";
 import { GasStation } from "@/types/station";
 import { fetchStations } from "@/services/stationService";
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { UserCircle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import mapboxgl from 'mapbox-gl';
 import { MAPBOX_TOKEN } from '@/utils/environment';
@@ -81,14 +78,7 @@ const Index = () => {
     >
       <Toaster />
 
-      <div className="absolute top-4 right-4 z-10">
-        <Link to="/admin/login">
-          <Button variant="outline" className="flex items-center gap-2 bg-white/80 hover:bg-white">
-            <UserCircle size={18} />
-            <span className="hidden sm:inline">{t('common', 'adminPanel')}</span>
-          </Button>
-        </Link>
-      </div>
+      {/* Remove the duplicate admin button from here, it's already in the Header */}
 
       <Header />
 
