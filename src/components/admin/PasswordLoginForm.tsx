@@ -285,22 +285,26 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.5 }}
       >
-        <Button
-          type="submit"
-          className="w-full mt-6 bg-noor-purple hover:bg-noor-purple/90 text-white border-none"
-          disabled={isLoading}
+        {/* Wrap Button with motion.div instead of directly applying motion props */}
+        <motion.div
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              جاري تسجيل الدخول...
-            </>
-          ) : (
-            "تسجيل الدخول"
-          )}
-        </Button>
+          <Button
+            type="submit"
+            className="w-full mt-6 bg-noor-purple hover:bg-noor-purple/90 text-white border-none"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                جاري تسجيل الدخول...
+              </>
+            ) : (
+              "تسجيل الدخول"
+            )}
+          </Button>
+        </motion.div>
       </motion.div>
     </motion.form>
   );
