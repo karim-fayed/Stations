@@ -43,14 +43,26 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocati
         userMarkerRef.current = null;
       }
       
-      // Remove accuracy circle layer and source
-      if (map && map.getLayer('accuracy-circle-layer')) {
-        map.removeLayer('accuracy-circle-layer');
-      }
-      
-      if (map && map.getSource('accuracy-circle')) {
-        map.removeSource('accuracy-circle');
-        accuracyCircleRef.current = null;
+      // Remove accuracy circle layer and source safely
+      if (map) {
+        // Safely check if layer exists before removing
+        try {
+          if (map.getLayer && map.getStyle() && map.getLayer('accuracy-circle-layer')) {
+            map.removeLayer('accuracy-circle-layer');
+          }
+        } catch (error) {
+          console.warn("Error removing accuracy circle layer:", error);
+        }
+        
+        // Safely check if source exists before removing
+        try {
+          if (map.getSource && map.getStyle() && map.getSource('accuracy-circle')) {
+            map.removeSource('accuracy-circle');
+            accuracyCircleRef.current = null;
+          }
+        } catch (error) {
+          console.warn("Error removing accuracy circle source:", error);
+        }
       }
       return;
     }
@@ -104,13 +116,21 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocati
     // Only add the accuracy circle if the map style is loaded
     if (mapLoaded && userLocation.accuracy && userLocation.accuracy > 0) {
       try {
-        // Clean up any existing layers and sources first
-        if (map.getLayer('accuracy-circle-layer')) {
-          map.removeLayer('accuracy-circle-layer');
+        // Clean up any existing layers and sources first safely
+        try {
+          if (map.getStyle() && map.getLayer('accuracy-circle-layer')) {
+            map.removeLayer('accuracy-circle-layer');
+          }
+        } catch (error) {
+          console.warn("Error removing existing accuracy circle layer:", error);
         }
         
-        if (map.getSource('accuracy-circle')) {
-          map.removeSource('accuracy-circle');
+        try {
+          if (map.getStyle() && map.getSource('accuracy-circle')) {
+            map.removeSource('accuracy-circle');
+          }
+        } catch (error) {
+          console.warn("Error removing existing accuracy circle source:", error);
         }
         
         // Add a circle representing the accuracy
@@ -177,13 +197,23 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocati
 
     return () => {
       document.head.removeChild(styleEl);
-      if (map) {
-        if (map.getLayer('accuracy-circle-layer')) {
-          map.removeLayer('accuracy-circle-layer');
+      
+      // Safe cleanup of map resources
+      if (map && map.getStyle()) {
+        try {
+          if (map.getLayer('accuracy-circle-layer')) {
+            map.removeLayer('accuracy-circle-layer');
+          }
+        } catch (error) {
+          console.warn("Error during cleanup (removing layer):", error);
         }
         
-        if (map.getSource('accuracy-circle')) {
-          map.removeSource('accuracy-circle');
+        try {
+          if (map.getSource('accuracy-circle')) {
+            map.removeSource('accuracy-circle');
+          }
+        } catch (error) {
+          console.warn("Error during cleanup (removing source):", error);
         }
       }
     };
