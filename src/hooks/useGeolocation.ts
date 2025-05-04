@@ -35,17 +35,16 @@ export const useGeolocation = ({ language, texts, map }: UseGeolocationProps) =>
     // Show loading toast
     setIsLoadingLocation(true);
     
-    const loadingToastId = toast({
+    const loadingToast = toast({
       title: texts.locationDetecting,
       description: texts.pleaseWait,
       duration: MAP_TIMEOUT,
-    }).id;
+    });
 
     // Set a timeout to handle geolocation errors
     timeoutRef.current = window.setTimeout(() => {
       setIsLoadingLocation(false);
       toast({
-        id: loadingToastId,
         title: texts.locationError,
         description: texts.enableLocation,
         variant: 'destructive',
@@ -77,7 +76,6 @@ export const useGeolocation = ({ language, texts, map }: UseGeolocationProps) =>
 
           // Update toast to show success
           toast({
-            id: loadingToastId,
             title: texts.locationDetected,
             description: '',
             duration: 3000,
@@ -103,7 +101,6 @@ export const useGeolocation = ({ language, texts, map }: UseGeolocationProps) =>
 
           // Update toast to show error
           toast({
-            id: loadingToastId,
             title: texts.locationError,
             description: error.message || texts.enableLocation,
             variant: 'destructive',
@@ -127,7 +124,6 @@ export const useGeolocation = ({ language, texts, map }: UseGeolocationProps) =>
 
       // Update toast to show error
       toast({
-        id: loadingToastId,
         title: texts.locationError,
         description: error instanceof Error ? error.message : texts.enableLocation,
         variant: 'destructive',
