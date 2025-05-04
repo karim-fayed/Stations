@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -6,7 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export async function updateUserRoleHandler(
   userId: string,
-  role: string
+  role: string,
+  confirmPassword?: string
 ) {
   try {
     // Clean inputs by removing any spaces
@@ -25,6 +27,39 @@ export async function updateUserRoleHandler(
     }
 
     const requesterId = sessionData.session.user.id;
+
+    // إذا كان التغيير إلى دور "owner"، نتحقق من كلمة المرور
+    if (cleanRole === 'owner') {
+      if (!confirmPassword) {
+        throw new Error("يجب إدخال كلمة المرور للتأكيد عند تعيين مالك جديد");
+      }
+
+      // التحقق من صحة كلمة المرور باستخدام واجهة Supabase
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: sessionData.session.user.email!,
+        password: confirmPassword
+      });
+
+      if (signInError) {
+        throw new Error("كلمة المرور غير صحيحة. لا يمكن تعيين مالك جديد");
+      }
+
+      // التحقق إذا كان هناك مالك آخر
+      const { data: ownersData, error: ownersError } = await supabase
+        .from('admin_users')
+        .select('id')
+        .eq('role', 'owner')
+        .neq('id', requesterId);
+
+      if (ownersError) {
+        throw new Error("فشل التحقق من المالكين الحاليين");
+      }
+
+      // التحقق من عدم وجود أكثر من مالكين
+      if (ownersData && ownersData.length >= 2) {
+        throw new Error("لا يمكن تعيين أكثر من مالكين اثنين للنظام");
+      }
+    }
 
     // تحديث الدور مباشرة في قاعدة البيانات بدلاً من استخدام Edge Function
     try {
@@ -63,11 +98,7 @@ export async function updateUserRoleHandler(
 
       // في بيئة الإنتاج، يجب استخدام Edge Function مع service_role لتحديث بيانات المستخدم في auth.users
 
-      // لا نحاول استدعاء Edge Function في بيئة التطوير
-      // في بيئة الإنتاج، يمكن تفعيل هذا الكود بعد نشر Edge Function
-
-      /*
-      // محاولة استدعاء Edge Function إذا كانت متاحة (اختياري)
+      // محاولة استدعاء Edge Function إذا كانت متاحة
       try {
         const { data, error } = await supabase.functions.invoke('update-user-role', {
           body: JSON.stringify({
@@ -83,7 +114,6 @@ export async function updateUserRoleHandler(
       } catch (edgeFnError) {
         console.warn("تعذر استدعاء Edge Function، ولكن تم تحديث الدور بنجاح:", edgeFnError);
       }
-      */
     } catch (directUpdateError) {
       console.error("فشل تحديث الدور مباشرة:", directUpdateError);
       throw directUpdateError;

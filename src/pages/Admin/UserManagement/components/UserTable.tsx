@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Loader2, Key, UserCog, Trash2 } from "lucide-react";
+import { Loader2, Key, UserCog, Trash2, ShieldAlert } from "lucide-react";
 import { User } from "../hooks/useUserManagement";
 import {
   Table,
@@ -70,22 +70,32 @@ const UserTable: React.FC<UserTableProps> = ({
                     <TableCell>{user.name || "-"}</TableCell>
                     <TableCell>
                       {isOwner && user.id !== currentUserId ? (
-                        <Select
-                          defaultValue={user.role || "admin"}
-                          onValueChange={(value) => onChangeRole && onChangeRole(user, value)}
-                        >
-                          <SelectTrigger className="w-[130px]">
-                            <SelectValue placeholder="اختر الدور" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">مشرف</SelectItem>
-                            <SelectItem value="owner">مالك</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center gap-2">
+                          <Select
+                            defaultValue={user.role || "admin"}
+                            onValueChange={(value) => onChangeRole && onChangeRole(user, value)}
+                          >
+                            <SelectTrigger className="w-[130px]">
+                              <SelectValue placeholder="اختر الدور" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="admin">مشرف</SelectItem>
+                              <SelectItem value="owner">مالك</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {user.role === 'owner' && (
+                            <ShieldAlert className="h-4 w-4 text-orange-500" title="هذا المستخدم لديه صلاحيات مالك" />
+                          )}
+                        </div>
                       ) : (
-                        <span className={user.role === 'owner' ? 'font-bold text-noor-purple' : ''}>
-                          {user.role === 'owner' ? 'مالك' : 'مشرف'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className={user.role === 'owner' ? 'font-bold text-noor-purple' : ''}>
+                            {user.role === 'owner' ? 'مالك' : 'مشرف'}
+                          </span>
+                          {user.role === 'owner' && (
+                            <ShieldAlert className="h-4 w-4 text-orange-500" title="هذا المستخدم لديه صلاحيات مالك" />
+                          )}
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>

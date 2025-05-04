@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
@@ -54,6 +55,26 @@ serve(async (req) => {
     // Only owners can change roles
     if (requesterData.role !== 'owner') {
       throw new Error("Only owners can change user roles");
+    }
+
+    // If the role is being changed to 'owner', check if there are already 2 owners
+    if (cleanRole === 'owner') {
+      const { data: ownersData, error: ownersError } = await supabaseClient
+        .from('admin_users')
+        .select('id')
+        .eq('role', 'owner');
+
+      if (ownersError) {
+        throw new Error(`Error checking existing owners: ${ownersError.message}`);
+      }
+
+      // Exclude the target user from the count (in case they're already an owner)
+      const currentOwnerCount = ownersData.filter(owner => owner.id !== cleanUserId).length;
+      
+      // Allow no more than 2 owners total
+      if (currentOwnerCount >= 2) {
+        throw new Error("Cannot have more than two owners in the system");
+      }
     }
 
     // Check if the user exists

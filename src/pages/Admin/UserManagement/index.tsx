@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, Link } from "react-router-dom";
@@ -5,6 +6,7 @@ import UserTable from "./components/UserTable";
 import CreateUserDialog from "./components/CreateUserDialog";
 import PasswordResetDialog from "./components/PasswordResetDialog";
 import DeleteUserDialog from "./components/DeleteUserDialog";
+import PromoteToOwnerDialog from "./components/PromoteToOwnerDialog";
 import { useUserManagement, User } from "./hooks/useUserManagement";
 import { Loader2, Home, ArrowLeft, Plus } from "lucide-react";
 import { motion } from "framer-motion";
@@ -25,6 +27,7 @@ const UserManagement = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isPromoteToOwnerDialogOpen, setIsPromoteToOwnerDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [checkingPermissions, setCheckingPermissions] = useState(true);
 
@@ -56,6 +59,11 @@ const UserManagement = () => {
     setIsDeleteDialogOpen(true);
   };
 
+  const handleOpenPromoteToOwnerDialog = (user: User) => {
+    setSelectedUser(user);
+    setIsPromoteToOwnerDialogOpen(true);
+  };
+
   const handleDeleteUser = async () => {
     if (selectedUser) {
       const success = await deleteUser(selectedUser);
@@ -67,7 +75,28 @@ const UserManagement = () => {
 
   // تغيير دور المستخدم
   const handleChangeRole = async (user: User, newRole: string) => {
-    await changeUserRole(user, newRole);
+    // إذا كان الدور الجديد هو "owner"، نفتح نافذة تأكيد بكلمة المرور
+    if (newRole === 'owner') {
+      setSelectedUser(user);
+      setIsPromoteToOwnerDialogOpen(true);
+    } else {
+      // للأدوار الأخرى، نغير الدور مباشرة دون تأكيد إضافي
+      await changeUserRole(user, newRole);
+    }
+  };
+
+  // تأكيد ترقية المستخدم لمالك
+  const handlePromoteToOwner = async (password: string) => {
+    if (!selectedUser) return;
+    
+    try {
+      const success = await changeUserRole(selectedUser, 'owner', password);
+      if (success) {
+        setIsPromoteToOwnerDialogOpen(false);
+      }
+    } catch (error) {
+      throw error;
+    }
   };
 
   // تغيير كلمة المرور مباشرة
@@ -179,6 +208,13 @@ const UserManagement = () => {
           user={selectedUser}
           onClose={() => setIsDeleteDialogOpen(false)}
           onConfirm={handleDeleteUser}
+        />
+
+        <PromoteToOwnerDialog
+          isOpen={isPromoteToOwnerDialogOpen}
+          onClose={() => setIsPromoteToOwnerDialogOpen(false)}
+          onConfirm={handlePromoteToOwner}
+          user={selectedUser}
         />
       </div>
     </div>

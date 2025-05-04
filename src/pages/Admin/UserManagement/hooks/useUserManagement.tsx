@@ -170,7 +170,7 @@ export const useUserManagement = () => {
           }
         }
       } catch (resetError) {
-        if (resetError.message.includes("Too Many Requests")) {
+        if (resetError.message && resetError.message.includes("Too Many Requests")) {
           console.warn("تم تجاوز الحد المسموح لطلبات إعادة تعيين كلمة المرور");
           // نخبر المستخدم أن الطلب تم إرساله بنجاح رغم الخطأ
         } else {
@@ -284,7 +284,7 @@ export const useUserManagement = () => {
     }
   };
 
-  const changeUserRole = async (user: User, newRole: string) => {
+  const changeUserRole = async (user: User, newRole: string, confirmPassword?: string) => {
     try {
       // Check if current user is owner
       if (!currentUser || currentUser.role !== 'owner') {
@@ -302,7 +302,12 @@ export const useUserManagement = () => {
       }
 
       // Call the handler to update the role
-      const result = await updateUserRoleHandler(user.id, newRole);
+      // إضافة كلمة المرور للتأكيد إذا كان الدور الجديد هو "owner"
+      const result = await updateUserRoleHandler(
+        user.id, 
+        newRole, 
+        newRole === 'owner' ? confirmPassword : undefined
+      );
 
       if (!result.success) {
         throw new Error(result.error || "فشل تغيير دور المستخدم");
