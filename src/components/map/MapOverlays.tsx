@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface MapOverlaysProps {
   isLoadingLocation: boolean;
@@ -16,10 +16,22 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   filteredStations,
   language
 }) => {
+  const [showInitialMessage, setShowInitialMessage] = useState(true);
+  
+  // Hide the initial message after 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowInitialMessage(false);
+    }, 5000);
+    
+    // Clean up timer when component unmounts
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <>
-      {/* Show "Select a city" message when no city is selected */}
-      {!selectedCity && filteredStations.length === 0 && !isLoadingLocation && (
+      {/* Show "Select a city" message when no city is selected, but hide after 5 seconds */}
+      {!selectedCity && filteredStations.length === 0 && !isLoadingLocation && showInitialMessage && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm p-6 rounded-lg shadow-lg text-center">
           <h3 className="text-xl font-bold text-noor-purple mb-2">
             {language === 'ar' ? 'اختر مدينة' : 'Select a City'}
