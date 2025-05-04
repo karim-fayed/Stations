@@ -35,7 +35,7 @@ const AuthForm = () => {
         console.log("User is already logged in, checking admin status...");
 
         // Check if the user is in the admin_users table
-        const { data: adminData, error: adminError } = await supabase
+        const { error: adminError } = await supabase
           .from('admin_users')
           .select('*')
           .eq('id', data.session.user.id)
@@ -66,7 +66,7 @@ const AuthForm = () => {
     };
 
     checkAuth();
-  }, [navigate, toast]);
+  }, [navigate, toast, t]);
 
   if (isCheckingAuth) {
     return (
@@ -78,11 +78,11 @@ const AuthForm = () => {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl">{t('login', 'loginTitle')}</CardTitle>
+    <Card className="w-full max-w-md shadow-lg border-0">
+      <CardHeader className="text-center pb-2">
+        <CardTitle className="text-2xl">تسجيل الدخول</CardTitle>
         <CardDescription>
-          {t('login', 'loginSubtitle')}
+          أدخل بيانات حسابك للوصول إلى لوحة التحكم
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -90,7 +90,7 @@ const AuthForm = () => {
       </CardContent>
       <CardFooter className="flex justify-center pt-4">
         <p className="text-sm text-gray-500">
-          © {t('common', 'appName')} {new Date().getFullYear()} - {t('common', 'allRightsReserved')}
+          © محطات نور {new Date().getFullYear()} - جميع الحقوق محفوظة
         </p>
       </CardFooter>
     </Card>

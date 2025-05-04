@@ -1,21 +1,21 @@
-
-import React from "react";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const LoginHeader = () => {
-  const { t } = useLanguage();
+  const { language } = useLanguage();
+  const isRTL = language === 'ar';
+
   return (
-    <div className="text-center mb-0">
+    <div className={`text-center mb-8 ${isRTL ? 'rtl' : 'ltr'}`}>
       <img
-        src="/lovable-uploads/27c1f136-856b-4b61-b332-3cea9403770a.png"
+        src="/lovable-uploads/7d04d515-ba22-4ed7-9bba-9b93a0f1eba3.png"
         alt="Noor Stations Logo"
-        className="mx-auto h-32 w-auto mb-4"
+        className="mx-auto h-24 w-auto"
       />
-      <h2 className="mt-2 text-4xl font-bold text-gray-900 mb-2">
-        {t('login', 'title')}
+      <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+        لوحة المشرفين
       </h2>
-      <p className="mt-1 text-lg text-gray-600">
-        {t('login', 'subtitle')}
+      <p className="mt-2 text-sm text-gray-600">
+        الرجاء تسجيل الدخول للوصول إلى لوحة التحكم
       </p>
     </div>
   );

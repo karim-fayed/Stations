@@ -2,9 +2,14 @@
 
 export type Language = 'ar' | 'en';
 
+export interface TranslationItem {
+  ar: string;
+  en: string;
+}
+
 export interface Translations {
   [key: string]: {
-    [key: string]: string;
+    [key: string]: TranslationItem | string;
   };
 }
 
@@ -457,12 +462,28 @@ export const translations: Translations = {
   // ترجمات تسجيل الدخول
   login: {
     title: {
-      ar: 'لوحة تحكم المشرفين',
+      ar: 'تسجيل الدخول',
       en: 'Login'
     },
     subtitle: {
       ar: 'قم بتسجيل الدخول للوصول إلى لوحة التحكم',
       en: 'Sign in to access the dashboard'
+    },
+    loginTitle: {
+      ar: 'تسجيل الدخول',
+      en: 'Login'
+    },
+    loginSubtitle: {
+      ar: 'أدخل بريدك الإلكتروني وكلمة المرور أدناه',
+      en: 'Enter your email and password below'
+    },
+    pageTitle: {
+      ar: 'لوحة تحكم محطات نور',
+      en: 'Noor Stations Dashboard'
+    },
+    pageSubtitle: {
+      ar: 'مرحباً بعودتك! الرجاء تسجيل الدخول للمتابعة',
+      en: 'Welcome back! Please login to continue'
     },
     emailPlaceholder: {
       ar: 'أدخل البريد الإلكتروني',
@@ -519,6 +540,18 @@ export const translations: Translations = {
     testAccounts: {
       ar: 'حسابات للاختبار:',
       en: 'Test accounts:'
+    },
+    testAccountsHint: {
+      ar: 'للتجربة استخدم أي من الحسابات التالية: admin@example.com أو user@example.com (كلمة المرور: password)',
+      en: 'For testing, use: admin@example.com or user@example.com (password: password)'
+    },
+    showPassword: {
+      ar: 'إظهار كلمة المرور',
+      en: 'Show password'
+    },
+    hidePassword: {
+      ar: 'إخفاء كلمة المرور',
+      en: 'Hide password'
     }
   }
 };
