@@ -22,6 +22,8 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
 }) => {
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const popupsRef = useRef<mapboxgl.Popup[]>([]);
+  const activePopupRef = useRef<mapboxgl.Popup | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // تحديث المُعلّمات (markers) على الخريطة
   const updateMarkers = useCallback(() => {
@@ -31,6 +33,12 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
     
     popupsRef.current.forEach(popup => popup.remove());
     popupsRef.current = [];
+
+    // إلغاء أي مؤقتات نشطة
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
 
     // إذا لم تكن الخريطة جاهزة بعد، لا تفعل شيئًا
     if (!map) return;
@@ -52,6 +60,7 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
       el.style.cursor = 'pointer';
       el.style.filter = isSelected ? 'drop-shadow(0 0 8px rgba(255, 119, 51, 0.8))' : 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35))';
       el.style.transition = 'all 0.3s ease-in-out';
+      el.style.transformOrigin = 'center bottom'; // تعيين نقطة التحول للتأثيرات
       
       // إضافة تأثير نبض للمُعلّمة المحددة
       if (isSelected) {
@@ -71,7 +80,8 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
         closeButton: false,
         closeOnClick: false,
         offset: 25,
-        className: 'station-popup'
+        className: 'station-popup',
+        maxWidth: '300px' // تعيين العرض الأقصى للنافذة المنبثقة
       }).setDOMContent(createPopupContent(station));
       
       popupsRef.current.push(popup);
@@ -83,20 +93,83 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
         offset: [0, -5] // تعديل الإزاحة ليبدو الدبوس في المكان الصحيح
       })
         .setLngLat([station.longitude, station.latitude])
-        .setPopup(popup)
         .addTo(map);
 
-      // إضافة أحداث hover
+      // إضافة المعلم إلى المرجع
+      markersRef.current.push(marker);
+
+      // تحسين سلوك التفاعل مع المؤشر - منع "هروب" النافذة المنبثقة
+      let isHovering = false;
+
+      // إضافة أحداث hover للمُعلّمة
       el.addEventListener('mouseenter', () => {
+        isHovering = true;
+
+        // إلغاء أي مؤقت سابق
+        if (hoverTimeoutRef.current) {
+          clearTimeout(hoverTimeoutRef.current);
+          hoverTimeoutRef.current = null;
+        }
+
+        // إغلاق أي نافذة منبثقة نشطة
+        if (activePopupRef.current) {
+          activePopupRef.current.remove();
+        }
+
+        // تطبيق تأثيرات المؤشر
         el.style.transform = 'scale(1.1) translateY(-5px)';
+        el.style.filter = 'drop-shadow(0 10px 15px rgba(0, 0, 0, 0.4))';
+        
+        // إظهار النافذة المنبثقة
         popup.addTo(map);
+        activePopupRef.current = popup;
+
+        // إضافة أحداث hover للنافذة المنبثقة نفسها
+        const popupElement = popup.getElement();
+        
+        // الاستماع لأحداث دخول المؤشر للنافذة المنبثقة
+        if (popupElement) {
+          popupElement.addEventListener('mouseenter', () => {
+            isHovering = true;
+            
+            // إلغاء أي مؤقت عند دخول المؤشر للنافذة المنبثقة
+            if (hoverTimeoutRef.current) {
+              clearTimeout(hoverTimeoutRef.current);
+              hoverTimeoutRef.current = null;
+            }
+          });
+          
+          // الاستماع لأحداث خروج المؤشر من النافذة المنبثقة
+          popupElement.addEventListener('mouseleave', () => {
+            isHovering = false;
+            
+            // تأخير إزالة النافذة المنبثقة لتوفير وقت أكبر للمستخدم
+            hoverTimeoutRef.current = setTimeout(() => {
+              if (!isHovering) {
+                popup.remove();
+                activePopupRef.current = null;
+              }
+            }, 300);
+          });
+        }
       });
       
+      // الاستماع لأحداث خروج المؤشر من المُعلّمة
       el.addEventListener('mouseleave', () => {
-        if (!isSelected) {
-          el.style.transform = 'scale(1) translateY(0)';
-        }
-        popup.remove();
+        isHovering = false;
+        
+        // تأخير إزالة النافذة المنبثقة وإعادة المُعلّمة إلى الحجم الطبيعي
+        hoverTimeoutRef.current = setTimeout(() => {
+          if (!isHovering) {
+            if (!isSelected) {
+              el.style.transform = 'scale(1) translateY(0)';
+              el.style.filter = 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35))';
+            }
+            
+            popup.remove();
+            activePopupRef.current = null;
+          }
+        }, 300); // تأخير 300 مللي ثانية للسماح بالانتقال السلس إلى النافذة المنبثقة
       });
 
       // إضافة حدث النقر
@@ -111,17 +184,26 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
           iterations: 1
         });
         
+        // إغلاق النافذة المنبثقة عند النقر
+        popup.remove();
+        
+        // تحديد المحطة
         onSelectStation(station);
       });
-
-      // تخزين المُعلّم في المرجع
-      markersRef.current.push(marker);
     });
   }, [stations, selectedStation, onSelectStation, map, createPopupContent, language]);
 
   // تحديث المعلمات عند تغير المحطات أو المحطة المحددة
   useEffect(() => {
     updateMarkers();
+    
+    // تنظيف المؤقتات عند إلغاء التحميل
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+    };
   }, [stations, selectedStation, updateMarkers]);
 
   // إضافة أنماط CSS للأنيميشن
@@ -134,10 +216,19 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
         100% { transform: translateY(-10px); }
       }
       
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+      
       .station-popup {
         animation: fadeIn 0.3s ease-out;
         border-radius: 10px;
         overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        z-index: 5;
+        max-width: 300px;
       }
       
       @keyframes fadeIn {
