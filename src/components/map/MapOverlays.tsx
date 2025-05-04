@@ -7,6 +7,7 @@ interface MapOverlaysProps {
   selectedCity: string;
   filteredStations: any[];
   language: 'ar' | 'en';
+  isLoadingCity?: boolean;
 }
 
 const MapOverlays: React.FC<MapOverlaysProps> = ({
@@ -14,7 +15,8 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   isLoadingNearest,
   selectedCity,
   filteredStations,
-  language
+  language,
+  isLoadingCity = false
 }) => {
   const [showInitialMessage, setShowInitialMessage] = useState(true);
   
@@ -31,7 +33,7 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   return (
     <>
       {/* Show "Select a city" message when no city is selected, but hide after 5 seconds */}
-      {!selectedCity && filteredStations.length === 0 && !isLoadingLocation && showInitialMessage && (
+      {!selectedCity && filteredStations.length === 0 && !isLoadingLocation && !isLoadingCity && showInitialMessage && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm p-6 rounded-lg shadow-lg text-center">
           <h3 className="text-xl font-bold text-noor-purple mb-2">
             {language === 'ar' ? 'اختر مدينة' : 'Select a City'}
@@ -45,14 +47,16 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
       )}
 
       {/* Loading indicator */}
-      {(isLoadingLocation || isLoadingNearest) && (
+      {(isLoadingLocation || isLoadingNearest || isLoadingCity) && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm p-6 rounded-lg shadow-lg">
           <div className="flex flex-col items-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-noor-purple mb-4"></div>
             <p className="text-noor-purple font-bold">
               {isLoadingLocation 
                 ? (language === 'ar' ? 'جاري تحديد موقعك...' : 'Detecting your location...')
-                : (language === 'ar' ? 'جاري البحث عن أقرب محطة...' : 'Finding nearest station...')}
+                : isLoadingNearest
+                  ? (language === 'ar' ? 'جاري البحث عن أقرب محطة...' : 'Finding nearest station...')
+                  : (language === 'ar' ? 'جاري تحميل محطات المدينة...' : 'Loading city stations...')}
             </p>
           </div>
         </div>

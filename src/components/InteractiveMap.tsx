@@ -57,11 +57,19 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     debouncedSearchTerm, 
     setDebouncedSearchTerm,
     filteredStations, 
-    setFilteredStations 
+    setFilteredStations,
+    isSearching,
+    clearSearch
   } = useMapSearch(stations, cities, onSelectStation, map, language);
 
   // Setup city filtering
-  const { filterStationsByCity } = useCityFilter(stations, cities, language, map, setFilteredStations);
+  const { filterStationsByCity, isLoadingCity, clearCityCache } = useCityFilter(
+    stations, 
+    cities, 
+    language, 
+    map, 
+    setFilteredStations
+  );
 
   // Setup user location and navigation
   const { 
@@ -98,6 +106,10 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       language,
       toast
     );
+    
+    // Clear search and caches for better performance
+    clearSearch();
+    clearCityCache();
   };
 
   return (
@@ -121,6 +133,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
           filteredStations={filteredStations}
           texts={texts}
           language={language}
+          isSearching={isSearching}
         />
       </div>
 
@@ -144,6 +157,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         <MapOverlays
           isLoadingLocation={isLoadingLocation}
           isLoadingNearest={isLoadingNearest}
+          isLoadingCity={isLoadingCity}
           selectedCity={selectedCity}
           filteredStations={filteredStations}
           language={language}

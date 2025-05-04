@@ -21,7 +21,7 @@ export const useNearestStation = ({
   const [isLoadingNearest, setIsLoadingNearest] = useState(false);
   const { toast } = useToast();
 
-  // Find nearest station to user with improved error handling
+  // Find nearest station to user with improved error handling and performance
   const findNearestStation = async (latitude?: number, longitude?: number, userLocation?: { latitude: number; longitude: number } | null) => {
     // Use provided coordinates or stored user location
     const lat = latitude || userLocation?.latitude;
@@ -40,26 +40,56 @@ export const useNearestStation = ({
     setIsLoadingNearest(true);
     
     // Show searching toast
-    toast({
+    const searchToastId = toast({
       title: language === 'ar' ? 'جاري البحث' : 'Searching',
       description: language === 'ar' ? 'البحث عن أقرب محطة...' : 'Finding nearest station...',
-    });
+    }).id;
 
     try {
       console.log(`Finding nearest station to ${lat}, ${lng}`);
-      const nearestStations = await fetchNearestStations(lat, lng, 1);
+      
+      // Set a timeout to ensure we don't wait too long for the API
+      const timeoutPromise = new Promise<GasStation[]>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Request timeout'));
+        }, 8000); // 8 second timeout
+      });
+      
+      // Race the station fetch against the timeout
+      const nearestStations = await Promise.race([
+        fetchNearestStations(lat, lng, 1),
+        timeoutPromise
+      ]);
       
       if (nearestStations.length > 0) {
         console.log("Found nearest station:", nearestStations[0]);
         onSelectStation(nearestStations[0]);
 
-        // Move map to the station
-        map.current?.flyTo({
-          center: [nearestStations[0].longitude, nearestStations[0].latitude],
-          zoom: 15,
-          essential: true,
-          duration: 1000
-        });
+        // Move map to the station with a smoother animation
+        if (map.current) {
+          // First check if the map needs to be moved significantly
+          const currentCenter = map.current.getCenter();
+          const stationLocation = [nearestStations[0].longitude, nearestStations[0].latitude];
+          
+          // Calculate distance to determine zoom behavior
+          const distanceFactor = Math.sqrt(
+            Math.pow(currentCenter.lng - stationLocation[0], 2) + 
+            Math.pow(currentCenter.lat - stationLocation[1], 2)
+          );
+          
+          // Adjust animation duration and zoom based on distance
+          const animationDuration = Math.min(1000 + distanceFactor * 500, 2000);
+          
+          map.current.flyTo({
+            center: stationLocation,
+            zoom: 15,
+            essential: true,
+            duration: animationDuration,
+            easing: (t) => {
+              return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // Custom easing for smoother animation
+            }
+          });
+        }
 
         // Convert distance from meters to km if more than 1000m
         const distanceText = nearestStations[0].distance_meters && nearestStations[0].distance_meters > 1000

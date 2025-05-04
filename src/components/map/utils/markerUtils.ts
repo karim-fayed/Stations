@@ -2,7 +2,25 @@
 import mapboxgl from 'mapbox-gl';
 import { GasStation } from '@/types/station';
 
-// Create a marker pin element
+// Pool of markers for reuse
+const markerImageCache: {[selected: string]: HTMLImageElement} = {};
+
+// Preload marker images for better performance
+export const preloadMarkerImages = () => {
+  const selectedMarker = new Image();
+  selectedMarker.src = '/lovable-uploads/27c1f136-856b-4b61-b332-3cea9403770a.png';
+  selectedMarker.onload = () => {
+    markerImageCache['selected'] = selectedMarker;
+  };
+  
+  const regularMarker = new Image();
+  regularMarker.src = '/lovable-uploads/27c1f136-856b-4b61-b332-3cea9403770a.png';
+  regularMarker.onload = () => {
+    markerImageCache['regular'] = regularMarker;
+  };
+};
+
+// Create a marker pin element with improved performance
 export const createMarkerElement = (
   station: GasStation,
   selectedStationId: string | null
@@ -22,6 +40,10 @@ export const createMarkerElement = (
   el.style.filter = isSelected ? 'drop-shadow(0 0 8px rgba(255, 119, 51, 0.8))' : 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35))';
   el.style.transition = 'all 0.3s ease-in-out';
   el.style.transformOrigin = 'center bottom';
+  el.style.zIndex = isSelected ? '100' : '1'; // Ensure selected markers appear on top
+  
+  // Add will-change property for better GPU acceleration
+  el.style.willChange = 'filter, transform, width, height';
   
   // Add pulse animation for selected marker
   if (isSelected) {
@@ -47,7 +69,7 @@ export const stylePopupCloseButton = (popup: mapboxgl.Popup): void => {
   }
 };
 
-// Handle marker hover effect
+// Handle marker hover effect with improved debouncing
 export const handleMarkerHover = (
   el: HTMLDivElement,
   popup: mapboxgl.Popup,
@@ -69,7 +91,13 @@ export const handleMarkerHover = (
   // Change marker appearance on hover
   el.style.filter = 'drop-shadow(0 6px 10px rgba(0, 0, 0, 0.4))';
   
-  // Display popup
-  popup.addTo(map);
-  activePopupRef.current = popup;
+  // Add slight delay to prevent popups from appearing too quickly during rapid mouse movement
+  hoverTimeoutRef.current = setTimeout(() => {
+    // Display popup
+    popup.addTo(map);
+    activePopupRef.current = popup;
+  }, 50); // Small delay to prevent flickering
 };
+
+// Initialize once on load
+preloadMarkerImages();
