@@ -1,6 +1,7 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { useBackgroundLocation } from './useBackgroundLocation';
 
 interface GeolocationOptions {
   language: 'ar' | 'en';
@@ -25,8 +26,41 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [locationAttempts, setLocationAttempts] = useState(0);
   const { toast } = useToast();
+  
+  // استخدام hook تحديد الموقع في الخلفية
+  const { 
+    locationData, 
+    isLocating, 
+    startBackgroundLocationTracking, 
+    stopBackgroundLocationTracking 
+  } = useBackgroundLocation(language);
+  
+  // تحديث الموقع عندما تتغير البيانات من تحديد الموقع في الخلفية
+  useEffect(() => {
+    if (locationData && !userLocation) {
+      const { latitude, longitude, accuracy } = locationData;
+      setUserLocation({ latitude, longitude, accuracy });
+      
+      // لا نريد الانتقال للموقع تلقائيًا إلا إذا كانت الدقة جيدة
+      if (accuracy && accuracy < 50) {
+        moveMapToLocation(latitude, longitude);
+      }
+    }
+  }, [locationData]);
+  
+  // تحديد الموقع على الخريطة
+  const moveMapToLocation = (latitude: number, longitude: number, zoom?: number) => {
+    if (map.current) {
+      map.current.flyTo({
+        center: [longitude, latitude],
+        zoom: zoom || 16,
+        essential: true,
+        duration: 1000
+      });
+    }
+  };
 
-  // Get user location with improved accuracy and timeout handling
+  // تحسين أداء الحصول على الموقع الدقيق للمستخدم
   const getUserLocation = () => {
     setIsLoadingLocation(true);
 
@@ -45,21 +79,21 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
       return;
     }
 
-    // Use high accuracy options with longer timeouts
+    // استخدام خيارات عالية الدقة مع مهلات أطول
     const geoOptions = {
-      enableHighAccuracy: true, // Always request high accuracy
-      timeout: locationAttempts > 0 ? 30000 : 20000, // Increase timeout times
-      maximumAge: 0 // Don't use cached position
+      enableHighAccuracy: true,
+      timeout: locationAttempts > 0 ? 30000 : 20000,
+      maximumAge: 0
     };
 
-    // Use geolocation watcher instead of single position request
+    // استخدام متابعة الموقع بدلاً من طلب موقع واحد
     const watchId = navigator.geolocation.watchPosition(
       async (position) => {
-        // Successfully got position
+        // تم الحصول على الموقع بنجاح
         const { latitude, longitude, accuracy } = position.coords;
         console.log(`User location detected: ${latitude}, ${longitude}, accuracy: ${accuracy}m`);
         
-        // If the accuracy is not good enough, continue watching
+        // إذا لم تكن الدقة جيدة بما فيه الكفاية، نستمر في المتابعة
         if (accuracy > 30 && locationAttempts < 3) {
           toast({
             title: language === 'ar' ? 'جاري تحسين الدقة...' : 'Improving accuracy...',
@@ -68,22 +102,17 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
               : `Location detected with ${accuracy.toFixed(1)}m accuracy, trying to improve...`,
           });
           setLocationAttempts(prev => prev + 1);
-          return; // Continue watching for a better position
+          return;
         }
         
-        // Clear the watch as we got a good position
+        // إلغاء المتابعة لأننا حصلنا على موقع جيد
         navigator.geolocation.clearWatch(watchId);
         
         setUserLocation({ latitude, longitude, accuracy });
-        setLocationAttempts(0); // Reset attempts counter on success
+        setLocationAttempts(0);
 
-        // Move to user location
-        map.current?.flyTo({
-          center: [longitude, latitude],
-          zoom: 16, // Zoom in closer for better accuracy
-          essential: true,
-          duration: 1000
-        });
+        // الانتقال إلى موقع المستخدم
+        moveMapToLocation(latitude, longitude);
 
         setIsLoadingLocation(false);
 
@@ -95,7 +124,7 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
         });
       },
       (error) => {
-        // Error getting position
+        // خطأ في الحصول على الموقع
         console.error('Geolocation error:', error);
         navigator.geolocation.clearWatch(watchId);
         
@@ -105,15 +134,15 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
         switch(error.code) {
           case error.PERMISSION_DENIED:
             errorMsg = language === 'ar' ? 'تم رفض إذن تحديد الموقع' : 'Location permission denied';
-            shouldRetry = false; // Don't retry if permission denied
+            shouldRetry = false;
             break;
           case error.POSITION_UNAVAILABLE:
             errorMsg = language === 'ar' ? 'معلومات الموقع غير متوفرة' : 'Location information unavailable';
-            shouldRetry = locationAttempts < 3; // Retry twice if position unavailable
+            shouldRetry = locationAttempts < 3;
             break;
           case error.TIMEOUT:
             errorMsg = language === 'ar' ? 'انتهت مهلة طلب تحديد الموقع' : 'Location request timed out';
-            shouldRetry = locationAttempts < 3; // Retry twice on timeout
+            shouldRetry = locationAttempts < 3;
             break;
           default:
             errorMsg = error.message;
@@ -121,13 +150,13 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
         }
         
         if (shouldRetry) {
-          // Retry with longer timeout
+          // إعادة المحاولة مع مهلة أطول
           setLocationAttempts(prev => prev + 1);
           toast({
             title: language === 'ar' ? 'إعادة محاولة تحديد الموقع' : 'Retrying location detection',
             description: language === 'ar' ? `محاولة ${locationAttempts + 1}/3...` : `Trying attempt ${locationAttempts + 1}/3...`,
           });
-          // Wait a moment before retrying
+          // الانتظار قليلاً قبل إعادة المحاولة
           setTimeout(getUserLocation, 1000);
         } else {
           toast({
@@ -141,7 +170,7 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
       geoOptions
     );
     
-    // Set a timeout to stop watching if it's taking too long
+    // تحديد مهلة للتوقف عن المتابعة إذا كانت تستغرق وقتًا طويلاً
     setTimeout(() => {
       if (isLoadingLocation) {
         navigator.geolocation.clearWatch(watchId);
@@ -160,5 +189,7 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
     setUserLocation,
     isLoadingLocation,
     getUserLocation,
+    startBackgroundLocationTracking,  // إضافة الوظائف الجديدة
+    stopBackgroundLocationTracking
   };
 };

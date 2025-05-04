@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/toaster";
 import Header from "@/components/Header";
@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { UserCircle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import mapboxgl from 'mapbox-gl';
+import { MAPBOX_TOKEN } from '@/utils/environment';
 
 const Index = () => {
   // الحالات (States)
@@ -23,6 +25,14 @@ const Index = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('map');
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const locationInitializedRef = useRef<boolean>(false);
+
+  // بدء تحديد الموقع في الخلفية عند تحميل التطبيق
+  useEffect(() => {
+    // نهيئ mapboxgl قبل تحميل الخريطة
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+  }, []);
 
   // جلب بيانات المحطات عند تحميل الصفحة
   useEffect(() => {
@@ -106,6 +116,10 @@ const Index = () => {
                 onSelectStation={handleSelectStation}
                 language={language}
                 stations={stations}
+                initBackgroundLocation={!locationInitializedRef.current}
+                onLocationInitialized={() => {
+                  locationInitializedRef.current = true;
+                }}
               />
             </TabsContent>
 

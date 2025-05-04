@@ -17,7 +17,9 @@ export const useMapLocation = (
     userLocation, 
     setUserLocation, 
     isLoadingLocation, 
-    getUserLocation 
+    getUserLocation,
+    startBackgroundLocationTracking,
+    stopBackgroundLocationTracking
   } = useGeolocation({ language, texts, map });
 
   const { 
@@ -46,6 +48,8 @@ export const useMapLocation = (
     isLoadingNearest,
     getUserLocation,
     findNearestStation,
-    showDirections
+    showDirections,
+    startBackgroundLocationTracking,
+    stopBackgroundLocationTracking
   };
 };

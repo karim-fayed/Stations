@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { GasStation } from '@/types/station';
 import { useToast } from "@/hooks/use-toast";
@@ -32,13 +32,17 @@ interface InteractiveMapProps {
   onSelectStation: (station: GasStation | null) => void;
   language: 'ar' | 'en';
   stations: GasStation[];
+  initBackgroundLocation?: boolean;
+  onLocationInitialized?: () => void;
 }
 
 const InteractiveMap: React.FC<InteractiveMapProps> = ({
   selectedStation,
   onSelectStation,
   language,
-  stations
+  stations,
+  initBackgroundLocation = false,
+  onLocationInitialized
 }) => {
   const [selectedCity, setSelectedCity] = useState<string>('');
   const { toast } = useToast();
@@ -79,8 +83,28 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     isLoadingNearest, 
     getUserLocation, 
     findNearestStation, 
-    showDirections 
+    showDirections,
+    startBackgroundLocationTracking,
+    stopBackgroundLocationTracking
   } = useMapLocation(map, onSelectStation, texts, language);
+
+  // بدء تحديد الموقع في الخلفية عند تحميل الخريطة
+  useEffect(() => {
+    if (initBackgroundLocation && map.current) {
+      console.log("Starting background location tracking");
+      startBackgroundLocationTracking();
+      
+      // إخطار المكون الأب أننا بدأنا تحديد الموقع
+      if (onLocationInitialized) {
+        onLocationInitialized();
+      }
+    }
+    
+    return () => {
+      // إيقاف تحديد الموقع عند إزالة المكون
+      stopBackgroundLocationTracking();
+    };
+  }, [initBackgroundLocation, map.current]);
 
   // Create popup content handler
   const handleCreatePopupContent = (station: GasStation) => {
