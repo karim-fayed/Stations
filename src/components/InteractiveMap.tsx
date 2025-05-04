@@ -87,8 +87,11 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       map.current, 
       onSelectStation, 
       setSearchTerm, 
-      setDebouncedSearchTerm, 
-      setUserLocation => setUserLocation(null), 
+      setSearchTerm, // Fix: Changed from setDebouncedSearchTerm (doesn't exist) to setSearchTerm
+      setUserLocation => {
+        // Fix: Changed from trying to call userLocation object to using the parameter correctly
+        return setUserLocation(null);
+      }, 
       setSelectedCity, 
       setFilteredStations,
       language,
