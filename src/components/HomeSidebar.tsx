@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -54,7 +55,7 @@ const HomeSidebar: React.FC<HomeSidebarProps> = ({ onClose }) => {
           <Menu size={24} />
         </Button>
       </SheetTrigger>
-      <SheetContent side={language === 'ar' ? 'right' : 'left'} className="p-0 w-[280px] bg-gradient-to-b from-white to-purple-50">
+      <SheetContent side={language === 'ar' ? 'left' : 'right'} className="p-0 w-[280px] bg-gradient-to-b from-white to-purple-50">
         <div className="flex flex-col h-full">
           <div className="p-4 border-b border-gray-100">
             <div className="flex justify-center items-center mb-4">
