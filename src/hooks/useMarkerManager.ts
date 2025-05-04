@@ -1,13 +1,13 @@
-import { useRef, useCallback, useMemo } from 'react';
+
+import { useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { GasStation } from '@/types/station';
-import { createMarkerElement, stylePopupCloseButton, handleMarkerHover } from '@/components/map/utils/markerUtils';
 
 interface UseMarkerManagerProps {
   map: mapboxgl.Map | null;
   stations: GasStation[];
   selectedStation: GasStation | null;
-  onSelectStation: (station: GasStation | null) => void;
+  onSelectStation: (station: GasStation) => void;
   language: 'ar' | 'en';
   createPopupContent: (station: GasStation) => HTMLElement;
 }
@@ -20,200 +20,121 @@ export const useMarkerManager = ({
   language,
   createPopupContent
 }: UseMarkerManagerProps) => {
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
-  const popupsRef = useRef<mapboxgl.Popup[]>([]);
-  const activePopupRef = useRef<mapboxgl.Popup | null>(null);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastRenderedRef = useRef<{count: number, ids: string[]}>({count: 0, ids: []});
-  
-  // A memoized version of the stations data to reduce unnecessary updates
-  const stationIds = useMemo(() => stations.map(s => s.id), [stations]);
-  const selectedId = selectedStation?.id || null;
+  const markersRef = new Map<string, mapboxgl.Marker>();
 
-  // Optimized marker update function
+  // Update markers on the map
   const updateMarkers = useCallback(() => {
-    // If map isn't ready yet, don't do anything
-    if (!map) return;
+    if (!map) {
+      return;
+    }
 
-    // Check if we really need to update markers
-    const stationsCount = stations.length;
-    const idsMatch = stationsCount === lastRenderedRef.current.count && 
-      stationIds.every(id => lastRenderedRef.current.ids.includes(id));
-    
-    // If we have the same stations (just in different order or with updated properties)
-    // we only need to update the selected marker
-    if (idsMatch && stationsCount > 0) {
-      markersRef.current.forEach(marker => {
-        const markerElement = marker.getElement();
-        const stationId = markerElement.getAttribute('data-station-id');
-        const isSelected = selectedId === stationId;
-        
-        // Only update the style of markers if selection has changed
-        if (isSelected) {
-          markerElement.style.width = '38px';
-          markerElement.style.height = '38px';
-          markerElement.style.filter = 'drop-shadow(0 0 8px rgba(255, 119, 51, 0.8))';
-          markerElement.style.animation = 'bounce 1s infinite alternate';
-          
-          // Move selected marker above all others
-          markerElement.style.zIndex = '100';
-          
-          // If selected, fly map to station
-          if (selectedStation) {
-            map.flyTo({
-              center: [selectedStation.longitude, selectedStation.latitude],
-              zoom: 14,
-              essential: true,
-              duration: 1000
-            });
-          }
-        } else {
-          // Reset styles for non-selected markers
-          markerElement.style.width = '28px';
-          markerElement.style.height = '28px';
-          markerElement.style.filter = 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35))';
-          markerElement.style.animation = 'none';
-          markerElement.style.zIndex = '1';
-        }
+    try {
+      // Clear existing markers
+      markersRef.forEach((marker) => {
+        marker.remove();
       });
-      
-      return; // Skip full re-render of markers
-    }
+      markersRef.clear();
 
-    // Otherwise, remove all existing markers and recreate them
-    markersRef.current.forEach(marker => marker.remove());
-    markersRef.current = [];
-    
-    popupsRef.current.forEach(popup => popup.remove());
-    popupsRef.current = [];
+      // Add markers for each station
+      stations.forEach((station) => {
+        // Create station marker
+        const isSelected = selectedStation?.id === station.id;
 
-    // Cancel any active timeouts
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
+        // Create custom marker element
+        const el = document.createElement('div');
+        el.className = `station-marker ${isSelected ? 'selected' : ''}`;
+        el.style.width = isSelected ? '42px' : '36px';
+        el.style.height = isSelected ? '42px' : '36px';
+        el.style.backgroundColor = isSelected ? '#6633cc' : '#9966cc';
+        el.style.border = '2px solid #ffffff';
+        el.style.borderRadius = '50%';
+        el.style.boxShadow = '0 2px 6px rgba(0, 0, 0, 0.3)';
+        el.style.cursor = 'pointer';
+        el.style.display = 'flex';
+        el.style.alignItems = 'center';
+        el.style.justifyContent = 'center';
+        el.style.transition = 'all 0.2s ease';
+        el.style.transform = isSelected ? 'scale(1.1)' : 'scale(1)';
+        el.style.zIndex = isSelected ? '2' : '1';
 
-    // Performance optimization: limit markers to improve performance on low-end devices
-    const MAX_MARKERS = 500;
-    const markersToRender = stations.length > MAX_MARKERS ? stations.slice(0, MAX_MARKERS) : stations;
+        // Add gas station icon
+        const icon = document.createElement('div');
+        icon.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="${isSelected ? '22' : '18'}" height="${isSelected ? '22' : '18'}" 
+               viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 22h12"></path>
+            <path d="M5 22V11c0-1.1.9-2 2-2h6c1.1 0 2 .9 2 2v11"></path>
+            <path d="M3 7V5c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2v2"></path>
+            <path d="M17 22V9"></path>
+            <path d="M15 7V5c0-1.1.9-2 2-2h3c1.1 0 2 .9 2 2v14c0 1.1-.9 2-2 2h-3"></path>
+            <path d="M19 5V3"></path>
+          </svg>`;
+        el.appendChild(icon);
 
-    // Create markers in batches of 100
-    const createMarkerBatch = (startIdx: number, endIdx: number) => {
-      const batch = markersToRender.slice(startIdx, endIdx);
-      
-      batch.forEach(station => {
-        // Create marker for the station
-        const el = createMarkerElement(station, selectedId);
-        
-        // Store the station ID in the element for easier reference
-        el.setAttribute('data-station-id', station.id);
-        
-        // If selected, fly map to station
-        if (selectedId === station.id && selectedStation) {
-          map.flyTo({
-            center: [selectedStation.longitude, selectedStation.latitude],
-            zoom: 14,
-            essential: true,
-            duration: 1000
-          });
-        }
-
-        // Create popup for the station with close button
+        // Create popup
         const popup = new mapboxgl.Popup({
-          closeButton: true,
-          closeOnClick: false,
-          offset: 25,
-          className: 'station-popup',
-          maxWidth: '300px',
+          closeButton: false,
+          closeOnClick: true,
           anchor: 'bottom',
-        }).setDOMContent(createPopupContent(station));
-        
-        // Style the close button
-        stylePopupCloseButton(popup);
-        
-        popupsRef.current.push(popup);
+          offset: [0, -15],
+          className: `gas-station-popup ${language === 'ar' ? 'arabic-popup' : ''}`
+        })
+          .setDOMContent(createPopupContent(station))
+          .on('close', () => {
+            if (selectedStation?.id === station.id) {
+              // onSelectStation(null);
+            }
+          });
 
-        // Create marker and add to map
+        // Add marker to map
         const marker = new mapboxgl.Marker({
-          element: el,
-          anchor: 'bottom',
-          offset: [0, -5] // Adjust offset to make the pin appear in the correct position
+          element: el
         })
           .setLngLat([station.longitude, station.latitude])
+          .setPopup(popup)
           .addTo(map);
 
-        // Add marker to reference
-        markersRef.current.push(marker);
-
-        // Track popup display state
-        let popupVisible = false;
-
-        // Add hover events to marker
-        el.addEventListener('mouseenter', () => {
-          handleMarkerHover(el, popup, map, activePopupRef, hoverTimeoutRef);
-          popupVisible = true;
-        });
-        
-        // Add click event
+        // Add click event to marker
         el.addEventListener('click', () => {
-          // Create pulse effect on click
-          el.animate([
-            { transform: 'scale(1)', offset: 0 },
-            { transform: 'scale(1.2)', offset: 0.5 },
-            { transform: 'scale(1)', offset: 1 }
-          ], {
-            duration: 300,
-            iterations: 1
-          });
-          
-          // Keep popup open on click
-          popupVisible = true;
-          
-          // Select the station
+          // Select the station when marker is clicked
           onSelectStation(station);
+          
+          // Show popup
+          marker.togglePopup();
         });
 
-        // Add popup close event
-        popup.on('close', () => {
-          popupVisible = false;
-          if (activePopupRef.current === popup) {
-            activePopupRef.current = null;
+        // Add hover effects
+        el.addEventListener('mouseenter', () => {
+          if (selectedStation?.id !== station.id) {
+            el.style.backgroundColor = '#7F00FF';
+            el.style.transform = 'scale(1.05)';
           }
         });
 
-        // Add click event to popup itself (to prevent closing when clicking on it)
-        const popupContentElement = popup.getElement();
-        if (popupContentElement) {
-          popupContentElement.addEventListener('click', (e) => {
-            e.stopPropagation();
-          });
-        }
-      });
-    };
-
-    // Process markers in batches using requestAnimationFrame to prevent UI blocking
-    const processBatch = (startIdx: number, batchSize: number) => {
-      const endIdx = Math.min(startIdx + batchSize, markersToRender.length);
-      createMarkerBatch(startIdx, endIdx);
-      
-      if (endIdx < markersToRender.length) {
-        // Schedule next batch
-        requestAnimationFrame(() => {
-          processBatch(endIdx, batchSize);
+        el.addEventListener('mouseleave', () => {
+          if (selectedStation?.id !== station.id) {
+            el.style.backgroundColor = '#9966cc';
+            el.style.transform = 'scale(1)';
+          }
         });
+
+        // Store marker reference
+        markersRef.set(station.id, marker);
+      });
+
+      // Open popup for selected station
+      if (selectedStation) {
+        const selectedMarker = markersRef.get(selectedStation.id);
+        if (selectedMarker && !selectedMarker.getPopup().isOpen()) {
+          selectedMarker.togglePopup();
+        }
       }
-    };
+    } catch (error) {
+      console.error("Error updating markers:", error);
+    }
+  }, [map, stations, selectedStation, onSelectStation, language, createPopupContent]);
 
-    // Begin batch processing with batches of 100
-    processBatch(0, 100);
-    
-    // Update last rendered ref
-    lastRenderedRef.current = {
-      count: stations.length,
-      ids: stationIds
-    };
-
-  }, [map, stations, stationIds, selectedStation, selectedId, onSelectStation, language, createPopupContent]);
-
-  return { updateMarkers };
+  return {
+    updateMarkers
+  };
 };

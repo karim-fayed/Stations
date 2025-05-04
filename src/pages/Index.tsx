@@ -15,12 +15,14 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import mapboxgl from 'mapbox-gl';
 import { MAPBOX_TOKEN } from '@/utils/environment';
 import { useTranslation } from "@/hooks/useTranslation";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   // الحالات (States)
   const [selectedStation, setSelectedStation] = useState<GasStation | null>(null);
   const { language } = useLanguage();
   const { t } = useTranslation();
+  const { toast } = useToast();
   const [stations, setStations] = useState<GasStation[]>([]);
   const [filteredStations, setFilteredStations] = useState<GasStation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,8 +34,17 @@ const Index = () => {
 
   // بدء تحديد الموقع في الخلفية عند تحميل التطبيق
   useEffect(() => {
-    // نهيئ mapboxgl قبل تحميل الخريطة
-    mapboxgl.accessToken = MAPBOX_TOKEN;
+    try {
+      // نهيئ mapboxgl قبل تحميل الخريطة
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+    } catch (err) {
+      console.error("Error initializing Mapbox:", err);
+      toast({
+        title: language === 'ar' ? 'خطأ في تهيئة الخريطة' : 'Map initialization error',
+        description: language === 'ar' ? 'يرجى تحديث الصفحة' : 'Please refresh the page',
+        variant: 'destructive'
+      });
+    }
   }, []);
 
   // جلب بيانات المحطات عند تحميل الصفحة
@@ -49,6 +60,11 @@ const Index = () => {
       } catch (err) {
         console.error("Error loading stations:", err);
         setError(t('home.loadingError'));
+        toast({
+          title: language === 'ar' ? 'خطأ في تحميل البيانات' : 'Error loading data',
+          description: language === 'ar' ? 'حدث خطأ أثناء تحميل بيانات المحطات' : 'An error occurred while loading station data',
+          variant: 'destructive'
+        });
       } finally {
         setIsLoading(false);
       }

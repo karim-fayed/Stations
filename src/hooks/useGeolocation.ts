@@ -1,195 +1,200 @@
 
-import { useState, useEffect } from 'react';
-import { useToast } from "@/hooks/use-toast";
-import { useBackgroundLocation } from './useBackgroundLocation';
+import { useState, useEffect, useCallback } from 'react';
+import { MapTexts } from '@/components/map/types';
+import { useToast } from '@/hooks/use-toast';
+import { MAP_TIMEOUT } from '@/utils/environment';
 
-interface GeolocationOptions {
+interface UseGeolocationProps {
   language: 'ar' | 'en';
-  texts: {
-    locationDetecting: string;
-    pleaseWait: string;
-    locationError: string;
-    enableLocation: string;
-    locationDetected: string;
-  };
+  texts: MapTexts;
   map: React.MutableRefObject<mapboxgl.Map | null>;
 }
 
-interface LocationState {
-  latitude: number;
-  longitude: number;
-  accuracy?: number;
-}
-
-export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => {
-  const [userLocation, setUserLocation] = useState<LocationState | null>(null);
+export const useGeolocation = ({ language, texts, map }: UseGeolocationProps) => {
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+  } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  const [locationAttempts, setLocationAttempts] = useState(0);
   const { toast } = useToast();
   
-  // استخدام hook تحديد الموقع في الخلفية
-  const { 
-    locationData, 
-    isLocating, 
-    startBackgroundLocationTracking, 
-    stopBackgroundLocationTracking 
-  } = useBackgroundLocation(language);
+  // Track the geolocation watch ID for cleanup
+  const watchIdRef = { current: 0 };
   
-  // تحديث الموقع عندما تتغير البيانات من تحديد الموقع في الخلفية
-  useEffect(() => {
-    if (locationData && !userLocation) {
-      const { latitude, longitude, accuracy } = locationData;
-      setUserLocation({ latitude, longitude, accuracy });
-      
-      // لا نريد الانتقال للموقع تلقائيًا إلا إذا كانت الدقة جيدة
-      if (accuracy && accuracy < 50) {
-        moveMapToLocation(latitude, longitude);
-      }
-    }
-  }, [locationData]);
-  
-  // تحديد الموقع على الخريطة
-  const moveMapToLocation = (latitude: number, longitude: number, zoom?: number) => {
-    if (map.current) {
-      map.current.flyTo({
-        center: [longitude, latitude],
-        zoom: zoom || 16,
-        essential: true,
-        duration: 1000
-      });
-    }
-  };
+  // Track if there's a pending location request timeout
+  const timeoutRef = { current: 0 };
 
-  // تحسين أداء الحصول على الموقع الدقيق للمستخدم
-  const getUserLocation = () => {
+  // Function to get user location
+  const getUserLocation = useCallback(() => {
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+    }
+
+    // Show loading toast
     setIsLoadingLocation(true);
-
-    toast({
+    
+    const loadingToastId = toast({
       title: texts.locationDetecting,
       description: texts.pleaseWait,
-    });
+      duration: MAP_TIMEOUT,
+    }).id;
 
-    if (!navigator.geolocation) {
+    // Set a timeout to handle geolocation errors
+    timeoutRef.current = window.setTimeout(() => {
+      setIsLoadingLocation(false);
       toast({
+        id: loadingToastId,
         title: texts.locationError,
         description: texts.enableLocation,
         variant: 'destructive',
       });
-      setIsLoadingLocation(false);
-      return;
-    }
+    }, MAP_TIMEOUT);
 
-    // استخدام خيارات عالية الدقة مع مهلات أطول
-    const geoOptions = {
-      enableHighAccuracy: true,
-      timeout: locationAttempts > 0 ? 30000 : 20000,
-      maximumAge: 0
-    };
+    try {
+      if (!navigator.geolocation) {
+        throw new Error('Geolocation not supported by your browser');
+      }
 
-    // استخدام متابعة الموقع بدلاً من طلب موقع واحد
-    const watchId = navigator.geolocation.watchPosition(
-      async (position) => {
-        // تم الحصول على الموقع بنجاح
-        const { latitude, longitude, accuracy } = position.coords;
-        console.log(`User location detected: ${latitude}, ${longitude}, accuracy: ${accuracy}m`);
-        
-        // إذا لم تكن الدقة جيدة بما فيه الكفاية، نستمر في المتابعة
-        if (accuracy > 30 && locationAttempts < 3) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // Clear timeout when position is received
+          if (timeoutRef.current) {
+            window.clearTimeout(timeoutRef.current);
+            timeoutRef.current = 0;
+          }
+
+          // Update state with user location
+          const newLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+          };
+          
+          setUserLocation(newLocation);
+          setIsLoadingLocation(false);
+
+          // Update toast to show success
           toast({
-            title: language === 'ar' ? 'جاري تحسين الدقة...' : 'Improving accuracy...',
-            description: language === 'ar' 
-              ? `تم تحديد موقعك بدقة ${accuracy.toFixed(1)} متر، محاولة تحسين...` 
-              : `Location detected with ${accuracy.toFixed(1)}m accuracy, trying to improve...`,
+            id: loadingToastId,
+            title: texts.locationDetected,
+            description: '',
+            duration: 3000,
           });
-          setLocationAttempts(prev => prev + 1);
-          return;
-        }
-        
-        // إلغاء المتابعة لأننا حصلنا على موقع جيد
-        navigator.geolocation.clearWatch(watchId);
-        
-        setUserLocation({ latitude, longitude, accuracy });
-        setLocationAttempts(0);
 
-        // الانتقال إلى موقع المستخدم
-        moveMapToLocation(latitude, longitude);
+          // Center map on user location if available
+          if (map.current) {
+            map.current.flyTo({
+              center: [newLocation.longitude, newLocation.latitude],
+              zoom: 14,
+            });
+          }
+        },
+        (error) => {
+          // Clear timeout
+          if (timeoutRef.current) {
+            window.clearTimeout(timeoutRef.current);
+            timeoutRef.current = 0;
+          }
 
-        setIsLoadingLocation(false);
+          console.error('Error getting location:', error);
+          setIsLoadingLocation(false);
 
-        toast({
-          title: texts.locationDetected,
-          description: language === 'ar' 
-            ? `تم تحديد موقعك بدقة ${accuracy.toFixed(1)} متر`
-            : `Your location detected with ${accuracy.toFixed(1)}m accuracy`,
-        });
-      },
-      (error) => {
-        // خطأ في الحصول على الموقع
-        console.error('Geolocation error:', error);
-        navigator.geolocation.clearWatch(watchId);
-        
-        let errorMsg = '';
-        let shouldRetry = false;
-        
-        switch(error.code) {
-          case error.PERMISSION_DENIED:
-            errorMsg = language === 'ar' ? 'تم رفض إذن تحديد الموقع' : 'Location permission denied';
-            shouldRetry = false;
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMsg = language === 'ar' ? 'معلومات الموقع غير متوفرة' : 'Location information unavailable';
-            shouldRetry = locationAttempts < 3;
-            break;
-          case error.TIMEOUT:
-            errorMsg = language === 'ar' ? 'انتهت مهلة طلب تحديد الموقع' : 'Location request timed out';
-            shouldRetry = locationAttempts < 3;
-            break;
-          default:
-            errorMsg = error.message;
-            shouldRetry = locationAttempts < 2;
-        }
-        
-        if (shouldRetry) {
-          // إعادة المحاولة مع مهلة أطول
-          setLocationAttempts(prev => prev + 1);
+          // Update toast to show error
           toast({
-            title: language === 'ar' ? 'إعادة محاولة تحديد الموقع' : 'Retrying location detection',
-            description: language === 'ar' ? `محاولة ${locationAttempts + 1}/3...` : `Trying attempt ${locationAttempts + 1}/3...`,
-          });
-          // الانتظار قليلاً قبل إعادة المحاولة
-          setTimeout(getUserLocation, 1000);
-        } else {
-          toast({
+            id: loadingToastId,
             title: texts.locationError,
-            description: errorMsg,
+            description: error.message || texts.enableLocation,
             variant: 'destructive',
           });
-          setIsLoadingLocation(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: MAP_TIMEOUT,
+          maximumAge: 0,
         }
-      },
-      geoOptions
-    );
-    
-    // تحديد مهلة للتوقف عن المتابعة إذا كانت تستغرق وقتًا طويلاً
-    setTimeout(() => {
-      if (isLoadingLocation) {
-        navigator.geolocation.clearWatch(watchId);
-        toast({
-          title: language === 'ar' ? 'استغرق وقتًا طويلاً' : 'Taking too long',
-          description: language === 'ar' ? 'قد تكون دقة GPS منخفضة في موقعك الحالي' : 'GPS accuracy might be low in your current location',
-          variant: 'default',
-        });
-        setIsLoadingLocation(false);
+      );
+    } catch (error) {
+      // Clear timeout
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = 0;
       }
-    }, 40000); // 40 second timeout
-  };
+
+      console.error('Error in geolocation:', error);
+      setIsLoadingLocation(false);
+
+      // Update toast to show error
+      toast({
+        id: loadingToastId,
+        title: texts.locationError,
+        description: error instanceof Error ? error.message : texts.enableLocation,
+        variant: 'destructive',
+      });
+    }
+  }, [texts, toast, map]);
+
+  // Start background location tracking
+  const startBackgroundLocationTracking = useCallback(() => {
+    try {
+      if (navigator.geolocation) {
+        // Clear any existing watch
+        if (watchIdRef.current) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+        }
+        
+        // Start new watch with less aggressive options
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (position) => {
+            setUserLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+            });
+          },
+          (error) => {
+            console.log("Background location error:", error.message);
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: MAP_TIMEOUT,
+            maximumAge: 30000, // Accept positions up to 30 seconds old
+          }
+        );
+      }
+    } catch (error) {
+      console.error("Error starting background location:", error);
+    }
+  }, []);
+
+  // Stop background location tracking
+  const stopBackgroundLocationTracking = useCallback(() => {
+    if (watchIdRef.current && navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = 0;
+    }
+  }, []);
+
+  // Clean up on component unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+      
+      if (watchIdRef.current && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, []);
 
   return {
     userLocation,
     setUserLocation,
     isLoadingLocation,
     getUserLocation,
-    startBackgroundLocationTracking,  // إضافة الوظائف الجديدة
-    stopBackgroundLocationTracking
+    startBackgroundLocationTracking,
+    stopBackgroundLocationTracking,
   };
 };

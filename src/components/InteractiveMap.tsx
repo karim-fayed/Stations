@@ -88,23 +88,23 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     stopBackgroundLocationTracking
   } = useMapLocation(map, onSelectStation, texts, language);
 
-  // بدء تحديد الموقع في الخلفية عند تحميل الخريطة
+  // Start background location tracking when map is loaded
   useEffect(() => {
     if (initBackgroundLocation && map.current) {
       console.log("Starting background location tracking");
       startBackgroundLocationTracking();
       
-      // إخطار المكون الأب أننا بدأنا تحديد الموقع
+      // Notify parent component that location tracking has started
       if (onLocationInitialized) {
         onLocationInitialized();
       }
     }
     
     return () => {
-      // إيقاف تحديد الموقع عند إزالة المكون
+      // Stop background location tracking when component is unmounted
       stopBackgroundLocationTracking();
     };
-  }, [initBackgroundLocation, map.current]);
+  }, [initBackgroundLocation, map.current, startBackgroundLocationTracking, stopBackgroundLocationTracking, onLocationInitialized]);
 
   // Create popup content handler
   const handleCreatePopupContent = (station: GasStation) => {
@@ -212,19 +212,23 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       />
 
       {/* Hidden marker management components */}
-      <MapMarkerManager
-        map={map.current}
-        stations={filteredStations}
-        selectedStation={selectedStation}
-        onSelectStation={onSelectStation}
-        language={language}
-        createPopupContent={handleCreatePopupContent}
-      />
+      {map.current && (
+        <>
+          <MapMarkerManager
+            map={map.current}
+            stations={filteredStations}
+            selectedStation={selectedStation}
+            onSelectStation={onSelectStation}
+            language={language}
+            createPopupContent={handleCreatePopupContent}
+          />
 
-      <UserLocationMarker
-        map={map.current}
-        userLocation={userLocation}
-      />
+          <UserLocationMarker
+            map={map.current}
+            userLocation={userLocation}
+          />
+        </>
+      )}
 
       <MapAnimation enable={true} />
     </div>
