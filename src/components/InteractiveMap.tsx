@@ -1,28 +1,28 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { GasStation } from '@/types/station';
 import { useToast } from "@/hooks/use-toast";
-import { Language } from '@/i18n/translations';
-import { MapPin, Navigation } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { RefreshCcw } from "lucide-react";
 
 // Import custom hooks
 import { useMapInitialization } from '@/hooks/useMapInitialization';
 import { useMapLocation } from '@/hooks/useMapLocation';
 import { useMapSearch } from '@/hooks/useMapSearch';
 import { useCityFilter } from '@/hooks/useCityFilter';
-import { useMapLocalization } from '@/components/map/useMapLocalization';
+import { useMapLocalization } from './map/useMapLocalization';
 import { useSaudiCities } from './map/useSaudiCities';
 
 // Import modular components
-import SearchFilterSection from './map/SearchFilterSection';
-import MapContainer from './map/MapContainer';
-import MapControlPanel from './map/MapControlPanel';
-import MapOverlays from './map/MapOverlays';
+import CitySelector from './map/CitySelector';
+import MapControls from './map/MapControls';
 import StationPopup from './map/StationPopup';
 import MapMarkerManager from './map/MapMarkerManager';
 import UserLocationMarker from './map/UserLocationMarker';
+import MapAnimation from './map/MapAnimation';
+import MapSearchBar from './map/MapSearchBar';
+import MapOverlays from './map/MapOverlays';
+import { Button } from '@/components/ui/button';
 
 // Import utils
 import { createPopupContent, resetMap } from '@/utils/mapUtils';
@@ -30,7 +30,7 @@ import { createPopupContent, resetMap } from '@/utils/mapUtils';
 interface InteractiveMapProps {
   selectedStation: GasStation | null;
   onSelectStation: (station: GasStation | null) => void;
-  language: Language;
+  language: 'ar' | 'en';
   stations: GasStation[];
   initBackgroundLocation?: boolean;
   onLocationInitialized?: () => void;
@@ -46,8 +46,6 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 }) => {
   const [selectedCity, setSelectedCity] = useState<string>('');
   const { toast } = useToast();
-  const [locationInitialized, setLocationInitialized] = useState(false);
-  const isRTL = language === 'ar';
 
   // Load localization and cities data
   const texts = useMapLocalization(language);
@@ -90,38 +88,23 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     stopBackgroundLocationTracking
   } = useMapLocation(map, onSelectStation, texts, language);
 
-  // Initialize background location tracking with better parameters
-  const initializeBackgroundLocation = useCallback(() => {
-    if (initBackgroundLocation && map.current && !locationInitialized) {
-      console.log("Starting background location tracking with optimization");
-      // Start with higher accuracy requirement (500m) and longer interval (5 minutes)
-      startBackgroundLocationTracking(500, 300000);
-      setLocationInitialized(true);
+  // بدء تحديد الموقع في الخلفية عند تحميل الخريطة
+  useEffect(() => {
+    if (initBackgroundLocation && map.current) {
+      console.log("Starting background location tracking");
+      startBackgroundLocationTracking();
       
-      // Notify parent component that location tracking has started
+      // إخطار المكون الأب أننا بدأنا تحديد الموقع
       if (onLocationInitialized) {
         onLocationInitialized();
       }
     }
-  }, [initBackgroundLocation, map, locationInitialized, startBackgroundLocationTracking, onLocationInitialized]);
-
-  useEffect(() => {
-    // Slight delay to ensure map is fully initialized
-    if (map.current && initBackgroundLocation && !locationInitialized) {
-      const timer = setTimeout(() => {
-        initializeBackgroundLocation();
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    }
     
     return () => {
-      // Stop tracking when component is unmounted
-      if (locationInitialized) {
-        stopBackgroundLocationTracking();
-      }
+      // إيقاف تحديد الموقع عند إزالة المكون
+      stopBackgroundLocationTracking();
     };
-  }, [map.current, initBackgroundLocation, locationInitialized, initializeBackgroundLocation, stopBackgroundLocationTracking]);
+  }, [initBackgroundLocation, map.current]);
 
   // Create popup content handler
   const handleCreatePopupContent = (station: GasStation) => {
@@ -155,29 +138,44 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   return (
     <div className="w-full h-full flex flex-col">
-      {/* Search and Filter Section */}
-      <SearchFilterSection 
-        cities={cities}
-        selectedCity={selectedCity}
-        onCityChange={handleCityChange}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        debouncedSearchTerm={debouncedSearchTerm}
-        filteredStations={filteredStations}
-        texts={texts}
-        language={language}
-        isSearching={isSearching}
-      />
+      <div className="mb-4 flex flex-col sm:flex-row gap-2">
+        {/* City Selector Component */}
+        <div className="flex-1">
+          <CitySelector
+            cities={cities}
+            selectedCity={selectedCity}
+            onCityChange={handleCityChange}
+            language={language}
+          />
+        </div>
+
+        {/* Search Field */}
+        <MapSearchBar
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          debouncedSearchTerm={debouncedSearchTerm}
+          filteredStations={filteredStations}
+          texts={texts}
+          language={language}
+          isSearching={isSearching}
+        />
+      </div>
 
       <div className="relative flex-grow">
-        {/* Map Container */}
-        <MapContainer mapContainerRef={mapContainer} />
+        <div ref={mapContainer} className="map-container h-[500px] rounded-lg shadow-lg"></div>
 
         {/* Reset map button */}
-        <MapControlPanel 
-          onResetMap={handleResetMap}
-          language={language}
-        />
+        <div className="absolute top-2 left-2 z-10">
+          <Button
+            variant="outline" 
+            size="icon"
+            className="bg-white hover:bg-gray-100 shadow-md"
+            onClick={handleResetMap}
+            title={language === 'ar' ? 'إعادة تعيين الخريطة' : 'Reset map'}
+          >
+            <RefreshCcw className="h-4 w-4" />
+          </Button>
+        </div>
 
         {/* Map Overlay Components */}
         <MapOverlays
@@ -200,48 +198,35 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             onReset={handleResetMap}
           />
         )}
-
-        {/* Hidden marker management components */}
-        <MapMarkerManager
-          map={map.current}
-          stations={filteredStations}
-          selectedStation={selectedStation}
-          onSelectStation={onSelectStation}
-          language={language}
-          createPopupContent={handleCreatePopupContent}
-        />
-
-        <UserLocationMarker
-          map={map.current}
-          userLocation={userLocation}
-        />
       </div>
 
-      {/* Map Controls */}
-      <div className="bg-white border-t p-3 flex justify-between gap-2">
-        <Button 
-          className="flex-1 bg-noor-purple text-white hover:bg-noor-purple/90"
-          onClick={getUserLocation}
-          disabled={isLoadingLocation}
-        >
-          <MapPin className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-          {isLoadingLocation 
-            ? (isRTL ? 'جاري التحميل...' : 'Loading...') 
-            : texts.getLocation}
-        </Button>
-        
-        <Button 
-          variant="outline"
-          className={`flex-1 border-noor-orange text-noor-orange ${!userLocation ? 'opacity-50' : 'hover:bg-orange-50'}`}
-          onClick={() => findNearestStation()}
-          disabled={isLoadingNearest || !userLocation}
-        >
-          <Navigation className={`h-4 w-4 ${isRTL ? 'ml-2' : 'mr-2'}`} />
-          {isLoadingNearest 
-            ? (isRTL ? 'جاري البحث...' : 'Searching...') 
-            : texts.findNearest}
-        </Button>
-      </div>
+      {/* Map Controls Component */}
+      <MapControls
+        onGetLocation={getUserLocation}
+        onFindNearest={() => findNearestStation()}
+        isLoadingLocation={isLoadingLocation}
+        isLoadingNearest={isLoadingNearest}
+        hasUserLocation={!!userLocation}
+        texts={texts}
+        language={language}
+      />
+
+      {/* Hidden marker management components */}
+      <MapMarkerManager
+        map={map.current}
+        stations={filteredStations}
+        selectedStation={selectedStation}
+        onSelectStation={onSelectStation}
+        language={language}
+        createPopupContent={handleCreatePopupContent}
+      />
+
+      <UserLocationMarker
+        map={map.current}
+        userLocation={userLocation}
+      />
+
+      <MapAnimation enable={true} />
     </div>
   );
 };

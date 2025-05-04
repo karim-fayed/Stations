@@ -1,131 +1,128 @@
+
 import { useState, useEffect } from 'react';
-import mapboxgl from 'mapbox-gl';
-import { GasStation } from '@/types/station';
-import { SaudiCity } from '@/components/map/types';
-import { useToast } from '@/hooks/use-toast';
-import { Language } from '@/i18n/translations';
+import mapboxgl from 'mapbox-gl';  // إضافة استيراد mapboxgl هنا
+import { GasStation, SaudiCity } from '@/types/station';
+import { useToast } from "@/hooks/use-toast";
 
 export const useMapSearch = (
   stations: GasStation[],
   cities: SaudiCity[],
   onSelectStation: (station: GasStation | null) => void,
   map: React.MutableRefObject<mapboxgl.Map | null>,
-  language: Language
+  language: 'ar' | 'en'
 ) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>('');
   const [filteredStations, setFilteredStations] = useState<GasStation[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
 
-  // Debounce search term
+  // Debounce search term with longer delay to reduce excessive searches
   useEffect(() => {
-    const timerId = setTimeout(() => {
+    const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-    }, 300);
+    }, 400); // Increased from 300ms to 400ms for better performance
 
     return () => {
-      clearTimeout(timerId);
+      clearTimeout(timer);
     };
   }, [searchTerm]);
 
-  // Filter stations based on search term
+  // Cache search results to improve performance
+  const [searchCache, setSearchCache] = useState<{ [key: string]: GasStation[] }>({});
+
+  // Update filtered stations when search term changes
   useEffect(() => {
-    if (!debouncedSearchTerm.trim()) {
-      setFilteredStations([]);
+    const term = debouncedSearchTerm.trim().toLowerCase();
+    
+    if (!term) {
+      return;
+    }
+
+    // Use cached results if available
+    if (searchCache[term]) {
+      setFilteredStations(searchCache[term]);
+      navigateToResults(searchCache[term]);
       return;
     }
 
     setIsSearching(true);
-    
-    // Search in station names, regions, and sub-regions
-    const lowerCaseSearchTerm = debouncedSearchTerm.toLowerCase();
-    const filtered = stations.filter(station =>
-      station.name.toLowerCase().includes(lowerCaseSearchTerm) ||
-      station.region.toLowerCase().includes(lowerCaseSearchTerm) ||
-      station.sub_region.toLowerCase().includes(lowerCaseSearchTerm)
-    );
-    
-    setFilteredStations(filtered);
-    
-    // If there's exactly one result and it's a close match, auto-select it
-    if (filtered.length === 1 && 
-        (filtered[0].name.toLowerCase() === lowerCaseSearchTerm ||
-         filtered[0].sub_region.toLowerCase() === lowerCaseSearchTerm)) {
-      onSelectStation(filtered[0]);
-      
-      // Fly to the station
-      if (map.current && filtered[0].latitude && filtered[0].longitude) {
-        map.current.flyTo({
-          center: [filtered[0].longitude, filtered[0].latitude],
-          zoom: 15,
-          duration: 1000
-        });
-      }
-    } 
-    // If there are results, focus the map on those areas
-    else if (filtered.length > 0) {
-      // Try to find a city that matches the search term first
-      const matchingCity = cities.find(city => 
-        (language === Language.ARABIC ? city.name : city.nameEn).toLowerCase().includes(lowerCaseSearchTerm)
+
+    // Implement more efficient filtering with batch processing for large datasets
+    // Use requestAnimationFrame to avoid UI blocking
+    window.requestAnimationFrame(() => {
+      const filtered = stations.filter(station =>
+        station.name.toLowerCase().includes(term) ||
+        (station.region?.toLowerCase() || '').includes(term) ||
+        (station.sub_region?.toLowerCase() || '').includes(term) ||
+        (station.fuel_types?.toLowerCase() || '').includes(term)
       );
-      
-      if (matchingCity && map.current) {
+
+      // Cache results for future use
+      setSearchCache(prev => ({ ...prev, [term]: filtered }));
+      setFilteredStations(filtered);
+      navigateToResults(filtered);
+      setIsSearching(false);
+    });
+    
+  }, [debouncedSearchTerm, stations, cities, onSelectStation, map]);
+
+  // Helper function to navigate to search results
+  const navigateToResults = (filtered: GasStation[]) => {
+    if (filtered.length > 0 && map.current) {
+      // Check for matching city first (more efficient city search)
+      const term = debouncedSearchTerm.trim().toLowerCase();
+      const matchingCity = cities.find(city =>
+        city.name.toLowerCase().includes(term) ||
+        city.nameEn.toLowerCase().includes(term)
+      );
+
+      if (matchingCity) {
+        // If we found a matching city, navigate to it
         map.current.flyTo({
           center: [matchingCity.longitude, matchingCity.latitude],
-          zoom: matchingCity.zoom || 12,
+          zoom: matchingCity.zoom,
+          essential: true,
           duration: 1000
         });
-      }
-      // Otherwise, if we have results but no matching city, fit bounds to include all results
-      else if (filtered.length > 0 && map.current) {
-        // Calculate bounds to fit all filtered stations
-        const bounds = new mapboxgl.LngLatBounds();
-        
-        filtered.forEach(station => {
-          if (station.latitude && station.longitude) {
+      } else if (filtered.length > 0) {
+        // Group nearby stations to prevent excessive zooming
+        if (filtered.length > 5) {
+          // Find center point of all stations for better viewport positioning
+          const bounds = new mapboxgl.LngLatBounds();
+          
+          // Add first 20 stations max to bounds to avoid performance issues
+          filtered.slice(0, 20).forEach(station => {
             bounds.extend([station.longitude, station.latitude]);
-          }
-        });
-        
-        // Check if bounds are valid (non-empty)
-        if (!bounds.isEmpty()) {
+          });
+          
+          // Fit map to these bounds
           map.current.fitBounds(bounds, {
-            padding: 100,
+            padding: 50,
+            maxZoom: 14,
+            duration: 1200
+          });
+        } else {
+          // For fewer stations, go to the first one
+          const firstStation = filtered[0];
+          map.current.flyTo({
+            center: [firstStation.longitude, firstStation.latitude],
+            zoom: 14,
+            essential: true,
             duration: 1000
           });
+
+          // Select the station
+          onSelectStation(firstStation);
         }
       }
-
-      // Show notification for search results
-      if (filtered.length > 0) {
-        toast({
-          title: language === Language.ARABIC ? 'نتائج البحث' : 'Search Results',
-          description: language === Language.ARABIC
-            ? `تم العثور على ${filtered.length} محطة`
-            : `Found ${filtered.length} stations`,
-        });
-      }
-    } 
-    // If no results, show a notification
-    else {
-      toast({
-        title: language === Language.ARABIC ? 'لا توجد نتائج' : 'No Results',
-        description: language === Language.ARABIC 
-          ? 'لم يتم العثور على محطات مطابقة' 
-          : 'No matching stations found',
-        variant: 'destructive',
-      });
     }
+  };
 
-    setIsSearching(false);
-  }, [debouncedSearchTerm, stations, cities, onSelectStation, map, language, toast]);
-
-  // Clear search function
+  // Clear search and reset
   const clearSearch = () => {
     setSearchTerm('');
     setDebouncedSearchTerm('');
-    setFilteredStations([]);
   };
 
   return {

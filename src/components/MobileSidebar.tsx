@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -6,7 +5,6 @@ import { Menu, Home, Users, UserCircle, LogOut, MapPin, FileSpreadsheet, BarChar
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { motion } from "framer-motion";
-import { Language } from '@/i18n/translations';
 
 interface MobileSidebarProps {
   isOwner?: boolean;
@@ -25,7 +23,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOwner = false, onLogout
   };
 
   const toggleLanguage = () => {
-    setLanguage(language === Language.ARABIC ? Language.ENGLISH : Language.ARABIC);
+    setLanguage(language === 'ar' ? 'en' : 'ar');
   };
 
   const menuItems = [
@@ -71,13 +69,13 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOwner = false, onLogout
           <Menu size={24} />
         </Button>
       </SheetTrigger>
-      <SheetContent side={language === Language.ARABIC ? 'right' : 'left'} className="p-0 w-[280px] bg-gradient-to-b from-white to-purple-50">
+      <SheetContent side={language === 'ar' ? 'right' : 'left'} className="p-0 w-[280px] bg-gradient-to-b from-white to-purple-50">
         <div className="flex flex-col h-full">
           <div className="p-4 border-b border-gray-100">
             <div className="flex justify-center items-center mb-4">
               <div>
                 <h3 className="font-bold text-lg bg-gradient-to-r from-noor-purple to-noor-orange bg-clip-text text-transparent flex items-center justify-center">
-                  {language === Language.ARABIC ? (
+                  {language === 'ar' ? (
                     <>
                       <span>محطات نور</span>
                       <div className="relative mr-2">

@@ -1,6 +1,4 @@
 
-import { Language } from '@/i18n/translations';
-
 export interface SaudiCity {
   name: string;
   nameEn: string;

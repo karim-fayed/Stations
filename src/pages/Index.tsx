@@ -8,10 +8,12 @@ import GasStationList from "@/components/GasStationList";
 import { GasStation } from "@/types/station";
 import { fetchStations } from "@/services/stationService";
 import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { UserCircle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import mapboxgl from 'mapbox-gl';
 import { MAPBOX_TOKEN } from '@/utils/environment';
-import { Language } from "@/i18n/translations";
 
 const Index = () => {
   // الحالات (States)
@@ -25,7 +27,6 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<string>('map');
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const locationInitializedRef = useRef<boolean>(false);
-  const isRTL = language === Language.ARABIC;
 
   // بدء تحديد الموقع في الخلفية عند تحميل التطبيق
   useEffect(() => {
@@ -73,14 +74,23 @@ const Index = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen flex flex-col bg-gray-50"
-      dir={isRTL ? "rtl" : "ltr"}
+      className="min-h-screen flex flex-col"
     >
       <Toaster />
 
+      <div className="absolute top-4 right-4 z-10">
+        <Link to="/admin/login">
+          <Button variant="outline" className="flex items-center gap-2 bg-white/80 hover:bg-white">
+            <UserCircle size={18} />
+            <span className="hidden sm:inline">{t('home', 'adminPanel')}</span>
+          </Button>
+        </Link>
+      </div>
+
       <Header />
 
-      <main className="flex-grow container mx-auto p-4">
+      <main className="flex-grow container mx-auto p-4 md:p-6">
+
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-noor-purple"></div>
@@ -90,55 +100,49 @@ const Index = () => {
             {error}
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <div className="bg-gray-100 px-4 py-2">
-                <TabsList className="w-full grid grid-cols-2">
-                  <TabsTrigger value="map" className="data-[state=active]:bg-white rounded-t-md py-3">
-                    {isRTL ? 'الخريطة' : 'Map'}
-                  </TabsTrigger>
-                  <TabsTrigger value="list" className="data-[state=active]:bg-white rounded-t-md py-3">
-                    {isRTL ? 'قائمة المحطات' : 'Stations List'}
-                  </TabsTrigger>
-                </TabsList>
-              </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="map">
+                {t('home', 'map')}
+              </TabsTrigger>
+              <TabsTrigger value="list">
+                {t('home', 'stationsList')}
+              </TabsTrigger>
+            </TabsList>
 
-              <TabsContent value="map" className="p-0 m-0">
-                <div className="h-[calc(100vh-220px)]">
-                  <InteractiveMap
-                    selectedStation={selectedStation}
-                    onSelectStation={handleSelectStation}
-                    language={language}
-                    stations={stations}
-                    initBackgroundLocation={!locationInitializedRef.current}
-                    onLocationInitialized={() => {
-                      locationInitializedRef.current = true;
-                    }}
-                  />
-                </div>
-              </TabsContent>
+            <TabsContent value="map" className="min-h-[500px]">
+              <InteractiveMap
+                selectedStation={selectedStation}
+                onSelectStation={handleSelectStation}
+                language={language}
+                stations={stations}
+                initBackgroundLocation={!locationInitializedRef.current}
+                onLocationInitialized={() => {
+                  locationInitializedRef.current = true;
+                }}
+              />
+            </TabsContent>
 
-              <TabsContent value="list" className="m-0 p-0">
-                <div className="h-[calc(100vh-220px)] overflow-auto">
-                  <GasStationList
-                    stations={stations}
-                    onSelectStation={handleSelectStation}
-                    selectedStation={selectedStation}
-                    language={language}
-                  />
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
+            <TabsContent value="list">
+              <GasStationList
+                stations={stations}
+                onSelectStation={handleSelectStation}
+                selectedStation={selectedStation}
+                language={language}
+              />
+            </TabsContent>
+          </Tabs>
         )}
       </main>
 
-      <footer className="bg-noor-purple text-white py-3 mt-auto text-center">
-        <p className="text-sm">
-          {isRTL
-            ? '© 2025 محطات نور. جميع الحقوق محفوظة.'
-            : '© 2025 Noor Stations. All rights reserved.'}
-        </p>
+      <footer className={`bg-noor-purple text-white p-4`}>
+        <div className="container mx-auto text-center">
+          <p>
+            {language === 'ar'
+              ? '© 2025 محطات نور. جميع الحقوق محفوظة.'
+              : '© 2025 Noor Stations. All rights reserved.'}
+          </p>
+        </div>
       </footer>
     </motion.div>
   );

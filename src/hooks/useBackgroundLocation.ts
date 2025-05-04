@@ -1,124 +1,159 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { Language } from '@/i18n/translations';
+import { useToast } from "@/hooks/use-toast";
 
-interface LocationData {
+interface GeolocationState {
   latitude: number;
   longitude: number;
   accuracy?: number;
   timestamp: number;
 }
 
-export const useBackgroundLocation = (language: Language) => {
-  const [locationData, setLocationData] = useState<LocationData | null>(null);
+/**
+ * Hook لتحديد موقع المستخدم في الخلفية عند تحميل التطبيق
+ * يستخدم للحصول على الموقع بأكبر دقة ممكنة
+ */
+export const useBackgroundLocation = (language: 'ar' | 'en') => {
+  const [locationData, setLocationData] = useState<GeolocationState | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const watchIdRef = useRef<number | null>(null);
-  const lastUpdateRef = useRef<number>(0);
-  const updateIntervalRef = useRef<number>(300000); // Default 5 minutes (300000ms)
+  const attemptsRef = useRef(0);
+  const { toast } = useToast();
 
-  // Start background location tracking with controlled frequency
-  const startBackgroundLocationTracking = (minAccuracy = 1000, desiredInterval = 300000) => {
-    // Only start if not already tracking
-    if (watchIdRef.current !== null) {
+  // التوقف عن متابعة الموقع عند إغلاق التطبيق
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+    };
+  }, []);
+
+  // بدء متابعة الموقع في الخلفية
+  const startBackgroundLocationTracking = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation not supported");
       return;
     }
 
-    updateIntervalRef.current = desiredInterval;
-    setIsLocating(true);
+    if (watchIdRef.current !== null) {
+      // إذا كان هناك متابعة موجودة بالفعل، نوقفها ونبدأ واحدة جديدة
+      navigator.geolocation.clearWatch(watchIdRef.current);
+    }
 
-    // Use high accuracy but with a reasonable timeout
+    setIsLocating(true);
+    
+    // خيارات عالية الدقة لتحديد الموقع
     const options = {
       enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 60000 // Accept cached positions up to 1 minute old
+      timeout: 20000,
+      maximumAge: 0
     };
 
-    // Initial position request for immediate feedback
-    navigator.geolocation.getCurrentPosition(
+    // بدء متابعة الموقع
+    watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude, accuracy } = position.coords;
-        console.info(`Initial location detected: ${latitude}, ${longitude}, accuracy: ${accuracy}m`);
+        const timestamp = position.timestamp;
         
-        // Only update if accuracy is better than the minimum threshold
-        if (accuracy < minAccuracy) {
+        console.log(`Background location update: ${latitude}, ${longitude}, accuracy: ${accuracy}m`);
+        
+        // تقييم الدقة ومقارنتها بالنتيجة السابقة
+        if (locationData) {
+          // استخدام البيانات الجديدة فقط إذا كانت الدقة أفضل
+          if (accuracy && locationData.accuracy && accuracy < locationData.accuracy) {
+            setLocationData({
+              latitude,
+              longitude,
+              accuracy,
+              timestamp
+            });
+          }
+          // أو إذا كانت البيانات قديمة (أكثر من دقيقتين)
+          else if (timestamp - locationData.timestamp > 120000) {
+            setLocationData({
+              latitude,
+              longitude,
+              accuracy,
+              timestamp
+            });
+          }
+        } else {
+          // استخدام أول قراءة متاحة
           setLocationData({
             latitude,
             longitude,
             accuracy,
-            timestamp: position.timestamp
+            timestamp
           });
-          lastUpdateRef.current = Date.now();
         }
+        
+        // إذا كانت الدقة جيدة جدًا (أقل من 20 متر)، يمكننا التوقف عن المتابعة
+        if (accuracy && accuracy < 20) {
+          setIsLocating(false);
+          if (watchIdRef.current !== null) {
+            navigator.geolocation.clearWatch(watchIdRef.current);
+            watchIdRef.current = null;
+          }
+        }
+        // إذا كانت المحاولات كثيرة، نتوقف أيضًا
+        else if (attemptsRef.current > 5) {
+          setIsLocating(false);
+          if (watchIdRef.current !== null) {
+            navigator.geolocation.clearWatch(watchIdRef.current);
+            watchIdRef.current = null;
+          }
+        }
+        
+        attemptsRef.current++;
       },
-      (error) => {
-        console.warn(`Initial geolocation error: ${error.message}`);
-        // Fall back to IP-based location or continue with watch
+      (err) => {
+        console.error('Background location error:', err);
+        setError(err.message);
+        setIsLocating(false);
+        
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+          watchIdRef.current = null;
+        }
+        
+        // إظهار تنبيه فقط عند حدوث خطأ في الإذن، لا نريد إزعاج المستخدم
+        if (err.code === err.PERMISSION_DENIED) {
+          toast({
+            title: language === 'ar' ? 'خطأ في تحديد الموقع' : 'Location Error',
+            description: language === 'ar' 
+              ? 'يرجى تفعيل خدمة تحديد المواقع للاستفادة من كامل مميزات التطبيق' 
+              : 'Please enable location services for full app functionality',
+            variant: "default",
+          });
+        }
       },
       options
     );
 
-    // Set up watchPosition with throttling to prevent excessive updates
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (position) => {
-        const now = Date.now();
-        const { latitude, longitude, accuracy } = position.coords;
-        
-        // Log location updates for debugging, but don't flood the console
-        if (now - lastUpdateRef.current > 15000) { // Log at most every 15 seconds
-          console.info(`Background location update: ${latitude}, ${longitude}, accuracy: ${accuracy}m`);
-        }
-
-        // Only update if:
-        // 1. Time since last update exceeds the desired interval OR
-        // 2. We have a significantly better accuracy than before
-        const timeSinceLastUpdate = now - lastUpdateRef.current;
-        const shouldUpdateTime = timeSinceLastUpdate > updateIntervalRef.current;
-        const shouldUpdateAccuracy = locationData && 
-                                     accuracy < minAccuracy && 
-                                     accuracy < (locationData.accuracy || Infinity) * 0.7; // 30% improvement
-        
-        if (shouldUpdateTime || shouldUpdateAccuracy) {
-          setLocationData({
-            latitude,
-            longitude,
-            accuracy,
-            timestamp: position.timestamp
-          });
-          lastUpdateRef.current = now;
-        }
-      },
-      (error) => {
-        console.warn(`Background geolocation watch error: ${error.message}`);
-        // Do not set isLocating to false here, as the watch continues despite errors
-      },
-      {
-        enableHighAccuracy: false, // Use lower accuracy for background to save battery
-        timeout: 10000,
-        maximumAge: 120000 // Accept cached positions up to 2 minutes old for background
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
       }
-    );
+    };
   };
 
-  // Stop background location tracking
+  // إيقاف متابعة الموقع في الخلفية
   const stopBackgroundLocationTracking = () => {
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
       setIsLocating(false);
-      console.info("Background location tracking stopped");
     }
   };
-
-  // Clean up on unmount
-  useEffect(() => {
-    return () => {
-      stopBackgroundLocationTracking();
-    };
-  }, []);
 
   return {
     locationData,
     isLocating,
+    error,
     startBackgroundLocationTracking,
     stopBackgroundLocationTracking
   };

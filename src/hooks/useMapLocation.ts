@@ -5,13 +5,12 @@ import { MapTexts } from '@/components/map/types';
 import { useGeolocation } from './useGeolocation';
 import { useNearestStation } from './useNearestStation';
 import { useDirections } from './useDirections';
-import { Language } from '@/i18n/translations';
 
 export const useMapLocation = (
   map: React.MutableRefObject<mapboxgl.Map | null>,
   onSelectStation: (station: GasStation | null) => void,
   texts: MapTexts,
-  language: Language
+  language: 'ar' | 'en'
 ) => {
   // Use our new custom hooks
   const { 

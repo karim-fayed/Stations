@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Language } from '@/i18n/translations';
 
 interface LanguageSwitcherProps {
   variant?: 'default' | 'outline' | 'ghost' | 'secondary' | 'destructive' | 'link';
@@ -34,14 +32,14 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem
-          onClick={() => setLanguage(Language.ARABIC)}
-          className={language === Language.ARABIC ? 'bg-primary/10 font-bold' : ''}
+          onClick={() => setLanguage('ar')}
+          className={language === 'ar' ? 'bg-primary/10 font-bold' : ''}
         >
           {t('common', 'arabic')}
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => setLanguage(Language.ENGLISH)}
-          className={language === Language.ENGLISH ? 'bg-primary/10 font-bold' : ''}
+          onClick={() => setLanguage('en')}
+          className={language === 'en' ? 'bg-primary/10 font-bold' : ''}
         >
           {t('common', 'english')}
         </DropdownMenuItem>

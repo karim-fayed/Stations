@@ -3,12 +3,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { GasStation } from '@/types/station';
 import { X } from 'lucide-react';
-import { Language } from '@/i18n/translations';
 
 interface StationPopupProps {
   station: GasStation;
   onSelectStation: (station: GasStation | null) => void;
-  language: Language;
+  language: 'ar' | 'en';
   texts: {
     region: string;
     subRegion: string;
@@ -35,12 +34,12 @@ const StationPopup: React.FC<StationPopupProps> = ({
     if (!station.distance_meters) return null;
 
     return station.distance_meters > 1000
-      ? `${(station.distance_meters/1000).toFixed(2)} ${language === Language.ARABIC ? 'كم' : 'km'}`
-      : `${Math.round(station.distance_meters)} ${language === Language.ARABIC ? 'متر' : 'meters'}`;
+      ? `${(station.distance_meters/1000).toFixed(2)} ${language === 'ar' ? 'كم' : 'km'}`
+      : `${Math.round(station.distance_meters)} ${language === 'ar' ? 'متر' : 'meters'}`;
   };
 
   // تحديد اتجاه العناصر بناءً على اللغة
-  const isRTL = language === Language.ARABIC;
+  const isRTL = language === 'ar';
   
   return (
     <motion.div

@@ -4,10 +4,9 @@ import { useToast } from "@/hooks/use-toast";
 import { GasStation } from '@/types/station';
 import { fetchNearestStations } from '@/services/stationService';
 import { MapTexts } from '@/components/map/types';
-import { Language } from '@/i18n/translations';
 
 interface NearestStationOptions {
-  language: Language;
+  language: 'ar' | 'en';
   texts: MapTexts;
   map: React.MutableRefObject<mapboxgl.Map | null>;
   onSelectStation: (station: GasStation | null) => void;
@@ -31,8 +30,8 @@ export const useNearestStation = ({
     if (!lat || !lng) {
       // If no location is available, notify the user
       toast({
-        title: language === Language.ARABIC ? 'تنبيه' : 'Notice',
-        description: language === Language.ARABIC ? 'يجب تحديد موقعك أولاً' : 'Please get your location first',
+        title: language === 'ar' ? 'تنبيه' : 'Notice',
+        description: language === 'ar' ? 'يجب تحديد موقعك أولاً' : 'Please get your location first',
         variant: 'default',
       });
       return;
@@ -42,8 +41,8 @@ export const useNearestStation = ({
     
     // Show searching toast
     const searchToastId = toast({
-      title: language === Language.ARABIC ? 'جاري البحث' : 'Searching',
-      description: language === Language.ARABIC ? 'البحث عن أقرب محطة...' : 'Finding nearest station...',
+      title: language === 'ar' ? 'جاري البحث' : 'Searching',
+      description: language === 'ar' ? 'البحث عن أقرب محطة...' : 'Finding nearest station...',
     }).id;
 
     try {
@@ -104,8 +103,8 @@ export const useNearestStation = ({
       } else {
         // No stations found
         toast({
-          title: language === Language.ARABIC ? 'لم يتم العثور على محطات' : 'No stations found',
-          description: language === Language.ARABIC ? 'لا توجد محطات قريبة من موقعك' : 'No stations near your location',
+          title: language === 'ar' ? 'لم يتم العثور على محطات' : 'No stations found',
+          description: language === 'ar' ? 'لا توجد محطات قريبة من موقعك' : 'No stations near your location',
           variant: "destructive",
         });
       }
@@ -113,7 +112,7 @@ export const useNearestStation = ({
       console.error('Error finding nearest station:', error);
       toast({
         title: texts.locationError,
-        description: language === Language.ARABIC ? 'حدث خطأ أثناء البحث عن أقرب محطة' : 'Error finding nearest station',
+        description: language === 'ar' ? 'حدث خطأ أثناء البحث عن أقرب محطة' : 'Error finding nearest station',
         variant: "destructive",
       });
     } finally {

@@ -1,9 +1,8 @@
 
 import { GasStation } from '@/types/station';
 import { MapTexts } from '@/components/map/types';
-import { Language } from '@/i18n/translations';
 
-export const createPopupContent = (station: GasStation, texts: MapTexts, language: Language, onSelectStation: (station: GasStation) => void) => {
+export const createPopupContent = (station: GasStation, texts: MapTexts, language: 'ar' | 'en', onSelectStation: (station: GasStation) => void) => {
   const distance = station.distance_meters
     ? station.distance_meters > 1000
       ? `${(station.distance_meters / 1000).toFixed(2)} ${texts.kilometers}`
@@ -12,10 +11,10 @@ export const createPopupContent = (station: GasStation, texts: MapTexts, languag
 
   const content = document.createElement('div');
   content.className = 'px-3 py-2';
-  content.dir = language === Language.ARABIC ? 'rtl' : 'ltr';
+  content.dir = language === 'ar' ? 'rtl' : 'ltr';
   
   // Check language for layout direction
-  const isRTL = language === Language.ARABIC;
+  const isRTL = language === 'ar';
   
   content.innerHTML = `
     <div class="bg-gradient-to-r from-noor-purple to-noor-light-purple p-2 -mt-2 -mx-3 mb-2 rounded-t-lg">
@@ -79,7 +78,7 @@ export const resetMap = (
   setUserLocation: (location: { latitude: number; longitude: number } | null) => void,
   setSelectedCity: (city: string) => void,
   setFilteredStations: (stations: GasStation[]) => void,
-  language: Language,
+  language: 'ar' | 'en',
   toast: any
 ) => {
   // Deselect station
@@ -109,8 +108,8 @@ export const resetMap = (
     });
 
     toast({
-      title: language === Language.ARABIC ? 'تم إعادة تعيين الخريطة' : 'Map has been reset',
-      description: language === Language.ARABIC ? 'يمكنك اختيار مدينة لعرض المحطات فيها' : 'Choose a city to view its stations',
+      title: language === 'ar' ? 'تم إعادة تعيين الخريطة' : 'Map has been reset',
+      description: language === 'ar' ? 'يمكنك اختيار مدينة لعرض المحطات فيها' : 'Choose a city to view its stations',
     });
   }
 };
