@@ -14,9 +14,10 @@ export const useMapLocation = (
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [isLoadingNearest, setIsLoadingNearest] = useState(false);
+  const [locationAttempts, setLocationAttempts] = useState(0);
   const { toast } = useToast();
 
-  // Get user location with improved accuracy
+  // Get user location with improved accuracy and timeout handling
   const getUserLocation = () => {
     setIsLoadingLocation(true);
 
@@ -35,19 +36,25 @@ export const useMapLocation = (
       return;
     }
 
-    // Use high accuracy options
+    // Use high accuracy options with shorter timeouts
     const geoOptions = {
       enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0
+      timeout: locationAttempts > 0 ? 15000 : 8000, // Increase timeout on retries
+      maximumAge: 0 // Don't use cached position
     };
 
-    navigator.geolocation.getCurrentPosition(
+    // Use watcher ID to be able to clear the watch
+    const watchId = navigator.geolocation.watchPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords;
-        console.log(`User location detected: ${latitude}, ${longitude}, accuracy: ${position.coords.accuracy}m`);
+        // Successfully got position
+        const { latitude, longitude, accuracy } = position.coords;
+        console.log(`User location detected: ${latitude}, ${longitude}, accuracy: ${accuracy}m`);
+        
+        // Clear the watch as we got a good position
+        navigator.geolocation.clearWatch(watchId);
         
         setUserLocation({ latitude, longitude });
+        setLocationAttempts(0); // Reset attempts counter on success
 
         // Move to user location
         map.current?.flyTo({
@@ -62,37 +69,56 @@ export const useMapLocation = (
         toast({
           title: texts.locationDetected,
           description: language === 'ar' 
-            ? `تم تحديد موقعك بدقة ${position.coords.accuracy.toFixed(1)} متر`
-            : `Your location detected with ${position.coords.accuracy.toFixed(1)}m accuracy`,
+            ? `تم تحديد موقعك بدقة ${accuracy.toFixed(1)} متر`
+            : `Your location detected with ${accuracy.toFixed(1)}m accuracy`,
         });
 
         // Let UI update first, then look for nearest station
         setTimeout(() => findNearestStation(), 500);
       },
       (error) => {
+        // Error getting position
         console.error('Geolocation error:', error);
+        navigator.geolocation.clearWatch(watchId);
+        
         let errorMsg = '';
+        let shouldRetry = false;
         
         switch(error.code) {
           case error.PERMISSION_DENIED:
             errorMsg = language === 'ar' ? 'تم رفض إذن تحديد الموقع' : 'Location permission denied';
+            shouldRetry = false; // Don't retry if permission denied
             break;
           case error.POSITION_UNAVAILABLE:
             errorMsg = language === 'ar' ? 'معلومات الموقع غير متوفرة' : 'Location information unavailable';
+            shouldRetry = locationAttempts < 2; // Retry once if position unavailable
             break;
           case error.TIMEOUT:
             errorMsg = language === 'ar' ? 'انتهت مهلة طلب تحديد الموقع' : 'Location request timed out';
+            shouldRetry = locationAttempts < 2; // Retry once on timeout
             break;
           default:
             errorMsg = error.message;
+            shouldRetry = locationAttempts < 1;
         }
         
-        toast({
-          title: texts.locationError,
-          description: errorMsg,
-          variant: 'destructive',
-        });
-        setIsLoadingLocation(false);
+        if (shouldRetry) {
+          // Retry with less accuracy but longer timeout
+          setLocationAttempts(prev => prev + 1);
+          toast({
+            title: language === 'ar' ? 'إعادة محاولة تحديد الموقع' : 'Retrying location detection',
+            description: language === 'ar' ? 'جارٍ إعادة المحاولة...' : 'Trying again...',
+          });
+          // Wait a moment before retrying
+          setTimeout(getUserLocation, 800);
+        } else {
+          toast({
+            title: texts.locationError,
+            description: errorMsg,
+            variant: 'destructive',
+          });
+          setIsLoadingLocation(false);
+        }
       },
       geoOptions
     );

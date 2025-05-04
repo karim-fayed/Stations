@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { GasStation } from "@/types/station";
 
@@ -187,22 +188,34 @@ export const fetchNearestStations = async (
     
     // First try with PostGIS
     try {
-      // Fix: Use parameter interpolation correctly for PostGIS query
+      // Fixed: Use a simpler query approach to avoid parameter interpolation issues
       const { data, error } = await supabase
         .from('stations')
-        .select('*, distance_meters:location <-> point($1, $2)::geography')
-        .eq('id', 'id') // This is a trick to get a valid SQL query but still apply the ORDER BY afterwards
-        .order('location <-> point($1, $2)::geography', { ascending: true })
-        .limit(limit)
-        .values([longitude, latitude]); // Supply parameters for interpolation
+        .select('*')
+        .order(`location <-> point(${longitude}, ${latitude})::geography`, { ascending: true })
+        .limit(limit);
 
       if (error) {
         throw error;
       }
 
       if (data && data.length > 0) {
-        // Apply proper type assertion since we know the response structure
-        return data as unknown as GasStation[];
+        // Manually calculate distances since we couldn't get them directly from the query
+        const stationsWithDistance = data.map(station => {
+          const distance = calculateDistance(
+            latitude,
+            longitude,
+            station.latitude,
+            station.longitude
+          );
+          
+          return {
+            ...station,
+            distance_meters: distance * 1000 // Convert km to meters
+          };
+        });
+        
+        return stationsWithDistance;
       }
     } catch (postGisError) {
       console.warn("PostGIS query failed, falling back to manual distance calculation", postGisError);
@@ -275,25 +288,36 @@ export const checkDuplicateStation = async (
       };
     }
 
-    // Check for nearby stations using standard Postgres/PostGIS distance calculation
-    // Fix: Using .eq() with a column filter instead of .filter() which requires different parameters
-    const { data: locationMatches, error: locationError } = await supabase
+    // Fixed: Use a simpler approach for location check to avoid PostGIS errors
+    // Get nearby stations within 100 meters using manual calculation
+    const { data: allStations, error: locationError } = await supabase
       .from('stations')
-      .select('*')
-      .or(`ST_DWithin(location, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326)::geography, 100)`)
-      .limit(1);
+      .select('*');
 
     if (locationError) {
       console.error("Error checking nearby stations:", locationError);
       throw locationError;
     }
 
-    if (locationMatches && Array.isArray(locationMatches) && locationMatches.length > 0) {
-      return {
-        isDuplicate: true,
-        duplicateStation: locationMatches[0] as GasStation,
-        duplicateType: 'location'
-      };
+    if (allStations && allStations.length > 0) {
+      // Find stations within 100 meters
+      const nearbyStation = allStations.find(station => {
+        const distance = calculateDistance(
+          latitude,
+          longitude,
+          station.latitude,
+          station.longitude
+        );
+        return (distance * 1000) < 100; // Convert km to meters and check if < 100m
+      });
+
+      if (nearbyStation) {
+        return {
+          isDuplicate: true,
+          duplicateStation: nearbyStation as GasStation,
+          duplicateType: 'location'
+        };
+      }
     }
 
     return { isDuplicate: false };
