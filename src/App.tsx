@@ -1,65 +1,41 @@
+import React, { Suspense } from 'react';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import './App.css';
+import Index from './pages/Index';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Services from './pages/Services';
+import NotFound from './pages/NotFound';
+import Login from './pages/Admin/Login';
+import Dashboard from './pages/Admin/Dashboard';
+import Profile from './pages/Admin/Profile';
+import UserManagement from './pages/Admin/UserManagement';
+import { Toaster } from "@/components/ui/toaster"
+import AuthGuard from './components/AuthGuard';
+import LoadingSpinner from './components/LoadingSpinner';
+import { DatabaseMaintenance } from './pages/Admin';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
-import Index from "./pages/Index";
-import Services from "./pages/Services";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import LoginPage from "./pages/Admin/Login";
-import Dashboard from "./pages/Admin/Dashboard";
-import UserManagement from "./pages/Admin/UserManagement";
-import ProfilePage from "./pages/Admin/Profile";
-import NotFound from "./pages/NotFound";
-import { ensureAdminExists } from "./utils/admin";
-import AuthGuard from "@/components/admin/AuthGuard";
-
-const queryClient = new QueryClient();
-
-const App = () => {
-  useEffect(() => {
-    // Ensure admin user exists on app startup
-    console.log("App initializing - ensuring admin users exist");
-    ensureAdminExists().catch(console.error);
-  }, []);
-
+function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/admin/login" element={<LoginPage />} />
-            <Route path="/admin/dashboard" element={
-              <AuthGuard>
-                <Dashboard />
-              </AuthGuard>
-            } />
-            <Route path="/admin/users" element={
-              <AuthGuard requireOwner={true}>
-                <UserManagement />
-              </AuthGuard>
-            } />
-            <Route path="/admin/profile" element={
-              <AuthGuard>
-                <ProfilePage />
-              </AuthGuard>
-            } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <div className="App">
+      <Suspense fallback={<LoadingSpinner />}>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/admin/login" element={<Login />} />
+          <Route path="/admin" element={<AuthGuard><Dashboard /></AuthGuard>} />
+          <Route path="/admin/profile" element={<AuthGuard><Profile /></AuthGuard>} />
+          <Route path="/admin/users" element={<AuthGuard><UserManagement /></AuthGuard>} />
+          {/* Add the new route for Database Maintenance */}
+          <Route path="/admin/db-maintenance" element={<AuthGuard><DatabaseMaintenance /></AuthGuard>} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+      <Toaster />
+    </div>
   );
-};
+}
 
 export default App;
