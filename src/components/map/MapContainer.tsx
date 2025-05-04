@@ -13,7 +13,13 @@ const MapContainer: React.FC<MapContainerProps> = ({ mapContainerRef }) => {
       style={{ 
         position: 'relative',
         overflow: 'hidden',
-        willChange: 'transform' // Improves rendering performance
+        willChange: 'transform', // Improves rendering performance
+        backfaceVisibility: 'hidden', // Helps with GPU acceleration
+        WebkitBackfaceVisibility: 'hidden',
+        WebkitPerspective: '1000',
+        perspective: '1000',
+        transform: 'translate3d(0,0,0)',
+        WebkitTransform: 'translate3d(0,0,0)'
       }}
     />
   );

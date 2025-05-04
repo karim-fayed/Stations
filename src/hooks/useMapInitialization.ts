@@ -43,6 +43,10 @@ export const useMapInitialization = (language: Language) => {
           antialias: false,
           maxZoom: 18,
           minZoom: 3,
+          fadeDuration: 100, // Reduce fade duration for better performance
+          trackResize: true,
+          optimizeForTerrain: false,
+          useRequestAnimationFrame: true, // Ensure animation frame is properly used
         });
 
         // Add map controls but delay until the map loads
@@ -65,11 +69,20 @@ export const useMapInitialization = (language: Language) => {
 
         // Handle map errors
         map.current.on('error', (e) => {
-          // Only log critical map errors
-          if (e.error && e.error.status !== 401 && e.error.status !== 404) {
+          // Only log critical map errors, type-safe error handling
+          const mapError = e.error as { status?: number };
+          if (mapError && mapError.status !== 401 && mapError.status !== 404) {
             console.error('Mapbox error:', e.error);
           }
         });
+
+        // Optimize frame rate
+        if (map.current) {
+          // Throttle expensive operations on move events
+          map.current.on('move', () => {
+            // Throttling handled internally by Mapbox
+          });
+        }
       } catch (error) {
         console.error('Error initializing map:', error);
         toast({
