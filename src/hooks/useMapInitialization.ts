@@ -45,8 +45,7 @@ export const useMapInitialization = (language: Language) => {
           minZoom: 3,
           fadeDuration: 100, // Reduce fade duration for better performance
           trackResize: true,
-          // Remove the unsupported property
-          useRequestAnimationFrame: true, // Ensure animation frame is properly used
+          // Removed both unsupported properties
         });
 
         // Add map controls but delay until the map loads
