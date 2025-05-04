@@ -80,22 +80,24 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
       return;
     }
 
-    // استخدام خيارات عالية الدقة مع مهلات أطول
+    // استخدام خيارات عالية الدقة مع مهلات أقصر في البداية ثم زيادتها تدريجياً
     const geoOptions = {
       enableHighAccuracy: true,
-      timeout: locationAttempts > 0 ? 30000 : 20000,
+      timeout: locationAttempts === 0 ? 15000 : (locationAttempts === 1 ? 20000 : 30000),
       maximumAge: 0
     };
 
-    // استخدام متابعة الموقع بدلاً من طلب موقع واحد
-    const watchId = navigator.geolocation.watchPosition(
+    console.log(`Geolocation attempt ${locationAttempts + 1} with timeout: ${geoOptions.timeout}ms`);
+
+    // استخدام getCurrentPosition بدلاً من watchPosition لتجنب استهلاك البطارية
+    navigator.geolocation.getCurrentPosition(
       async (position) => {
         // تم الحصول على الموقع بنجاح
         const { latitude, longitude, accuracy } = position.coords;
         console.log(`User location detected: ${latitude}, ${longitude}, accuracy: ${accuracy}m`);
         
-        // إذا لم تكن الدقة جيدة بما فيه الكفاية، نستمر في المتابعة
-        if (accuracy > 30 && locationAttempts < 3) {
+        // إذا لم تكن الدقة جيدة بما فيه الكفاية وكانت هناك محاولات أقل من 3، نحاول مرة أخرى
+        if (accuracy > 100 && locationAttempts < 2) {
           toast({
             title: language === Language.ARABIC ? 'جاري تحسين الدقة...' : 'Improving accuracy...',
             description: language === Language.ARABIC 
@@ -103,11 +105,13 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
               : `Location detected with ${accuracy.toFixed(1)}m accuracy, trying to improve...`,
           });
           setLocationAttempts(prev => prev + 1);
+          
+          // ننتظر لحظة قبل المحاولة مرة أخرى
+          setTimeout(() => {
+            getUserLocation();
+          }, 1000);
           return;
         }
-        
-        // إلغاء المتابعة لأننا حصلنا على موقع جيد
-        navigator.geolocation.clearWatch(watchId);
         
         setUserLocation({ latitude, longitude, accuracy });
         setLocationAttempts(0);
@@ -127,26 +131,25 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
       (error) => {
         // خطأ في الحصول على الموقع
         console.error('Geolocation error:', error);
-        navigator.geolocation.clearWatch(watchId);
         
         let errorMsg = '';
         let shouldRetry = false;
         
         switch(error.code) {
-          case error.PERMISSION_DENIED:
+          case 1: // PERMISSION_DENIED
             errorMsg = language === Language.ARABIC ? 'تم رفض إذن تحديد الموقع' : 'Location permission denied';
             shouldRetry = false;
             break;
-          case error.POSITION_UNAVAILABLE:
+          case 2: // POSITION_UNAVAILABLE
             errorMsg = language === Language.ARABIC ? 'معلومات الموقع غير متوفرة' : 'Location information unavailable';
-            shouldRetry = locationAttempts < 3;
+            shouldRetry = locationAttempts < 2;
             break;
-          case error.TIMEOUT:
+          case 3: // TIMEOUT
             errorMsg = language === Language.ARABIC ? 'انتهت مهلة طلب تحديد الموقع' : 'Location request timed out';
-            shouldRetry = locationAttempts < 3;
+            shouldRetry = locationAttempts < 2;
             break;
           default:
-            errorMsg = error.message;
+            errorMsg = error.message || 'حدث خطأ غير معروف';
             shouldRetry = locationAttempts < 2;
         }
         
@@ -158,7 +161,9 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
             description: language === Language.ARABIC ? `محاولة ${locationAttempts + 1}/3...` : `Trying attempt ${locationAttempts + 1}/3...`,
           });
           // الانتظار قليلاً قبل إعادة المحاولة
-          setTimeout(getUserLocation, 1000);
+          setTimeout(() => {
+            getUserLocation();
+          }, 1500);
         } else {
           toast({
             title: texts.locationError,
@@ -166,23 +171,56 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
             variant: 'destructive',
           });
           setIsLoadingLocation(false);
+          
+          // محاولة استخدام موقع تقريبي إذا كان متاحًا
+          if (locationData) {
+            const { latitude, longitude } = locationData;
+            setUserLocation({ latitude, longitude, accuracy: 1000 }); // دقة منخفضة
+            moveMapToLocation(latitude, longitude, 14); // تكبير أقل للموقع التقريبي
+            
+            toast({
+              title: language === Language.ARABIC ? 'تم استخدام موقع تقريبي' : 'Using approximate location',
+              description: language === Language.ARABIC 
+                ? 'تم استخدام موقع تقريبي بدلاً من الموقع الدقيق' 
+                : 'Using approximate location instead of precise location',
+            });
+          } else {
+            // استخدام احتياطي - مركز السعودية
+            const saudiCenterLat = 24.774265;
+            const saudiCenterLng = 46.738586;
+            moveMapToLocation(saudiCenterLat, saudiCenterLng, 5);
+          }
         }
       },
       geoOptions
     );
     
-    // تحديد مهلة للتوقف عن المتابعة إذا كانت تستغرق وقتًا طويلاً
-    setTimeout(() => {
+    // تحديد مهلة قصوى للعملية بأكملها
+    const maxTimeout = 35000; // 35 ثانية كحد أقصى
+    const overallTimeoutId = setTimeout(() => {
       if (isLoadingLocation) {
-        navigator.geolocation.clearWatch(watchId);
+        setIsLoadingLocation(false);
         toast({
           title: language === Language.ARABIC ? 'استغرق وقتًا طويلاً' : 'Taking too long',
-          description: language === Language.ARABIC ? 'قد تكون دقة GPS منخفضة في موقعك الحالي' : 'GPS accuracy might be low in your current location',
+          description: language === Language.ARABIC 
+            ? 'قد تكون دقة GPS منخفضة في موقعك الحالي. حاول مجددًا لاحقًا.' 
+            : 'GPS accuracy might be low in your current location. Try again later.',
           variant: 'default',
         });
-        setIsLoadingLocation(false);
+        
+        // محاولة استخدام موقع تقريبي من تتبع الموقع في الخلفية إذا كان متاحًا
+        if (locationData) {
+          const { latitude, longitude } = locationData;
+          setUserLocation({ latitude, longitude, accuracy: 1000 }); // دقة منخفضة
+          moveMapToLocation(latitude, longitude, 14);
+        }
       }
-    }, 40000); // 40 second timeout
+    }, maxTimeout);
+
+    // تنظيف المؤقت عند إلغاء المكون
+    return () => {
+      clearTimeout(overallTimeoutId);
+    };
   };
 
   return {
@@ -190,7 +228,7 @@ export const useGeolocation = ({ language, texts, map }: GeolocationOptions) => 
     setUserLocation,
     isLoadingLocation,
     getUserLocation,
-    startBackgroundLocationTracking,  // إضافة الوظائف الجديدة
+    startBackgroundLocationTracking,
     stopBackgroundLocationTracking
   };
 };

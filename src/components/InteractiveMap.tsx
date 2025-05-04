@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { GasStation } from '@/types/station';
 import { useToast } from "@/hooks/use-toast";
@@ -47,6 +47,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 }) => {
   const [selectedCity, setSelectedCity] = useState<string>('');
   const { toast } = useToast();
+  const [locationInitialized, setLocationInitialized] = useState(false);
 
   // Load localization and cities data
   const texts = useMapLocalization(language);
@@ -89,23 +90,37 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     stopBackgroundLocationTracking
   } = useMapLocation(map, onSelectStation, texts, language);
 
-  // بدء تحديد الموقع في الخلفية عند تحميل الخريطة
-  useEffect(() => {
-    if (initBackgroundLocation && map.current) {
+  // بدء تحديد الموقع في الخلفية عند تحميل الخريطة - مع تحسينات جديدة
+  const initializeBackgroundLocation = useCallback(() => {
+    if (initBackgroundLocation && map.current && !locationInitialized) {
       console.log("Starting background location tracking");
       startBackgroundLocationTracking();
+      setLocationInitialized(true);
       
       // إخطار المكون الأب أننا بدأنا تحديد الموقع
       if (onLocationInitialized) {
         onLocationInitialized();
       }
     }
+  }, [initBackgroundLocation, map.current, locationInitialized, startBackgroundLocationTracking, onLocationInitialized]);
+
+  useEffect(() => {
+    // تأخير قليل لضمان تهيئة الخريطة بشكل كامل
+    if (map.current && initBackgroundLocation && !locationInitialized) {
+      const timer = setTimeout(() => {
+        initializeBackgroundLocation();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
     
     return () => {
       // إيقاف تحديد الموقع عند إزالة المكون
-      stopBackgroundLocationTracking();
+      if (locationInitialized) {
+        stopBackgroundLocationTracking();
+      }
     };
-  }, [initBackgroundLocation, map.current]);
+  }, [map.current, initBackgroundLocation, locationInitialized, initializeBackgroundLocation, stopBackgroundLocationTracking]);
 
   // Create popup content handler
   const handleCreatePopupContent = (station: GasStation) => {
