@@ -1,5 +1,5 @@
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { MAPBOX_TOKEN } from '@/utils/environment';
 import { useToast } from "@/hooks/use-toast";
@@ -8,18 +8,28 @@ import { Language } from '@/i18n/translations';
 export const useMapInitialization = (language: Language) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const rtlPluginLoaded = useRef<boolean>(false);
   const { toast } = useToast();
 
   // Initialize map
   useEffect(() => {
     if (map.current) return; // Avoid re-initialization
 
-    // Configure Mapbox error handling to prevent console flooding
-    mapboxgl.setRTLTextPlugin(
-      'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.2.3/mapbox-gl-rtl-text.js',
-      null,
-      true // Lazy load the RTL plugin
-    );
+    // Configure Mapbox RTL text plugin only once
+    if (!rtlPluginLoaded.current) {
+      try {
+        mapboxgl.setRTLTextPlugin(
+          'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.2.3/mapbox-gl-rtl-text.js',
+          null,
+          true // Lazy load the RTL plugin
+        );
+        rtlPluginLoaded.current = true;
+      } catch (e) {
+        console.log("RTL plugin already loaded or failed to load");
+        // Fail silently here as the plugin might already be loaded
+        rtlPluginLoaded.current = true;
+      }
+    }
 
     if (mapContainer.current) {
       try {
@@ -45,11 +55,10 @@ export const useMapInitialization = (language: Language) => {
           minZoom: 3,
           fadeDuration: 100, // Reduce fade duration for better performance
           trackResize: true,
-          // Removed both unsupported properties
         });
 
-        // Add map controls but delay until the map loads
-        map.current.on('load', () => {
+        // Add map controls but delay until the map loads completely
+        map.current.once('load', () => {
           if (map.current) {
             // Add map controls
             map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -75,11 +84,22 @@ export const useMapInitialization = (language: Language) => {
           }
         });
 
-        // Optimize frame rate
+        // Optimize frame rate for better performance
         if (map.current) {
-          // Throttle expensive operations on move events
+          // Use a throttled event handler for move events
+          let frameRequest: number | null = null;
+          
           map.current.on('move', () => {
-            // Throttling handled internally by Mapbox
+            // Cancel previous frame if it hasn't executed yet
+            if (frameRequest) {
+              cancelAnimationFrame(frameRequest);
+            }
+            
+            // Schedule a new frame
+            frameRequest = requestAnimationFrame(() => {
+              frameRequest = null;
+              // Any move-related updates would go here
+            });
           });
         }
       } catch (error) {
