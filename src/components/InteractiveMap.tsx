@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { GasStation } from '@/types/station';
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCcw } from "lucide-react";
 import { Language } from '@/i18n/translations';
 
 // Import custom hooks
@@ -15,15 +14,15 @@ import { useMapLocalization } from '@/components/map/useMapLocalization';
 import { useSaudiCities } from './map/useSaudiCities';
 
 // Import modular components
-import CitySelector from './map/CitySelector';
+import SearchFilterSection from './map/SearchFilterSection';
+import MapContainer from './map/MapContainer';
+import MapControlPanel from './map/MapControlPanel';
 import MapControls from './map/MapControls';
 import StationPopup from './map/StationPopup';
 import MapMarkerManager from './map/MapMarkerManager';
 import UserLocationMarker from './map/UserLocationMarker';
 import MapAnimation from './map/MapAnimation';
-import MapSearchBar from './map/MapSearchBar';
 import MapOverlays from './map/MapOverlays';
-import { Button } from '@/components/ui/button';
 
 // Import utils
 import { createPopupContent, resetMap } from '@/utils/mapUtils';
@@ -90,22 +89,22 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     stopBackgroundLocationTracking
   } = useMapLocation(map, onSelectStation, texts, language);
 
-  // بدء تحديد الموقع في الخلفية عند تحميل الخريطة - مع تحسينات جديدة
+  // Initialize background location tracking
   const initializeBackgroundLocation = useCallback(() => {
     if (initBackgroundLocation && map.current && !locationInitialized) {
       console.log("Starting background location tracking");
       startBackgroundLocationTracking();
       setLocationInitialized(true);
       
-      // إخطار المكون الأب أننا بدأنا تحديد الموقع
+      // Notify parent component that location tracking has started
       if (onLocationInitialized) {
         onLocationInitialized();
       }
     }
   }, [initBackgroundLocation, map.current, locationInitialized, startBackgroundLocationTracking, onLocationInitialized]);
 
-  useEffect(() => {
-    // تأخير قليل لضمان تهيئة الخريطة بشكل كامل
+  React.useEffect(() => {
+    // Slight delay to ensure map is fully initialized
     if (map.current && initBackgroundLocation && !locationInitialized) {
       const timer = setTimeout(() => {
         initializeBackgroundLocation();
@@ -115,7 +114,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     }
     
     return () => {
-      // إيقاف تحديد الموقع عند إزالة المكون
+      // Stop tracking when component is unmounted
       if (locationInitialized) {
         stopBackgroundLocationTracking();
       }
@@ -154,44 +153,29 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="mb-4 flex flex-col sm:flex-row gap-2">
-        {/* City Selector Component */}
-        <div className="flex-1">
-          <CitySelector
-            cities={cities}
-            selectedCity={selectedCity}
-            onCityChange={handleCityChange}
-            language={language}
-          />
-        </div>
-
-        {/* Search Field */}
-        <MapSearchBar
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          debouncedSearchTerm={debouncedSearchTerm}
-          filteredStations={filteredStations}
-          texts={texts}
-          language={language}
-          isSearching={isSearching}
-        />
-      </div>
+      {/* Search and Filter Section */}
+      <SearchFilterSection 
+        cities={cities}
+        selectedCity={selectedCity}
+        onCityChange={handleCityChange}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        debouncedSearchTerm={debouncedSearchTerm}
+        filteredStations={filteredStations}
+        texts={texts}
+        language={language}
+        isSearching={isSearching}
+      />
 
       <div className="relative flex-grow">
-        <div ref={mapContainer} className="map-container h-[50vh] md:h-[55vh] lg:h-[45vh] xl:h-[50vh] rounded-lg shadow-lg"></div>
+        {/* Map Container */}
+        <MapContainer mapContainerRef={mapContainer} />
 
         {/* Reset map button */}
-        <div className="absolute top-2 left-2 z-10">
-          <Button
-            variant="outline" 
-            size="icon"
-            className="bg-white hover:bg-gray-100 shadow-md"
-            onClick={handleResetMap}
-            title={language === Language.ARABIC ? 'إعادة تعيين الخريطة' : 'Reset map'}
-          >
-            <RefreshCcw className="h-4 w-4" />
-          </Button>
-        </div>
+        <MapControlPanel 
+          onResetMap={handleResetMap}
+          language={language}
+        />
 
         {/* Map Overlay Components */}
         <MapOverlays
