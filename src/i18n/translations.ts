@@ -5,15 +5,15 @@ export const translations = {
   common: {
     about: {
       en: "About",
-      ar: "عن"
+      ar: "حول"
     },
     contact: {
       en: "Contact",
-      ar: "اتصل"
+      ar: "اتصل بنا"
     },
     services: {
       en: "Services",
-      ar: "خدمات"
+      ar: "خدماتنا"
     },
     login: {
       en: "Login",
@@ -57,15 +57,19 @@ export const translations = {
     },
     arabic: {
       en: "Arabic",
-      ar: "عربي"
+      ar: "العربية"
     },
     english: {
       en: "English",
-      ar: "إنجليزي"
+      ar: "الإنجليزية"
     },
     home: {
       en: "Home",
       ar: "الرئيسية"
+    },
+    adminPanel: {
+      en: "Admin Panel",
+      ar: "لوحة الإدارة"
     }
   }
 };

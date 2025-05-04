@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Toaster } from "@/components/ui/toaster";
@@ -10,9 +11,11 @@ import { UserCircle, Mail, Phone, MapPin, Clock, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from '@/hooks/useTranslation';
 
 const Contact = () => {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: '',
@@ -91,7 +94,7 @@ const Contact = () => {
         <Link to="/admin/login">
           <Button variant="outline" className="flex items-center gap-2 bg-white/80 hover:bg-white">
             <UserCircle size={18} />
-            <span className="hidden sm:inline">{t('home', 'adminPanel')}</span>
+            <span className="hidden sm:inline">{t('common.adminPanel')}</span>
           </Button>
         </Link>
       </div>
