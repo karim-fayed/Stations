@@ -133,11 +133,11 @@ export const useMapLocation = (
           description: `${nearestStations[0].name} (${distanceText})`,
         });
       } else {
-        // No stations found
+        // No stations found - Fix: Changed variant from "warning" to "destructive"
         toast({
           title: language === 'ar' ? 'لم يتم العثور على محطات' : 'No stations found',
           description: language === 'ar' ? 'لا توجد محطات قريبة من موقعك' : 'No stations near your location',
-          variant: "warning",
+          variant: "destructive",
         });
       }
     } catch (error) {

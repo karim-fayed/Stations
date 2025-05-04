@@ -187,17 +187,22 @@ export const fetchNearestStations = async (
     
     // First try with PostGIS
     try {
+      // Fix: Use parameter interpolation correctly for PostGIS query
       const { data, error } = await supabase
         .from('stations')
-        .select('*, distance_meters:location <-> ST_MakePoint(${longitude}, ${latitude})::geography')
-        .limit(limit);
+        .select('*, distance_meters:location <-> point($1, $2)::geography')
+        .eq('id', 'id') // This is a trick to get a valid SQL query but still apply the ORDER BY afterwards
+        .order('location <-> point($1, $2)::geography', { ascending: true })
+        .limit(limit)
+        .values([longitude, latitude]); // Supply parameters for interpolation
 
       if (error) {
         throw error;
       }
 
       if (data && data.length > 0) {
-        return data as GasStation[];
+        // Apply proper type assertion since we know the response structure
+        return data as unknown as GasStation[];
       }
     } catch (postGisError) {
       console.warn("PostGIS query failed, falling back to manual distance calculation", postGisError);
