@@ -17,6 +17,17 @@ const MarkerAnimationStyles: React.FC = () => {
         100% { transform: scale(1); }
       }
       
+      @keyframes ripple {
+        0% {
+          transform: scale(1);
+          opacity: 0.8;
+        }
+        100% {
+          transform: scale(4);
+          opacity: 0;
+        }
+      }
+      
       .station-popup {
         animation: fadeIn 0.3s ease-out;
         border-radius: 10px;
@@ -61,6 +72,24 @@ const MarkerAnimationStyles: React.FC = () => {
       /* تحسين استقرار النوافذ المنبثقة */
       .mapboxgl-popup {
         z-index: 10;
+      }
+      
+      /* User location marker styles */
+      .user-location-marker {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #4285F4;
+        border: 3px solid white;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        animation: pulse 1.5s infinite;
+        z-index: 5;
+      }
+      
+      .user-location-pulse {
+        position: relative;
+        width: 20px;
+        height: 20px;
       }
     `;
     

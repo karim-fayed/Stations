@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { GasStation } from "@/types/station";
 
@@ -184,19 +183,58 @@ export const fetchNearestStations = async (
   maxDistance = 50000 // 50 km in meters
 ): Promise<GasStation[]> => {
   try {
-    // Using direct SQL query approach with fetch instead of from().select()
-    const { data, error } = await supabase
-      .from('stations')
-      .select('*')
-      .order(`location <-> ST_MakePoint(${longitude}, ${latitude})::geography`)
-      .limit(limit);
+    console.log(`Finding stations near: ${latitude}, ${longitude}, limit: ${limit}`);
+    
+    // First try with PostGIS
+    try {
+      const { data, error } = await supabase
+        .from('stations')
+        .select('*, distance_meters:location <-> ST_MakePoint(${longitude}, ${latitude})::geography')
+        .limit(limit);
 
-    if (error) {
-      console.error("Error fetching nearest stations:", error);
-      throw error;
+      if (error) {
+        throw error;
+      }
+
+      if (data && data.length > 0) {
+        return data as GasStation[];
+      }
+    } catch (postGisError) {
+      console.warn("PostGIS query failed, falling back to manual distance calculation", postGisError);
     }
 
-    return data as GasStation[] || [];
+    // Fallback method: Get all stations and calculate distances manually
+    const { data: allStations, error: fetchError } = await supabase
+      .from('stations')
+      .select('*');
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    if (!allStations || allStations.length === 0) {
+      return [];
+    }
+
+    // Calculate distances and sort
+    const stationsWithDistance = allStations.map(station => {
+      const distance = calculateDistance(
+        latitude,
+        longitude,
+        station.latitude,
+        station.longitude
+      );
+      
+      return {
+        ...station,
+        distance_meters: distance * 1000 // Convert km to meters
+      };
+    });
+
+    // Sort by distance and limit results
+    stationsWithDistance.sort((a, b) => a.distance_meters - b.distance_meters);
+    return stationsWithDistance.slice(0, limit);
+    
   } catch (error) {
     console.error("Error in fetchNearestStations:", error);
     throw error;
