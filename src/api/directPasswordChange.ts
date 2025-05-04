@@ -14,6 +14,7 @@ export async function directPasswordChange(
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
     if (sessionError || !sessionData.session) {
+      console.error("Session error:", sessionError);
       return {
         success: false,
         error: "جلسة المستخدم غير صالحة. يرجى تسجيل الدخول مرة أخرى."
@@ -37,6 +38,7 @@ export async function directPasswordChange(
     });
 
     if (signInError) {
+      console.error("Current password verification failed:", signInError);
       return {
         success: false,
         error: "كلمة المرور الحالية غير صحيحة"
@@ -45,6 +47,7 @@ export async function directPasswordChange(
 
     // 3. استخدام Edge Function لتحديث كلمة المرور
     try {
+      console.log("Invoking Edge Function to update password");
       const { data, error } = await supabase.functions.invoke('update-user-password', {
         body: JSON.stringify({
           userId: userId,
@@ -55,7 +58,7 @@ export async function directPasswordChange(
 
       if (error) {
         console.error("Error invoking Edge Function:", error);
-
+        
         // إذا فشلت Edge Function، نستخدم SDK كخطة بديلة
         console.log("Falling back to SDK for password update");
         const { error: updateError } = await supabase.auth.updateUser({
@@ -63,6 +66,7 @@ export async function directPasswordChange(
         });
 
         if (updateError) {
+          console.error("SDK password update failed:", updateError);
           return {
             success: false,
             error: `فشل تغيير كلمة المرور: ${updateError.message}`
@@ -75,12 +79,13 @@ export async function directPasswordChange(
       console.error("Exception invoking Edge Function:", edgeFnError);
 
       // إذا فشلت Edge Function، نستخدم SDK كخطة بديلة
-      console.log("Falling back to SDK for password update");
+      console.log("Falling back to SDK for password update after exception");
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword
       });
 
       if (updateError) {
+        console.error("SDK password update failed after exception:", updateError);
         return {
           success: false,
           error: `فشل تغيير كلمة المرور: ${updateError.message}`
@@ -89,15 +94,20 @@ export async function directPasswordChange(
     }
 
     // 4. تحديث سجل المستخدم في جدول admin_users
-    const { error: updateUserError } = await supabase
-      .from('admin_users')
-      .update({
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', userId);
+    try {
+      const { error: updateUserError } = await supabase
+        .from('admin_users')
+        .update({
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
 
-    if (updateUserError) {
-      console.warn("تم تحديث كلمة المرور ولكن تعذر تحديث سجل المستخدم:", updateUserError);
+      if (updateUserError) {
+        console.warn("تم تحديث كلمة المرور ولكن تعذر تحديث سجل المستخدم:", updateUserError);
+      }
+    } catch (updateDbError) {
+      console.error("Error updating user record:", updateDbError);
+      // نستمر لأن كلمة المرور قد تم تغييرها بالفعل
     }
 
     // 5. تسجيل الخروج وإعادة تسجيل الدخول لتطبيق التغييرات
@@ -123,12 +133,9 @@ export async function directPasswordChange(
         };
       }
 
-      // إعادة تحميل الصفحة لتطبيق التغييرات
-      window.location.reload();
-
       return {
         success: true,
-        message: "تم تغيير كلمة المرور بنجاح. جاري إعادة تحميل الصفحة..."
+        message: "تم تغيير كلمة المرور بنجاح."
       };
     } catch (authError) {
       console.warn("تم تغيير كلمة المرور ولكن حدث خطأ أثناء إعادة تسجيل الدخول:", authError);

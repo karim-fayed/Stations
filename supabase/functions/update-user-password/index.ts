@@ -9,8 +9,11 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  console.log("Handling request to update-user-password function");
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log("Handling OPTIONS request");
     return new Response("ok", { headers: corsHeaders });
   }
 
@@ -22,12 +25,24 @@ serve(async (req) => {
     );
 
     // Parse request body
-    const { userId, password, requesterId } = await req.json();
+    let body;
+    try {
+      body = await req.json();
+      console.log("Request body parsed successfully");
+    } catch (e) {
+      console.error("Error parsing request body:", e);
+      throw new Error("Invalid request body");
+    }
+    
+    const { userId, password, requesterId } = body;
 
     // Clean inputs by removing any spaces
     const cleanUserId = userId ? userId.trim() : '';
     const cleanPassword = password ? password.trim() : '';
     const cleanRequesterId = requesterId ? requesterId.trim() : '';
+
+    console.log("Processing request for userId:", cleanUserId);
+    console.log("Request made by requesterId:", cleanRequesterId);
 
     if (!cleanUserId || !cleanPassword) {
       throw new Error("User ID and password are required");
@@ -37,7 +52,7 @@ serve(async (req) => {
       throw new Error("Requester ID is required");
     }
 
-    // Check if the requester is an owner
+    // Check if the requester is an owner or the same user
     const { data: requesterData, error: requesterError } = await supabaseClient
       .from('admin_users')
       .select('*')
@@ -45,16 +60,21 @@ serve(async (req) => {
       .single();
 
     if (requesterError) {
+      console.error("Error fetching requester:", requesterError);
       throw new Error(`Error fetching requester: ${requesterError.message}`);
     }
 
     if (!requesterData) {
+      console.error("Requester not found");
       throw new Error("Requester not found");
     }
+
+    console.log("Requester role:", requesterData.role);
 
     // Only owners can change passwords for other users
     // Users can change their own passwords
     if (requesterData.role !== 'owner' && cleanRequesterId !== cleanUserId) {
+      console.error("Permission denied: only owners can change passwords for other users");
       throw new Error("Only owners can change passwords for other users");
     }
 
@@ -65,20 +85,27 @@ serve(async (req) => {
     );
 
     if (updateError) {
+      console.error("Error updating password:", updateError);
       throw updateError;
     }
 
-    // Update the admin_users table to track that password was changed
-    const { error: updateUserError } = await supabaseClient
-      .from('admin_users')
-      .update({
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', cleanUserId);
+    console.log("Password updated successfully");
 
-    if (updateUserError) {
-      console.error("Error updating user record:", updateUserError);
-      // We don't throw here as the password was already updated
+    // Update the admin_users table to track that password was changed
+    try {
+      const { error: updateUserError } = await supabaseClient
+        .from('admin_users')
+        .update({
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', cleanUserId);
+
+      if (updateUserError) {
+        console.error("Error updating user record:", updateUserError);
+        // We don't throw here as the password was already updated
+      }
+    } catch (e) {
+      console.error("Error updating admin_users table:", e);
     }
 
     return new Response(

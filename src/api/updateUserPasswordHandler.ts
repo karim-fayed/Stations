@@ -10,6 +10,8 @@ export async function updateUserPasswordHandler(
   password: string
 ) {
   try {
+    console.log("Starting updateUserPasswordHandler");
+    
     // Clean inputs by removing any spaces
     const cleanUserId = userId ? userId.trim() : '';
     const cleanPassword = password ? password.trim().replace(/\s/g, '') : '';
@@ -21,14 +23,22 @@ export async function updateUserPasswordHandler(
     // Get current user session to verify permissions
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
-    if (sessionError || !sessionData.session) {
+    if (sessionError) {
+      console.error("Session error:", sessionError);
+      throw new Error("You must be logged in to update passwords");
+    }
+    
+    if (!sessionData.session) {
+      console.error("No session data found");
       throw new Error("You must be logged in to update passwords");
     }
 
     const requesterId = sessionData.session.user.id;
+    console.log("Requester ID:", requesterId);
 
     // استدعاء Edge Function لتغيير كلمة المرور
     try {
+      console.log("Invoking Edge Function");
       const { data, error } = await supabase.functions.invoke('update-user-password', {
         body: JSON.stringify({
           userId: cleanUserId,
@@ -38,18 +48,23 @@ export async function updateUserPasswordHandler(
       });
 
       if (error) {
+        console.error("Edge Function error:", error);
         throw error;
       }
+
+      console.log("Edge Function response:", data);
 
       // طريقة بديلة إذا فشلت Edge Function (للمستخدم الذي يغير كلمة المرور الخاصة به)
       if (requesterId === cleanUserId) {
         try {
           // استخدام updatePassword للمستخدم الحالي
+          console.log("Using SDK as fallback for current user");
           const { error: updateError } = await supabase.auth.updateUser({
             password: cleanPassword
           });
 
           if (updateError) {
+            console.error("SDK update error:", updateError);
             throw updateError;
           }
 
@@ -65,15 +80,19 @@ export async function updateUserPasswordHandler(
       }
 
       // تحديث سجل المستخدم
-      const { error: updateUserError } = await supabase
-        .from('admin_users')
-        .update({
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', cleanUserId);
+      try {
+        const { error: updateUserError } = await supabase
+          .from('admin_users')
+          .update({
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', cleanUserId);
 
-      if (updateUserError) {
-        console.warn("تم تحديث كلمة المرور ولكن تعذر تحديث سجل المستخدم:", updateUserError);
+        if (updateUserError) {
+          console.warn("تم تحديث كلمة المرور ولكن تعذر تحديث سجل المستخدم:", updateUserError);
+        }
+      } catch (dbError) {
+        console.warn("Error updating user record:", dbError);
       }
 
       return { success: true, data: { message: "تم تحديث كلمة المرور بنجاح" } };

@@ -45,6 +45,7 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ userId }) => {
     setIsLoading(true);
 
     try {
+      console.log("Starting password change process");
       // Validate inputs
       if (!currentPassword || !newPassword || !confirmPassword) {
         toast({
@@ -76,10 +77,12 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ userId }) => {
         return;
       }
 
+      console.log("Calling directPasswordChange");
       // استخدام الوظيفة الجديدة لتغيير كلمة المرور مباشرة
       const result = await directPasswordChange(currentPassword, newPassword);
 
       if (!result.success) {
+        console.error("Password change failed:", result.error);
         toast({
           title: "خطأ في تغيير كلمة المرور",
           description: result.error || "حدث خطأ أثناء تغيير كلمة المرور",
@@ -89,6 +92,7 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ userId }) => {
         return;
       }
 
+      console.log("Password change successful:", result.message);
       // Clear form
       setCurrentPassword("");
       setNewPassword("");
@@ -98,6 +102,12 @@ const ChangePasswordForm: React.FC<ChangePasswordFormProps> = ({ userId }) => {
         title: "تم تغيير كلمة المرور بنجاح",
         description: result.message || "تم تحديث كلمة المرور الخاصة بك",
       });
+      
+      // If no redirect happened in the directPasswordChange function, we're still here
+      // Let's reload the page to refresh the session after a short delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (error: any) {
       console.error("Error changing password:", error);
       toast({

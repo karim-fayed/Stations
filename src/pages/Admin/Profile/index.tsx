@@ -31,9 +31,22 @@ const ProfilePage = () => {
     const fetchUserProfile = async () => {
       setLoading(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        console.log("Fetching user session data");
+        const { data: { user }, error: sessionError } = await supabase.auth.getUser();
+
+        if (sessionError) {
+          console.error("Error fetching session:", sessionError);
+          toast({
+            title: "خطأ في الجلسة",
+            description: "حدثت مشكلة أثناء التحقق من جلسة المستخدم",
+            variant: "destructive",
+          });
+          navigate("/admin/login");
+          return;
+        }
 
         if (!user) {
+          console.log("No user found in session");
           toast({
             title: "غير مصرح",
             description: "يرجى تسجيل الدخول للوصول إلى هذه الصفحة",
@@ -43,35 +56,104 @@ const ProfilePage = () => {
           return;
         }
 
-        // Get user profile from admin_profiles table instead of users
-        const { data: userData, error } = await supabase
-          .from("admin_profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
+        console.log("User found in session:", user.id);
 
-        if (error) {
-          console.error("Error fetching user data:", error);
+        // Get user profile from admin_profiles table
+        try {
+          console.log("Fetching user profile data");
+          const { data: userData, error: profileError } = await supabase
+            .from("admin_users") // Changed from admin_profiles to admin_users
+            .select("*")
+            .eq("id", user.id)
+            .single();
+
+          if (profileError) {
+            console.error("Error fetching user profile data:", profileError);
+            
+            // Try to create the profile if it doesn't exist
+            if (profileError.code === 'PGRST116') {
+              console.log("Profile doesn't exist, creating one");
+              const { error: insertError } = await supabase
+                .from("admin_users")
+                .insert([{ 
+                  id: user.id, 
+                  email: user.email,
+                  name: user.user_metadata?.name || user.email,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                }]);
+              
+              if (insertError) {
+                console.error("Error creating profile:", insertError);
+                toast({
+                  title: "خطأ",
+                  description: "تعذر إنشاء ملف المستخدم",
+                  variant: "destructive",
+                });
+              } else {
+                // Try fetching again
+                const { data: newUserData, error: newError } = await supabase
+                  .from("admin_users")
+                  .select("*")
+                  .eq("id", user.id)
+                  .single();
+                  
+                if (newError) {
+                  console.error("Error fetching new profile:", newError);
+                } else {
+                  setUser({
+                    id: user.id,
+                    email: user.email || '',
+                    profile: newUserData
+                  });
+                  return;
+                }
+              }
+            }
+            
+            // If we reach here, we still have an error
+            toast({
+              title: "خطأ",
+              description: "حدث خطأ أثناء جلب بيانات المستخدم",
+              variant: "destructive",
+            });
+            
+            // Still show the page with basic user information
+            setUser({
+              id: user.id,
+              email: user.email || '',
+            });
+            return;
+          }
+
+          console.log("User profile data retrieved:", userData);
+          setUser({
+            id: user.id,
+            email: user.email || '',
+            profile: userData
+          });
+        } catch (dataError) {
+          console.error("Exception fetching profile data:", dataError);
           toast({
             title: "خطأ",
             description: "حدث خطأ أثناء جلب بيانات المستخدم",
             variant: "destructive",
           });
-          return;
+          
+          // Still show the page with basic user information
+          setUser({
+            id: user.id,
+            email: user.email || '',
+          });
         }
-
-        setUser({
-          id: user.id,
-          email: user.email || '',
-          profile: userData
-        });
       } catch (error) {
-        console.error("Error:", error);
+        console.error("Unexpected error in fetchUserProfile:", error);
         toast({
           title: "خطأ",
-          description: "حدث خطأ أثناء جلب بيانات المستخدم",
+          description: "حدث خطأ غير متوقع",
           variant: "destructive",
         });
+        navigate("/admin/login");
       } finally {
         setLoading(false);
       }
@@ -151,7 +233,7 @@ const ProfilePage = () => {
                 <CardTitle className="text-noor-purple">تغيير كلمة المرور</CardTitle>
               </CardHeader>
               <CardContent className="p-6">
-                <ChangePasswordForm userId={user?.id || ''} />
+                {user && <ChangePasswordForm userId={user.id} />}
               </CardContent>
             </Card>
           </motion.div>
