@@ -1,9 +1,8 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -19,7 +18,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   // Function to prevent spaces in input
   const preventSpaces = (value: string) => {
@@ -64,8 +63,8 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       await supabase.auth.signOut();
 
       // Set up testing credentials for development
-      let emailToUse = cleanEmail;
-      let passwordToUse = cleanPassword;
+      const emailToUse = cleanEmail;
+      const passwordToUse = cleanPassword;
 
       // تم إزالة الاختصارات بناءً على طلب المستخدم لتحسين الأمان
 
@@ -179,31 +178,38 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
     setShowPassword(!showPassword);
   };
 
+  const isRTL = language === 'ar';
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-          {t('common', 'email')}
-        </label>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          value={email}
-          onChange={handleEmailChange}
-          placeholder="admin@example.com"
-          className="w-full"
-          dir="ltr"
-        />
+        <div className="relative">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1 text-right">
+            البريد الإلكتروني
+          </label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={handleEmailChange}
+            placeholder="أدخل البريد الإلكتروني"
+            className={`w-full ${isRTL ? 'pr-10' : 'pl-10'} text-right`}
+            dir="rtl"
+          />
+          <Mail
+            className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`}
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-          {t('common', 'password')}
-        </label>
         <div className="relative">
+          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1 text-right">
+            كلمة المرور
+          </label>
           <Input
             id="password"
             name="password"
@@ -212,13 +218,18 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
             required
             value={password}
             onChange={handlePasswordChange}
-            className="w-full pr-10"
-            dir="ltr"
+            placeholder="أدخل كلمة المرور"
+            className={`w-full pr-10 ${isRTL ? 'pl-10' : 'pl-0'} text-right`}
+            dir="rtl"
+          />
+          <Lock
+            className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 ${isRTL ? 'right-3' : 'left-3'}`}
           />
           <button
             type="button"
             onClick={togglePasswordVisibility}
-            className="absolute inset-y-0 right-0 flex items-center pr-3"
+            className={`absolute inset-y-0 flex items-center ${isRTL ? 'left-3' : 'right-3'}`}
+            aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
           >
             {showPassword ? (
               <EyeOff className="h-4 w-4 text-gray-400" />
@@ -231,20 +242,18 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
 
       <Button
         type="submit"
-        className="w-full bg-noor-purple hover:bg-noor-purple/90"
+        className="w-full bg-purple-600 hover:bg-purple-700 mt-4"
         disabled={isLoading}
       >
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            {t('login', 'loggingIn')}
+            جاري تسجيل الدخول...
           </>
         ) : (
-          t('login', 'loginButton')
+          "تسجيل الدخول"
         )}
       </Button>
-
-
     </form>
   );
 };
