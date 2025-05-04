@@ -1,10 +1,18 @@
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { GasStation } from '@/types/station';
 
-const DashboardTabs = () => {
+interface DashboardTabsProps {
+  stations?: GasStation[];
+  onEdit?: (station: GasStation) => void;
+  onDelete?: (station: GasStation) => void;
+}
+
+const DashboardTabs = ({ stations, onEdit, onDelete }: DashboardTabsProps = {}) => {
   const { t } = useTranslation();
 
   return (

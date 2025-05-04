@@ -1,3 +1,4 @@
+
 import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import './App.css';
@@ -11,8 +12,8 @@ import Dashboard from './pages/Admin/Dashboard';
 import Profile from './pages/Admin/Profile';
 import UserManagement from './pages/Admin/UserManagement';
 import { Toaster } from "@/components/ui/toaster"
-import AuthGuard from './components/AuthGuard';
-import LoadingSpinner from './components/LoadingSpinner';
+import AuthGuard from './components/admin/AuthGuard';
+import LoadingSpinner from './components/ui/loading-spinner';
 import { DatabaseMaintenance } from './pages/Admin';
 
 function App() {
