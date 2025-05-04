@@ -45,8 +45,8 @@ const Header = () => {
             )}
           </h1>
 
-          {/* Floating Menu Button - تم نقله من اليمين إلى اليسار */}
-          <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} top-1/2 transform -translate-y-1/2`}>
+          {/* Floating Menu Button - تم نقله ليكون محاذياً لزر لوحة التحكم */}
+          <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} top-[60%] transform -translate-y-1/2`}>
             <div className="md:hidden">
               <HomeSidebar />
             </div>
