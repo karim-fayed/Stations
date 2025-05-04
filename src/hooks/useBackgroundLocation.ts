@@ -19,6 +19,7 @@ export const useBackgroundLocation = (language: 'ar' | 'en') => {
   const [error, setError] = useState<string | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const attemptsRef = useRef(0);
+  const timeoutRef = useRef<number | null>(null);
   const { toast } = useToast();
 
   // التوقف عن متابعة الموقع عند إغلاق التطبيق
@@ -27,6 +28,12 @@ export const useBackgroundLocation = (language: 'ar' | 'en') => {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
+      }
+      
+      // تنظيف timeout إذا كان موجود
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     };
   }, []);
@@ -43,12 +50,19 @@ export const useBackgroundLocation = (language: 'ar' | 'en') => {
       navigator.geolocation.clearWatch(watchIdRef.current);
     }
 
+    // تنظيف timeout إذا كان موجود
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
     setIsLocating(true);
+    setError(null);
     
     // خيارات عالية الدقة لتحديد الموقع
     const options = {
       enableHighAccuracy: true,
-      timeout: 20000,
+      timeout: 30000, // زيادة timeout إلى 30 ثانية
       maximumAge: 0
     };
 
@@ -108,6 +122,11 @@ export const useBackgroundLocation = (language: 'ar' | 'en') => {
         }
         
         attemptsRef.current++;
+
+        // إعادة تعيين timeout في كل مرة نحصل فيها على تحديث
+        if (timeoutRef.current) {
+          window.clearTimeout(timeoutRef.current);
+        }
       },
       (err) => {
         console.error('Background location error:', err);
@@ -128,15 +147,65 @@ export const useBackgroundLocation = (language: 'ar' | 'en') => {
               : 'Please enable location services for full app functionality',
             variant: "default",
           });
+        } else if (err.code === err.TIMEOUT) {
+          // محاولة إعادة التشغيل عند حدوث timeout
+          if (attemptsRef.current < 3) {
+            console.log(`Timeout occurred, retrying (attempt ${attemptsRef.current + 1}/3)...`);
+            attemptsRef.current++;
+            
+            // إعادة المحاولة بعد ثانيتين
+            setTimeout(() => {
+              startBackgroundLocationTracking();
+            }, 2000);
+          } else {
+            // إظهار رسالة إذا استمر timeout بعد 3 محاولات
+            toast({
+              title: language === 'ar' ? 'تعذر تحديد الموقع' : 'Location Detection Failed',
+              description: language === 'ar' 
+                ? 'تأكد من تفعيل خدمات تحديد المواقع وأنك متصل بالإنترنت' 
+                : 'Make sure location services are enabled and you are connected to the internet',
+              variant: "default",
+            });
+          }
         }
       },
       options
     );
 
+    // إضافة timeout شامل للتأكد من أننا لن ننتظر إلى الأبد
+    timeoutRef.current = window.setTimeout(() => {
+      if (isLocating && !locationData) {
+        console.log('Global location timeout reached after 60 seconds');
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current);
+          watchIdRef.current = null;
+        }
+        setIsLocating(false);
+        
+        // إذا لم نحصل على أي بيانات موقع بعد 60 ثانية
+        if (!locationData) {
+          toast({
+            title: language === 'ar' ? 'استغرق وقتًا طويلاً' : 'Taking too long',
+            description: language === 'ar' 
+              ? 'قد تكون دقة GPS منخفضة في موقعك الحالي' 
+              : 'GPS accuracy might be low in your current location',
+            variant: "default",
+          });
+        }
+      }
+      
+      timeoutRef.current = null;
+    }, 60000); // timeout شامل لمدة 60 ثانية
+
     return () => {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
+      }
+      
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     };
   };
@@ -147,6 +216,11 @@ export const useBackgroundLocation = (language: 'ar' | 'en') => {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
       setIsLocating(false);
+    }
+    
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
   };
 

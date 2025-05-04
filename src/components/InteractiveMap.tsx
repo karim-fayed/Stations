@@ -11,7 +11,7 @@ import { useMapInitialization } from '@/hooks/useMapInitialization';
 import { useMapLocation } from '@/hooks/useMapLocation';
 import { useMapSearch } from '@/hooks/useMapSearch';
 import { useCityFilter } from '@/hooks/useCityFilter';
-import { useMapLocalization } from './map/useMapLocalization';
+import { useMapLocalization } from '@/components/map/useMapLocalization'; // Changed from useMapLocalization.ts
 import { useSaudiCities } from './map/useSaudiCities';
 
 // Import modular components
