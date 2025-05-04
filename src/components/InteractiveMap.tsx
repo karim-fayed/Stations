@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { GasStation } from '@/types/station';
 import { useToast } from "@/hooks/use-toast";
+import { RefreshCcw } from "lucide-react"; // Import the refresh icon
 
 // Import custom hooks
 import { useMapInitialization } from '@/hooks/useMapInitialization';
@@ -21,6 +22,7 @@ import UserLocationMarker from './map/UserLocationMarker';
 import MapAnimation from './map/MapAnimation';
 import MapSearchBar from './map/MapSearchBar';
 import MapOverlays from './map/MapOverlays';
+import { Button } from '@/components/ui/button';
 
 // Import utils
 import { createPopupContent, resetMap } from '@/utils/mapUtils';
@@ -53,6 +55,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     searchTerm, 
     setSearchTerm, 
     debouncedSearchTerm, 
+    setDebouncedSearchTerm,
     filteredStations, 
     setFilteredStations 
   } = useMapSearch(stations, cities, onSelectStation, map, language);
@@ -62,7 +65,8 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   // Setup user location and navigation
   const { 
-    userLocation, 
+    userLocation,
+    setUserLocation,
     isLoadingLocation, 
     isLoadingNearest, 
     getUserLocation, 
@@ -87,11 +91,8 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       map.current, 
       onSelectStation, 
       setSearchTerm, 
-      setSearchTerm, // Fix: Changed from setDebouncedSearchTerm (doesn't exist) to setSearchTerm
-      setUserLocation => {
-        // Fix: Changed from trying to call userLocation object to using the parameter correctly
-        return setUserLocation(null);
-      }, 
+      setDebouncedSearchTerm,
+      setUserLocation, 
       setSelectedCity, 
       setFilteredStations,
       language,
@@ -126,6 +127,19 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       <div className="relative flex-grow">
         <div ref={mapContainer} className="map-container h-[500px] rounded-lg shadow-lg"></div>
 
+        {/* Reset map button */}
+        <div className="absolute top-2 left-2 z-10">
+          <Button
+            variant="outline" 
+            size="icon"
+            className="bg-white hover:bg-gray-100 shadow-md"
+            onClick={handleResetMap}
+            title={language === 'ar' ? 'إعادة تعيين الخريطة' : 'Reset map'}
+          >
+            <RefreshCcw className="h-4 w-4" />
+          </Button>
+        </div>
+
         {/* Map Overlay Components */}
         <MapOverlays
           isLoadingLocation={isLoadingLocation}
@@ -151,7 +165,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       {/* Map Controls Component */}
       <MapControls
         onGetLocation={getUserLocation}
-        onFindNearest={findNearestStation}
+        onFindNearest={() => findNearestStation()}
         isLoadingLocation={isLoadingLocation}
         isLoadingNearest={isLoadingNearest}
         hasUserLocation={!!userLocation}

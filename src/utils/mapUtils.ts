@@ -75,7 +75,7 @@ export const resetMap = (
   onSelectStation: (station: GasStation | null) => void, 
   setSearchTerm: (term: string) => void,
   setDebouncedSearchTerm: (term: string) => void,
-  setUserLocation: any, // Updated to accept a callback function instead of expecting an object
+  setUserLocation: (location: { latitude: number; longitude: number } | null) => void,
   setSelectedCity: (city: string) => void,
   setFilteredStations: (stations: GasStation[]) => void,
   language: 'ar' | 'en',

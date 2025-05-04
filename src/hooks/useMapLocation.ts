@@ -36,10 +36,10 @@ export const useMapLocation = (
       return;
     }
 
-    // Use high accuracy options with shorter timeouts
+    // Use high accuracy options with longer timeouts
     const geoOptions = {
       enableHighAccuracy: true,
-      timeout: locationAttempts > 0 ? 15000 : 8000, // Increase timeout on retries
+      timeout: locationAttempts > 0 ? 20000 : 15000, // Increase timeout times
       maximumAge: 0 // Don't use cached position
     };
 
@@ -74,7 +74,7 @@ export const useMapLocation = (
         });
 
         // Let UI update first, then look for nearest station
-        setTimeout(() => findNearestStation(), 500);
+        setTimeout(() => findNearestStation(latitude, longitude), 500);
       },
       (error) => {
         // Error getting position
@@ -91,26 +91,26 @@ export const useMapLocation = (
             break;
           case error.POSITION_UNAVAILABLE:
             errorMsg = language === 'ar' ? 'معلومات الموقع غير متوفرة' : 'Location information unavailable';
-            shouldRetry = locationAttempts < 2; // Retry once if position unavailable
+            shouldRetry = locationAttempts < 3; // Retry twice if position unavailable
             break;
           case error.TIMEOUT:
             errorMsg = language === 'ar' ? 'انتهت مهلة طلب تحديد الموقع' : 'Location request timed out';
-            shouldRetry = locationAttempts < 2; // Retry once on timeout
+            shouldRetry = locationAttempts < 3; // Retry twice on timeout
             break;
           default:
             errorMsg = error.message;
-            shouldRetry = locationAttempts < 1;
+            shouldRetry = locationAttempts < 2;
         }
         
         if (shouldRetry) {
-          // Retry with less accuracy but longer timeout
+          // Retry with longer timeout
           setLocationAttempts(prev => prev + 1);
           toast({
             title: language === 'ar' ? 'إعادة محاولة تحديد الموقع' : 'Retrying location detection',
-            description: language === 'ar' ? 'جارٍ إعادة المحاولة...' : 'Trying again...',
+            description: language === 'ar' ? `محاولة ${locationAttempts + 1}/3...` : `Trying attempt ${locationAttempts + 1}/3...`,
           });
           // Wait a moment before retrying
-          setTimeout(getUserLocation, 800);
+          setTimeout(getUserLocation, 1000);
         } else {
           toast({
             title: texts.locationError,
@@ -124,9 +124,13 @@ export const useMapLocation = (
     );
   };
 
-  // Find nearest station to user with better error handling
-  const findNearestStation = async () => {
-    if (!userLocation) {
+  // Find nearest station to user with improved error handling
+  const findNearestStation = async (lat?: number, lng?: number) => {
+    // Use provided coordinates or stored user location
+    const latitude = lat || userLocation?.latitude;
+    const longitude = lng || userLocation?.longitude;
+    
+    if (!latitude || !longitude) {
       getUserLocation();
       return;
     }
@@ -134,8 +138,8 @@ export const useMapLocation = (
     setIsLoadingNearest(true);
 
     try {
-      console.log(`Finding nearest station to ${userLocation.latitude}, ${userLocation.longitude}`);
-      const nearestStations = await fetchNearestStations(userLocation.latitude, userLocation.longitude, 1);
+      console.log(`Finding nearest station to ${latitude}, ${longitude}`);
+      const nearestStations = await fetchNearestStations(latitude, longitude, 1);
       
       if (nearestStations.length > 0) {
         console.log("Found nearest station:", nearestStations[0]);
@@ -159,7 +163,7 @@ export const useMapLocation = (
           description: `${nearestStations[0].name} (${distanceText})`,
         });
       } else {
-        // No stations found - Fix: Changed variant from "warning" to "destructive"
+        // No stations found - Fixed: Changed variant from "warning" to "destructive"
         toast({
           title: language === 'ar' ? 'لم يتم العثور على محطات' : 'No stations found',
           description: language === 'ar' ? 'لا توجد محطات قريبة من موقعك' : 'No stations near your location',

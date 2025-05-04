@@ -251,7 +251,13 @@ export const fetchNearestStations = async (
 
     // Sort by distance and limit results
     stationsWithDistance.sort((a, b) => a.distance_meters - b.distance_meters);
-    return stationsWithDistance.slice(0, limit);
+    
+    // Filter by maxDistance if specified
+    const filteredStations = stationsWithDistance.filter(
+      station => station.distance_meters <= maxDistance
+    );
+    
+    return filteredStations.slice(0, limit);
     
   } catch (error) {
     console.error("Error in fetchNearestStations:", error);
