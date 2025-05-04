@@ -11,7 +11,7 @@ export const useMapLocation = (
   texts: MapTexts,
   language: 'ar' | 'en'
 ) => {
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number; accuracy?: number } | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const [isLoadingNearest, setIsLoadingNearest] = useState(false);
   const [locationAttempts, setLocationAttempts] = useState(0);
@@ -38,28 +38,40 @@ export const useMapLocation = (
 
     // Use high accuracy options with longer timeouts
     const geoOptions = {
-      enableHighAccuracy: true,
-      timeout: locationAttempts > 0 ? 20000 : 15000, // Increase timeout times
+      enableHighAccuracy: true, // Always request high accuracy
+      timeout: locationAttempts > 0 ? 30000 : 20000, // Increase timeout times
       maximumAge: 0 // Don't use cached position
     };
 
-    // Use watcher ID to be able to clear the watch
+    // Use geolocation watcher instead of single position request
     const watchId = navigator.geolocation.watchPosition(
       async (position) => {
         // Successfully got position
         const { latitude, longitude, accuracy } = position.coords;
         console.log(`User location detected: ${latitude}, ${longitude}, accuracy: ${accuracy}m`);
         
+        // If the accuracy is not good enough, continue watching
+        if (accuracy > 30 && locationAttempts < 3) {
+          toast({
+            title: language === 'ar' ? 'جاري تحسين الدقة...' : 'Improving accuracy...',
+            description: language === 'ar' 
+              ? `تم تحديد موقعك بدقة ${accuracy.toFixed(1)} متر، محاولة تحسين...` 
+              : `Location detected with ${accuracy.toFixed(1)}m accuracy, trying to improve...`,
+          });
+          setLocationAttempts(prev => prev + 1);
+          return; // Continue watching for a better position
+        }
+        
         // Clear the watch as we got a good position
         navigator.geolocation.clearWatch(watchId);
         
-        setUserLocation({ latitude, longitude });
+        setUserLocation({ latitude, longitude, accuracy });
         setLocationAttempts(0); // Reset attempts counter on success
 
         // Move to user location
         map.current?.flyTo({
           center: [longitude, latitude],
-          zoom: 13,
+          zoom: 16, // Zoom in closer for better accuracy
           essential: true,
           duration: 1000
         });
@@ -119,6 +131,19 @@ export const useMapLocation = (
       },
       geoOptions
     );
+    
+    // Set a timeout to stop watching if it's taking too long
+    setTimeout(() => {
+      if (isLoadingLocation) {
+        navigator.geolocation.clearWatch(watchId);
+        toast({
+          title: language === 'ar' ? 'استغرق وقتًا طويلاً' : 'Taking too long',
+          description: language === 'ar' ? 'قد تكون دقة GPS منخفضة في موقعك الحالي' : 'GPS accuracy might be low in your current location',
+          variant: 'default',
+        });
+        setIsLoadingLocation(false);
+      }
+    }, 40000); // 40 second timeout
   };
 
   // Find nearest station to user with improved error handling
@@ -157,7 +182,7 @@ export const useMapLocation = (
         // Move map to the station
         map.current?.flyTo({
           center: [nearestStations[0].longitude, nearestStations[0].latitude],
-          zoom: 14,
+          zoom: 15,
           essential: true,
           duration: 1000
         });
@@ -200,14 +225,17 @@ export const useMapLocation = (
       description: `${texts.directionsTo} ${station.name}`,
     });
 
-    // Open Google Maps directions in new window
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}`;
+    // If we have user location, use it as the starting point
+    const url = userLocation 
+      ? `https://www.google.com/maps/dir/${userLocation.latitude},${userLocation.longitude}/${station.latitude},${station.longitude}`
+      : `https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}`;
+    
     window.open(url, '_blank');
   };
 
   return {
     userLocation,
-    setUserLocation,  // Expose this function to fix the error
+    setUserLocation,
     isLoadingLocation,
     isLoadingNearest,
     getUserLocation,
