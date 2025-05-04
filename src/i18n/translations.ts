@@ -19,6 +19,9 @@ export interface TranslationSchema {
     logout: string;
     dashboard: string;
     adminPanel: string;
+    changeLanguage: string;
+    profile: string;
+    alert: string;
   };
   home: {
     stations: string;
@@ -52,6 +55,27 @@ export interface TranslationSchema {
     searchStation: string;
     noResults: string;
     searchResults: string;
+  };
+  dashboard: {
+    subtitle: string;
+    stations: string;
+    importExport: string;
+    analytics: string;
+    addStation: string;
+    deleteDuplicates: string;
+  };
+  login: {
+    checkingSession: string;
+    error: string;
+    enterCredentials: string;
+    loginError: string;
+    invalidCredentials: string;
+    loginSuccess: string;
+    redirecting: string;
+    notAdmin: string;
+  };
+  userManagement: {
+    title: string;
   };
   admin: {
     about: string;
@@ -122,7 +146,7 @@ export interface TranslationSchema {
     corporateServices: string;
     corporateDescription: string;
     contactUs: string;
-  };
+  }
 }
 
 // تعريف الترجمات بشكل منظم حسب اللغة والقسم
@@ -140,6 +164,9 @@ export const translations: Record<Language, TranslationSchema> = {
       logout: "Logout",
       dashboard: "Dashboard",
       adminPanel: "Admin Panel",
+      changeLanguage: "Change Language",
+      profile: "Profile",
+      alert: "Alert",
     },
     home: {
       stations: "Stations",
@@ -173,6 +200,27 @@ export const translations: Record<Language, TranslationSchema> = {
       searchStation: "Search for a station...",
       noResults: "No search results",
       searchResults: "Search results",
+    },
+    dashboard: {
+      subtitle: "Manage your stations and analytics",
+      stations: "Stations",
+      importExport: "Import/Export",
+      analytics: "Analytics",
+      addStation: "Add Station",
+      deleteDuplicates: "Delete Duplicates",
+    },
+    login: {
+      checkingSession: "Checking session...",
+      error: "Error",
+      enterCredentials: "Please enter your credentials",
+      loginError: "Login Error",
+      invalidCredentials: "Invalid email or password",
+      loginSuccess: "Login Successful",
+      redirecting: "Redirecting to dashboard...",
+      notAdmin: "You are not authorized to access this area",
+    },
+    userManagement: {
+      title: "User Management",
     },
     admin: {
       about: "About",
@@ -258,6 +306,9 @@ export const translations: Record<Language, TranslationSchema> = {
       logout: "تسجيل الخروج",
       dashboard: "لوحة التحكم",
       adminPanel: "لوحة الإدارة",
+      changeLanguage: "تغيير اللغة",
+      profile: "الملف الشخصي",
+      alert: "تنبيه",
     },
     home: {
       stations: "المحطات",
@@ -291,6 +342,27 @@ export const translations: Record<Language, TranslationSchema> = {
       searchStation: "البحث عن محطة...",
       noResults: "لا توجد نتائج للبحث",
       searchResults: "نتائج البحث",
+    },
+    dashboard: {
+      subtitle: "إدارة المحطات والتحليلات",
+      stations: "المحطات",
+      importExport: "استيراد/تصدير",
+      analytics: "التحليلات",
+      addStation: "إضافة محطة",
+      deleteDuplicates: "حذف المكررات",
+    },
+    login: {
+      checkingSession: "جاري التحقق من الجلسة...",
+      error: "خطأ",
+      enterCredentials: "يرجى إدخال بيانات الدخول",
+      loginError: "خطأ في تسجيل الدخول",
+      invalidCredentials: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+      loginSuccess: "تم تسجيل الدخول بنجاح",
+      redirecting: "جاري التوجيه إلى لوحة التحكم...",
+      notAdmin: "ليس لديك صلاحية للوصول إلى هذه المنطقة",
+    },
+    userManagement: {
+      title: "إدارة المستخدمين",
     },
     admin: {
       about: "عن",
