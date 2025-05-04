@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Loader2, RefreshCcw } from "lucide-react";
+import { Loader2, MapPin, Navigation } from "lucide-react";
 
 interface MapControlsProps {
   onGetLocation: () => void;
@@ -39,21 +39,37 @@ const MapControls: React.FC<MapControlsProps> = ({
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
           </>
-        ) : texts.getLocation}
+        ) : (
+          <>
+            <MapPin className="mr-2 h-4 w-4" />
+            {texts.getLocation}
+          </>
+        )}
       </motion.button>
+      
       <motion.button 
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="px-4 py-2 border border-noor-purple text-noor-purple rounded-md hover:bg-noor-purple/10 transition-colors flex items-center justify-center"
+        className={`px-4 py-2 border rounded-md flex items-center justify-center transition-colors ${
+          hasUserLocation 
+            ? "border-noor-orange text-noor-orange hover:bg-noor-orange/10" 
+            : "border-gray-300 text-gray-400"
+        }`}
         onClick={onFindNearest}
         disabled={isLoadingNearest || !hasUserLocation}
+        title={!hasUserLocation ? (language === 'ar' ? 'الرجاء تحديد موقعك أولاً' : 'Please get your location first') : ''}
       >
         {isLoadingNearest ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             {language === 'ar' ? 'جاري البحث...' : 'Searching...'}
           </>
-        ) : texts.findNearest}
+        ) : (
+          <>
+            <Navigation className="mr-2 h-4 w-4" />
+            {texts.findNearest}
+          </>
+        )}
       </motion.button>
     </div>
   );

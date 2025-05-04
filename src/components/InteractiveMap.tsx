@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { GasStation } from '@/types/station';
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCcw } from "lucide-react"; // Import the refresh icon
+import { RefreshCcw } from "lucide-react";
 
 // Import custom hooks
 import { useMapInitialization } from '@/hooks/useMapInitialization';

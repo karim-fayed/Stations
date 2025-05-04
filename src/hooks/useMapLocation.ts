@@ -72,9 +72,6 @@ export const useMapLocation = (
             ? `تم تحديد موقعك بدقة ${accuracy.toFixed(1)} متر`
             : `Your location detected with ${accuracy.toFixed(1)}m accuracy`,
         });
-
-        // Let UI update first, then look for nearest station
-        setTimeout(() => findNearestStation(latitude, longitude), 500);
       },
       (error) => {
         // Error getting position
@@ -131,11 +128,23 @@ export const useMapLocation = (
     const longitude = lng || userLocation?.longitude;
     
     if (!latitude || !longitude) {
+      // If no location is available, get user location first
+      toast({
+        title: language === 'ar' ? 'تنبيه' : 'Notice',
+        description: language === 'ar' ? 'يجب تحديد موقعك أولاً' : 'Please get your location first',
+        variant: 'default',
+      });
       getUserLocation();
       return;
     }
 
     setIsLoadingNearest(true);
+    
+    // Show searching toast
+    toast({
+      title: language === 'ar' ? 'جاري البحث' : 'Searching',
+      description: language === 'ar' ? 'البحث عن أقرب محطة...' : 'Finding nearest station...',
+    });
 
     try {
       console.log(`Finding nearest station to ${latitude}, ${longitude}`);
