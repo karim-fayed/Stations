@@ -81,7 +81,8 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
         closeOnClick: false,
         offset: 25,
         className: 'station-popup',
-        maxWidth: '300px' // تعيين العرض الأقصى للنافذة المنبثقة
+        maxWidth: '300px', // تعيين العرض الأقصى للنافذة المنبثقة
+        anchor: 'bottom' // جعل النافذة المنبثقة تظهر فوق الدبوس دائمًا
       }).setDOMContent(createPopupContent(station));
       
       popupsRef.current.push(popup);
@@ -100,6 +101,7 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
 
       // تحسين سلوك التفاعل مع المؤشر - منع "هروب" النافذة المنبثقة
       let isHovering = false;
+      let popupVisible = false;
 
       // إضافة أحداث hover للمُعلّمة
       el.addEventListener('mouseenter', () => {
@@ -122,6 +124,7 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
         
         // إظهار النافذة المنبثقة
         popup.addTo(map);
+        popupVisible = true;
         activePopupRef.current = popup;
 
         // إضافة أحداث hover للنافذة المنبثقة نفسها
@@ -144,12 +147,17 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
             isHovering = false;
             
             // تأخير إزالة النافذة المنبثقة لتوفير وقت أكبر للمستخدم
+            // تم زيادة التأخير لمنع اختفاء النافذة المنبثقة سريعًا
             hoverTimeoutRef.current = setTimeout(() => {
-              if (!isHovering) {
-                popup.remove();
-                activePopupRef.current = null;
+              if (!isHovering && popupVisible) {
+                // لا نزيل النافذة المنبثقة إلا إذا كان المؤشر بعيدًا عن الدبوس والنافذة المنبثقة
+                if (!isSelected) { // لا نزيل النافذة المنبثقة إذا كانت المحطة محددة
+                  popup.remove();
+                  popupVisible = false;
+                  activePopupRef.current = null;
+                }
               }
-            }, 300);
+            }, 1000); // زيادة التأخير إلى 1 ثانية
           });
         }
       });
@@ -159,17 +167,18 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
         isHovering = false;
         
         // تأخير إزالة النافذة المنبثقة وإعادة المُعلّمة إلى الحجم الطبيعي
+        // تم زيادة التأخير لمنع اختفاء النافذة المنبثقة سريعًا
         hoverTimeoutRef.current = setTimeout(() => {
-          if (!isHovering) {
+          if (!isHovering && popupVisible) {
             if (!isSelected) {
               el.style.transform = 'scale(1) translateY(0)';
               el.style.filter = 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35))';
+              popup.remove();
+              popupVisible = false;
+              activePopupRef.current = null;
             }
-            
-            popup.remove();
-            activePopupRef.current = null;
           }
-        }, 300); // تأخير 300 مللي ثانية للسماح بالانتقال السلس إلى النافذة المنبثقة
+        }, 1000); // زيادة التأخير إلى 1 ثانية
       });
 
       // إضافة حدث النقر
@@ -184,8 +193,8 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
           iterations: 1
         });
         
-        // إغلاق النافذة المنبثقة عند النقر
-        popup.remove();
+        // نحتفظ بالنافذة المنبثقة مفتوحة عند النقر
+        popupVisible = true;
         
         // تحديد المحطة
         onSelectStation(station);
@@ -229,6 +238,14 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
         box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         z-index: 5;
         max-width: 300px;
+        pointer-events: auto !important; /* يسمح بالتفاعل مع النافذة المنبثقة */
+      }
+      
+      .station-popup .mapboxgl-popup-content {
+        padding: 0 !important;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25) !important;
       }
       
       @keyframes fadeIn {
