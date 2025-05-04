@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import mapboxgl from 'mapbox-gl';
 import { GasStation } from '@/types/station';
 import { SaudiCity } from '@/components/map/types';
 import { useToast } from '@/hooks/use-toast';
