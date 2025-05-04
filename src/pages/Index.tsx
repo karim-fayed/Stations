@@ -92,7 +92,7 @@ const Index = () => {
 
       <Header />
 
-      <main className="flex-grow container mx-auto px-1 sm:px-4 py-2 sm:py-4">
+      <main className="flex-grow container mx-auto px-2 sm:px-4 py-2 sm:py-4">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-noor-purple"></div>
@@ -103,16 +103,16 @@ const Index = () => {
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-2 sm:mb-4">
-              <TabsTrigger value="map">
+            <TabsList className="grid w-full grid-cols-2 mb-3 sm:mb-4">
+              <TabsTrigger value="map" className="text-sm sm:text-base py-1.5 sm:py-2">
                 {t('home', 'map')}
               </TabsTrigger>
-              <TabsTrigger value="list">
+              <TabsTrigger value="list" className="text-sm sm:text-base py-1.5 sm:py-2">
                 {t('home', 'stationsList')}
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="map" className="h-[75vh]">
+            <TabsContent value="map" className="h-[70vh] sm:h-[75vh]">
               <InteractiveMap
                 selectedStation={selectedStation}
                 onSelectStation={handleSelectStation}
@@ -125,7 +125,7 @@ const Index = () => {
               />
             </TabsContent>
 
-            <TabsContent value="list" className="h-[75vh] overflow-auto">
+            <TabsContent value="list" className="h-[70vh] sm:h-[75vh] overflow-auto">
               <GasStationList
                 stations={stations}
                 onSelectStation={handleSelectStation}
@@ -137,9 +137,9 @@ const Index = () => {
         )}
       </main>
 
-      <footer className={`bg-noor-purple text-white py-2`}>
+      <footer className={`bg-noor-purple text-white py-2 mt-auto`}>
         <div className="container mx-auto text-center">
-          <p>
+          <p className="text-xs sm:text-sm">
             {isRTL
               ? '© 2025 محطات نور. جميع الحقوق محفوظة.'
               : '© 2025 Noor Stations. All rights reserved.'}

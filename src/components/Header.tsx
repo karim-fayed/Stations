@@ -16,9 +16,7 @@ const Header = () => {
           <h1 className="text-white text-lg sm:text-xl md:text-2xl font-bold text-center flex items-center justify-center">
             {language === 'ar' ? (
               <>
-                <span className="hidden xs:inline">مرحباً بك في محطات نور</span>
-                <span className="xs:hidden">محطات نور</span>
-                <div className="relative mr-2">
+                <div className="relative ml-2">
                   <img
                     src="https://noor.com.sa/wp-content/themes/noor/images/apple-touch-icon-72x72.png"
                     alt="Noor Logo"
@@ -27,11 +25,11 @@ const Header = () => {
                   />
                   <div className="absolute inset-0 bg-white rounded-full blur-md opacity-30 animate-pulse" style={{ animationDuration: '3s' }}></div>
                 </div>
+                <span className="hidden xs:inline">مرحباً بك في محطات نور</span>
+                <span className="xs:hidden">محطات نور</span>
               </>
             ) : (
               <>
-                <span className="hidden xs:inline">Welcome to Noor Stations</span>
-                <span className="xs:hidden">Noor Stations</span>
                 <div className="relative mr-2">
                   <img
                     src="https://noor.com.sa/wp-content/themes/noor/images/apple-touch-icon-72x72.png"
@@ -41,15 +39,26 @@ const Header = () => {
                   />
                   <div className="absolute inset-0 bg-white rounded-full blur-md opacity-30 animate-pulse" style={{ animationDuration: '3s' }}></div>
                 </div>
+                <span className="hidden xs:inline">Welcome to Noor Stations</span>
+                <span className="xs:hidden">Noor Stations</span>
               </>
             )}
           </h1>
 
-          {/* Floating Menu Button */}
-          <div className={`absolute ${language === 'ar' ? 'right-0' : 'left-0'} top-1/2 transform -translate-y-1/2`}>
+          {/* نقل زر القائمة الجانبية إلى الجهة المناسبة حسب اللغة */}
+          <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} top-1/2 transform -translate-y-1/2`}>
             <div className="md:hidden">
               <HomeSidebar />
             </div>
+          </div>
+
+          {/* إضافة زر لوحة التحكم في نفس الصف مع زر القائمة */}
+          <div className={`absolute ${language === 'ar' ? 'right-0' : 'left-0'} top-1/2 transform -translate-y-1/2`}>
+            <Link to="/admin/login" className="md:hidden">
+              <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9 text-white">
+                <UserCircle size={18} className="text-white" />
+              </Button>
+            </Link>
           </div>
         </div>
 
