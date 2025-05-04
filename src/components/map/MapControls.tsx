@@ -2,6 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, MapPin, Navigation } from "lucide-react";
+import { Language } from '@/i18n/translations';
 
 interface MapControlsProps {
   onGetLocation: () => void;
@@ -13,7 +14,7 @@ interface MapControlsProps {
     getLocation: string;
     findNearest: string;
   };
-  language: 'ar' | 'en';
+  language: Language;
 }
 
 const MapControls: React.FC<MapControlsProps> = ({
@@ -37,7 +38,7 @@ const MapControls: React.FC<MapControlsProps> = ({
         {isLoadingLocation ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            {language === 'ar' ? 'جاري التحميل...' : 'Loading...'}
+            {language === Language.ARABIC ? 'جاري التحميل...' : 'Loading...'}
           </>
         ) : (
           <>
@@ -57,12 +58,12 @@ const MapControls: React.FC<MapControlsProps> = ({
         }`}
         onClick={onFindNearest}
         disabled={isLoadingNearest || !hasUserLocation}
-        title={!hasUserLocation ? (language === 'ar' ? 'الرجاء تحديد موقعك أولاً' : 'Please get your location first') : ''}
+        title={!hasUserLocation ? (language === Language.ARABIC ? 'الرجاء تحديد موقعك أولاً' : 'Please get your location first') : ''}
       >
         {isLoadingNearest ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            {language === 'ar' ? 'جاري البحث...' : 'Searching...'}
+            {language === Language.ARABIC ? 'جاري البحث...' : 'Searching...'}
           </>
         ) : (
           <>

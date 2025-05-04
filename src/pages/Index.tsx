@@ -14,6 +14,7 @@ import { UserCircle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import mapboxgl from 'mapbox-gl';
 import { MAPBOX_TOKEN } from '@/utils/environment';
+import { Language } from "@/i18n/translations";
 
 const Index = () => {
   // الحالات (States)
@@ -138,7 +139,7 @@ const Index = () => {
       <footer className={`bg-noor-purple text-white p-4`}>
         <div className="container mx-auto text-center">
           <p>
-            {language === 'ar'
+            {language === Language.ARABIC
               ? '© 2025 محطات نور. جميع الحقوق محفوظة.'
               : '© 2025 Noor Stations. All rights reserved.'}
           </p>

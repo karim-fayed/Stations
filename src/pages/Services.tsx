@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Toaster } from "@/components/ui/toaster";
@@ -6,6 +7,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { UserCircle, Fuel, Wrench, Truck, ShoppingBag, Coffee } from "lucide-react";
+import { Language } from '@/i18n/translations';
 
 const Services = () => {
   const { language, t } = useLanguage();
@@ -75,7 +77,7 @@ const Services = () => {
           transition={{ duration: 0.5 }}
         >
           <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-noor-purple to-noor-orange bg-clip-text text-transparent">
-            {language === 'ar' ? 'خدماتنا' : 'Our Services'}
+            {language === Language.ARABIC ? 'خدماتنا' : 'Our Services'}
           </h1>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -92,10 +94,10 @@ const Services = () => {
                     {service.icon}
                   </div>
                   <h3 className="text-xl font-bold mb-2">
-                    {language === 'ar' ? service.titleAr : service.titleEn}
+                    {language === Language.ARABIC ? service.titleAr : service.titleEn}
                   </h3>
                   <p className="text-gray-600">
-                    {language === 'ar' ? service.descriptionAr : service.descriptionEn}
+                    {language === Language.ARABIC ? service.descriptionAr : service.descriptionEn}
                   </p>
                 </div>
               </motion.div>
@@ -104,16 +106,16 @@ const Services = () => {
 
           <div className="mt-12 bg-gray-50 p-6 rounded-lg shadow">
             <h2 className="text-2xl font-bold mb-4 text-center">
-              {language === 'ar' ? 'خدمات للشركات' : 'Corporate Services'}
+              {language === Language.ARABIC ? 'خدمات للشركات' : 'Corporate Services'}
             </h2>
             <p className="text-center mb-6">
-              {language === 'ar'
+              {language === Language.ARABIC
                 ? 'نقدم خدمات خاصة للشركات والمؤسسات بأسعار تنافسية وجودة عالية.'
                 : 'We offer special services for companies and institutions at competitive prices and high quality.'}
             </p>
             <div className="flex justify-center">
               <Button className="bg-gradient-to-r from-noor-purple to-noor-orange text-white hover:opacity-90">
-                {language === 'ar' ? 'تواصل معنا' : 'Contact Us'}
+                {language === Language.ARABIC ? 'تواصل معنا' : 'Contact Us'}
               </Button>
             </div>
           </div>
@@ -123,7 +125,7 @@ const Services = () => {
       <footer className={`bg-noor-purple text-white p-4`}>
         <div className="container mx-auto text-center">
           <p>
-            {language === 'ar'
+            {language === Language.ARABIC
               ? '© 2025 محطات نور. جميع الحقوق محفوظة.'
               : '© 2025 Noor Stations. All rights reserved.'}
           </p>

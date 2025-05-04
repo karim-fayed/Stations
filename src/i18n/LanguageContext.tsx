@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { Language, translations } from './translations';
 
@@ -18,12 +19,12 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   // استخدام اللغة المخزنة في localStorage أو اللغة العربية كافتراضي
   const [language, setLanguageState] = useState<Language>(() => {
     const savedLanguage = localStorage.getItem('language') as Language;
-    return savedLanguage || 'ar';
+    return savedLanguage ? (savedLanguage as Language) : Language.ARABIC;
   });
 
   // تحديث اتجاه الصفحة عند تغيير اللغة
   useEffect(() => {
-    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.dir = language === Language.ARABIC ? 'rtl' : 'ltr';
     document.documentElement.lang = language;
     localStorage.setItem('language', language);
   }, [language]);
@@ -48,7 +49,7 @@ export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) 
   };
 
   // اتجاه النص
-  const dir = language === 'ar' ? 'rtl' : 'ltr';
+  const dir = language === Language.ARABIC ? 'rtl' : 'ltr';
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t, dir }}>
