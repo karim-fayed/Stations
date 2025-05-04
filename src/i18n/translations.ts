@@ -69,7 +69,15 @@ export const translations = {
     },
     adminPanel: {
       en: "Admin Panel",
-      ar: "لوحة الإدارة"
+      ar: "لوحة التحكم"
+    },
+    map: {
+      en: "Map",
+      ar: "الخريطة"
+    },
+    stationsList: {
+      en: "Stations List",
+      ar: "قائمة المحطات"
     }
   }
 };

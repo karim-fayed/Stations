@@ -102,7 +102,7 @@ const DashboardHeader = ({ onLogout, onAddStation, onDeleteDuplicates, duplicate
                 variant="outline"
                 className="flex items-center gap-2 text-blue-600 border-blue-300 hover:bg-blue-50 transition-all duration-300 hover:scale-105"
               >
-                <Users size={16} /> {t('userManagement', 'title')}
+                <Users size={16} /> {t('common', 'manageUsers')}
               </Button>
             </Link>
           )}

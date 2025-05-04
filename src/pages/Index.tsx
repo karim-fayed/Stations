@@ -14,11 +14,13 @@ import { UserCircle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import mapboxgl from 'mapbox-gl';
 import { MAPBOX_TOKEN } from '@/utils/environment';
+import { useTranslation } from "@/hooks/useTranslation";
 
 const Index = () => {
   // الحالات (States)
   const [selectedStation, setSelectedStation] = useState<GasStation | null>(null);
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
+  const { t } = useTranslation();
   const [stations, setStations] = useState<GasStation[]>([]);
   const [filteredStations, setFilteredStations] = useState<GasStation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +48,7 @@ const Index = () => {
         setError(null);
       } catch (err) {
         console.error("Error loading stations:", err);
-        setError(t('home', 'loadingError'));
+        setError(t('home.loadingError'));
       } finally {
         setIsLoading(false);
       }
@@ -82,7 +84,7 @@ const Index = () => {
         <Link to="/admin/login">
           <Button variant="outline" className="flex items-center gap-2 bg-white/80 hover:bg-white">
             <UserCircle size={18} />
-            <span className="hidden sm:inline">{t('home', 'adminPanel')}</span>
+            <span className="hidden sm:inline">{t('common.adminPanel')}</span>
           </Button>
         </Link>
       </div>
@@ -103,10 +105,10 @@ const Index = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6">
               <TabsTrigger value="map">
-                {t('home', 'map')}
+                {t('common.map')}
               </TabsTrigger>
               <TabsTrigger value="list">
-                {t('home', 'stationsList')}
+                {t('common.stationsList')}
               </TabsTrigger>
             </TabsList>
 
