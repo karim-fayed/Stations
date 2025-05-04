@@ -82,7 +82,7 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
         offset: 25,
         className: 'station-popup',
         maxWidth: '300px', // تعيين العرض الأقصى للنافذة المنبثقة
-        anchor: 'bottom' // جعل النافذة المنبثقة تظهر فوق الدبوس دائمًا
+        anchor: 'bottom', // جعل النافذة المنبثقة تظهر فوق الدبوس دائمًا
       }).setDOMContent(createPopupContent(station));
       
       popupsRef.current.push(popup);
@@ -99,14 +99,11 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
       // إضافة المعلم إلى المرجع
       markersRef.current.push(marker);
 
-      // تحسين سلوك التفاعل مع المؤشر - منع "هروب" النافذة المنبثقة
-      let isHovering = false;
+      // تتبع حالة العرض للنافذة المنبثقة
       let popupVisible = false;
 
       // إضافة أحداث hover للمُعلّمة
       el.addEventListener('mouseenter', () => {
-        isHovering = true;
-
         // إلغاء أي مؤقت سابق
         if (hoverTimeoutRef.current) {
           clearTimeout(hoverTimeoutRef.current);
@@ -118,69 +115,15 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
           activePopupRef.current.remove();
         }
 
-        // تطبيق تأثيرات المؤشر
-        el.style.transform = 'scale(1.1) translateY(-5px)';
-        el.style.filter = 'drop-shadow(0 10px 15px rgba(0, 0, 0, 0.4))';
+        // تغيير مظهر الدبوس عند التحويم عليه (بدون تحريكه للأعلى)
+        el.style.filter = 'drop-shadow(0 6px 10px rgba(0, 0, 0, 0.4))';
         
         // إظهار النافذة المنبثقة
         popup.addTo(map);
         popupVisible = true;
         activePopupRef.current = popup;
-
-        // إضافة أحداث hover للنافذة المنبثقة نفسها
-        const popupElement = popup.getElement();
-        
-        // الاستماع لأحداث دخول المؤشر للنافذة المنبثقة
-        if (popupElement) {
-          popupElement.addEventListener('mouseenter', () => {
-            isHovering = true;
-            
-            // إلغاء أي مؤقت عند دخول المؤشر للنافذة المنبثقة
-            if (hoverTimeoutRef.current) {
-              clearTimeout(hoverTimeoutRef.current);
-              hoverTimeoutRef.current = null;
-            }
-          });
-          
-          // الاستماع لأحداث خروج المؤشر من النافذة المنبثقة
-          popupElement.addEventListener('mouseleave', () => {
-            isHovering = false;
-            
-            // تأخير إزالة النافذة المنبثقة لتوفير وقت أكبر للمستخدم
-            // تم زيادة التأخير لمنع اختفاء النافذة المنبثقة سريعًا
-            hoverTimeoutRef.current = setTimeout(() => {
-              if (!isHovering && popupVisible) {
-                // لا نزيل النافذة المنبثقة إلا إذا كان المؤشر بعيدًا عن الدبوس والنافذة المنبثقة
-                if (!isSelected) { // لا نزيل النافذة المنبثقة إذا كانت المحطة محددة
-                  popup.remove();
-                  popupVisible = false;
-                  activePopupRef.current = null;
-                }
-              }
-            }, 1000); // زيادة التأخير إلى 1 ثانية
-          });
-        }
       });
       
-      // الاستماع لأحداث خروج المؤشر من المُعلّمة
-      el.addEventListener('mouseleave', () => {
-        isHovering = false;
-        
-        // تأخير إزالة النافذة المنبثقة وإعادة المُعلّمة إلى الحجم الطبيعي
-        // تم زيادة التأخير لمنع اختفاء النافذة المنبثقة سريعًا
-        hoverTimeoutRef.current = setTimeout(() => {
-          if (!isHovering && popupVisible) {
-            if (!isSelected) {
-              el.style.transform = 'scale(1) translateY(0)';
-              el.style.filter = 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35))';
-              popup.remove();
-              popupVisible = false;
-              activePopupRef.current = null;
-            }
-          }
-        }, 1000); // زيادة التأخير إلى 1 ثانية
-      });
-
       // إضافة حدث النقر
       el.addEventListener('click', () => {
         // إنشاء تأثير نبضة عند النقر
@@ -199,6 +142,15 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
         // تحديد المحطة
         onSelectStation(station);
       });
+
+      // إضافة حدث نقر للنافذة المنبثقة نفسها
+      const popupElement = popup.getElement();
+      if (popupElement) {
+        popupElement.addEventListener('click', (e) => {
+          // منع انتشار الحدث لإبقاء النافذة المنبثقة مفتوحة
+          e.stopPropagation();
+        });
+      }
     });
   }, [stations, selectedStation, onSelectStation, map, createPopupContent, language]);
 
@@ -251,6 +203,11 @@ const MapMarkerManager: React.FC<MapMarkerManagerProps> = ({
       @keyframes fadeIn {
         0% { opacity: 0; transform: translateY(10px); }
         100% { opacity: 1; transform: translateY(0); }
+      }
+
+      /* تحسين استقرار النوافذ المنبثقة */
+      .mapboxgl-popup {
+        z-index: 10;
       }
     `;
     
