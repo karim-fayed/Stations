@@ -1,9 +1,10 @@
 
 import { useState } from 'react';
-import { useToast } from "@/hooks/use-toast";
 import { GasStation } from '@/types/station';
-import { fetchNearestStations } from '@/services/stationService';
 import { MapTexts } from '@/components/map/types';
+import { useGeolocation } from './useGeolocation';
+import { useNearestStation } from './useNearestStation';
+import { useDirections } from './useDirections';
 
 export const useMapLocation = (
   map: React.MutableRefObject<mapboxgl.Map | null>,
@@ -11,226 +12,31 @@ export const useMapLocation = (
   texts: MapTexts,
   language: 'ar' | 'en'
 ) => {
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number; accuracy?: number } | null>(null);
-  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  const [isLoadingNearest, setIsLoadingNearest] = useState(false);
-  const [locationAttempts, setLocationAttempts] = useState(0);
-  const { toast } = useToast();
+  // Use our new custom hooks
+  const { 
+    userLocation, 
+    setUserLocation, 
+    isLoadingLocation, 
+    getUserLocation 
+  } = useGeolocation({ language, texts, map });
 
-  // Get user location with improved accuracy and timeout handling
-  const getUserLocation = () => {
-    setIsLoadingLocation(true);
+  const { 
+    isLoadingNearest, 
+    findNearestStation: findNearest 
+  } = useNearestStation({ language, texts, map, onSelectStation });
 
-    toast({
-      title: texts.locationDetecting,
-      description: texts.pleaseWait,
-    });
+  const { 
+    showDirections: showDirectionsToStation 
+  } = useDirections({ language, texts });
 
-    if (!navigator.geolocation) {
-      toast({
-        title: texts.locationError,
-        description: texts.enableLocation,
-        variant: 'destructive',
-      });
-      setIsLoadingLocation(false);
-      return;
-    }
-
-    // Use high accuracy options with longer timeouts
-    const geoOptions = {
-      enableHighAccuracy: true, // Always request high accuracy
-      timeout: locationAttempts > 0 ? 30000 : 20000, // Increase timeout times
-      maximumAge: 0 // Don't use cached position
-    };
-
-    // Use geolocation watcher instead of single position request
-    const watchId = navigator.geolocation.watchPosition(
-      async (position) => {
-        // Successfully got position
-        const { latitude, longitude, accuracy } = position.coords;
-        console.log(`User location detected: ${latitude}, ${longitude}, accuracy: ${accuracy}m`);
-        
-        // If the accuracy is not good enough, continue watching
-        if (accuracy > 30 && locationAttempts < 3) {
-          toast({
-            title: language === 'ar' ? 'جاري تحسين الدقة...' : 'Improving accuracy...',
-            description: language === 'ar' 
-              ? `تم تحديد موقعك بدقة ${accuracy.toFixed(1)} متر، محاولة تحسين...` 
-              : `Location detected with ${accuracy.toFixed(1)}m accuracy, trying to improve...`,
-          });
-          setLocationAttempts(prev => prev + 1);
-          return; // Continue watching for a better position
-        }
-        
-        // Clear the watch as we got a good position
-        navigator.geolocation.clearWatch(watchId);
-        
-        setUserLocation({ latitude, longitude, accuracy });
-        setLocationAttempts(0); // Reset attempts counter on success
-
-        // Move to user location
-        map.current?.flyTo({
-          center: [longitude, latitude],
-          zoom: 16, // Zoom in closer for better accuracy
-          essential: true,
-          duration: 1000
-        });
-
-        setIsLoadingLocation(false);
-
-        toast({
-          title: texts.locationDetected,
-          description: language === 'ar' 
-            ? `تم تحديد موقعك بدقة ${accuracy.toFixed(1)} متر`
-            : `Your location detected with ${accuracy.toFixed(1)}m accuracy`,
-        });
-      },
-      (error) => {
-        // Error getting position
-        console.error('Geolocation error:', error);
-        navigator.geolocation.clearWatch(watchId);
-        
-        let errorMsg = '';
-        let shouldRetry = false;
-        
-        switch(error.code) {
-          case error.PERMISSION_DENIED:
-            errorMsg = language === 'ar' ? 'تم رفض إذن تحديد الموقع' : 'Location permission denied';
-            shouldRetry = false; // Don't retry if permission denied
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMsg = language === 'ar' ? 'معلومات الموقع غير متوفرة' : 'Location information unavailable';
-            shouldRetry = locationAttempts < 3; // Retry twice if position unavailable
-            break;
-          case error.TIMEOUT:
-            errorMsg = language === 'ar' ? 'انتهت مهلة طلب تحديد الموقع' : 'Location request timed out';
-            shouldRetry = locationAttempts < 3; // Retry twice on timeout
-            break;
-          default:
-            errorMsg = error.message;
-            shouldRetry = locationAttempts < 2;
-        }
-        
-        if (shouldRetry) {
-          // Retry with longer timeout
-          setLocationAttempts(prev => prev + 1);
-          toast({
-            title: language === 'ar' ? 'إعادة محاولة تحديد الموقع' : 'Retrying location detection',
-            description: language === 'ar' ? `محاولة ${locationAttempts + 1}/3...` : `Trying attempt ${locationAttempts + 1}/3...`,
-          });
-          // Wait a moment before retrying
-          setTimeout(getUserLocation, 1000);
-        } else {
-          toast({
-            title: texts.locationError,
-            description: errorMsg,
-            variant: 'destructive',
-          });
-          setIsLoadingLocation(false);
-        }
-      },
-      geoOptions
-    );
-    
-    // Set a timeout to stop watching if it's taking too long
-    setTimeout(() => {
-      if (isLoadingLocation) {
-        navigator.geolocation.clearWatch(watchId);
-        toast({
-          title: language === 'ar' ? 'استغرق وقتًا طويلاً' : 'Taking too long',
-          description: language === 'ar' ? 'قد تكون دقة GPS منخفضة في موقعك الحالي' : 'GPS accuracy might be low in your current location',
-          variant: 'default',
-        });
-        setIsLoadingLocation(false);
-      }
-    }, 40000); // 40 second timeout
+  // Find nearest station (wrapper function to use the userLocation state)
+  const findNearestStation = (lat?: number, lng?: number) => {
+    findNearest(lat, lng, userLocation);
   };
 
-  // Find nearest station to user with improved error handling
-  const findNearestStation = async (lat?: number, lng?: number) => {
-    // Use provided coordinates or stored user location
-    const latitude = lat || userLocation?.latitude;
-    const longitude = lng || userLocation?.longitude;
-    
-    if (!latitude || !longitude) {
-      // If no location is available, get user location first
-      toast({
-        title: language === 'ar' ? 'تنبيه' : 'Notice',
-        description: language === 'ar' ? 'يجب تحديد موقعك أولاً' : 'Please get your location first',
-        variant: 'default',
-      });
-      getUserLocation();
-      return;
-    }
-
-    setIsLoadingNearest(true);
-    
-    // Show searching toast
-    toast({
-      title: language === 'ar' ? 'جاري البحث' : 'Searching',
-      description: language === 'ar' ? 'البحث عن أقرب محطة...' : 'Finding nearest station...',
-    });
-
-    try {
-      console.log(`Finding nearest station to ${latitude}, ${longitude}`);
-      const nearestStations = await fetchNearestStations(latitude, longitude, 1);
-      
-      if (nearestStations.length > 0) {
-        console.log("Found nearest station:", nearestStations[0]);
-        onSelectStation(nearestStations[0]);
-
-        // Move map to the station
-        map.current?.flyTo({
-          center: [nearestStations[0].longitude, nearestStations[0].latitude],
-          zoom: 15,
-          essential: true,
-          duration: 1000
-        });
-
-        // Convert distance from meters to km if more than 1000m
-        const distanceText = nearestStations[0].distance_meters && nearestStations[0].distance_meters > 1000
-          ? `${(nearestStations[0].distance_meters / 1000).toFixed(2)} ${texts.kilometers}`
-          : `${Math.round(nearestStations[0].distance_meters || 0)} ${texts.meters}`;
-
-        toast({
-          title: texts.nearestStationIs,
-          description: `${nearestStations[0].name} (${distanceText})`,
-        });
-      } else {
-        // No stations found
-        toast({
-          title: language === 'ar' ? 'لم يتم العثور على محطات' : 'No stations found',
-          description: language === 'ar' ? 'لا توجد محطات قريبة من موقعك' : 'No stations near your location',
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error finding nearest station:', error);
-      toast({
-        title: texts.locationError,
-        description: language === 'ar' ? 'حدث خطأ أثناء البحث عن أقرب محطة' : 'Error finding nearest station',
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoadingNearest(false);
-    }
-  };
-
-  // Show directions to selected station
+  // Show directions (wrapper function to use the userLocation state)
   const showDirections = (station: GasStation | null) => {
-    if (!station) return;
-
-    toast({
-      title: texts.showingDirections,
-      description: `${texts.directionsTo} ${station.name}`,
-    });
-
-    // If we have user location, use it as the starting point
-    const url = userLocation 
-      ? `https://www.google.com/maps/dir/${userLocation.latitude},${userLocation.longitude}/${station.latitude},${station.longitude}`
-      : `https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}`;
-    
-    window.open(url, '_blank');
+    showDirectionsToStation(station, userLocation);
   };
 
   return {
