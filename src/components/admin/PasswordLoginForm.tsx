@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { motion } from "framer-motion";
+import logger from "@/utils/logger";
 
 interface PasswordLoginFormProps {
   email: string;
@@ -48,7 +49,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       const cleanEmail = email.trim();
       const cleanPassword = password.trim();
 
-      console.log("Login attempt with email:", cleanEmail);
+      logger.debug("Login attempt with email:", cleanEmail);
 
       // Validate inputs
       if (!cleanEmail || !cleanPassword) {
@@ -77,7 +78,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
       });
 
       if (error) {
-        console.error("Login error:", error);
+        logger.error("Login error:", error);
 
         // Handle specific error cases
         if (error.message.includes("Invalid login credentials")) {
@@ -104,11 +105,11 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
         return;
       }
 
-      console.log("Login successful:", data);
+      logger.debug("Login successful");
 
       // Check if we have a session
       if (data.session) {
-        console.log("User authenticated:", data.user);
+        logger.debug("User authenticated");
 
         try {
           // Check if user is in admin_users table
@@ -119,7 +120,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
             .single();
 
           if (adminError) {
-            console.error("Error checking admin status:", adminError);
+            logger.error("Error checking admin status:", adminError);
 
             if (adminError.code === 'PGRST116') { // No rows found
               await supabase.auth.signOut(); // Sign out if not an admin
@@ -132,10 +133,10 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
               return;
             }
           } else {
-            console.log("Admin user verified:", adminData);
+            logger.debug("Admin user verified");
           }
         } catch (adminCheckError) {
-          console.error("Error during admin check:", adminCheckError);
+          logger.error("Error during admin check:", adminCheckError);
         }
 
         toast({
@@ -148,7 +149,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
           navigate("/admin/dashboard");
         }, 1000);
       } else {
-        console.error("No session after successful login");
+        logger.error("No session after successful login");
         toast({
           title: "خطأ في تسجيل الدخول",
           description: "فشل إنشاء جلسة المستخدم",
@@ -156,7 +157,7 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
         });
       }
     } catch (error: unknown) {
-      console.error("Unexpected login error:", error);
+      logger.error("Unexpected login error:", error);
 
       if (error instanceof Error) {
         toast({
@@ -183,15 +184,15 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
   const isRTL = language === 'ar';
 
   const inputVariants = {
-    focus: { 
+    focus: {
       boxShadow: "0 0 0 3px rgba(102, 51, 204, 0.3)",
-      borderColor: "rgba(102, 51, 204, 0.5)", 
+      borderColor: "rgba(102, 51, 204, 0.5)",
     }
   };
 
   return (
-    <motion.form 
-      onSubmit={handleSubmit} 
+    <motion.form
+      onSubmit={handleSubmit}
       className="space-y-5"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -199,8 +200,8 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
     >
       <div className="space-y-3">
         <div className="relative">
-          <motion.label 
-            htmlFor="email" 
+          <motion.label
+            htmlFor="email"
             className="block text-sm font-medium text-white/90 mb-1.5 text-right"
             initial={{ x: -5, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -234,8 +235,8 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
 
       <div className="space-y-3">
         <div className="relative">
-          <motion.label 
-            htmlFor="password" 
+          <motion.label
+            htmlFor="password"
             className="block text-sm font-medium text-white/90 mb-1.5 text-right"
             initial={{ x: -5, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}

@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { SupabaseUserResponse } from "./types";
-import { createAdminAccountHandler } from "@/api/createAdminAccountHandler";
 
 /**
  * Clean a string by removing spaces
@@ -11,73 +10,9 @@ const cleanString = (str: string): string => {
 };
 
 /**
- * يقوم بإنشاء مستخدم مشرف في Supabase إذا لم يكن موجوداً.
+ * تم إزالة وظيفة createAdminUser التي كانت تنشئ مستخدمين تلقائيًا
+ * يجب إنشاء المستخدمين فقط من خلال واجهة المستخدم أو قاعدة البيانات مباشرة
  */
-export async function createAdminUser(email: string, password: string, name: string): Promise<void> {
-  try {
-    // Clean inputs by removing spaces
-    const cleanedEmail = cleanString(email);
-    const cleanedPassword = cleanString(password);
-    const cleanedName = name.trim();
-
-    console.log(`محاولة إنشاء مستخدم مشرف: ${cleanedEmail}`);
-
-    // First try using the edge function handler
-    const result = await createAdminAccountHandler(cleanedEmail, cleanedPassword, cleanedName);
-
-    if (result.success) {
-      console.log(`تم إنشاء/تحديث المستخدم المشرف بنجاح: ${cleanedEmail}`);
-      return;
-    }
-
-    console.log(`فشل استخدام edge function، محاولة استخدام طريقة العميل...`);
-
-    // Fallback to client-side method if edge function fails
-    // Try to sign up with the credentials
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: cleanedEmail,
-      password: cleanedPassword,
-      options: {
-        data: {
-          name: cleanedName,
-          role: "admin"
-        },
-      }
-    });
-
-    if (signUpError) {
-      if (signUpError.message.includes("User already registered")) {
-        console.log(`المستخدم المشرف موجود بالفعل: ${cleanedEmail}`);
-        // Try to sign in to check if the user exists and is valid
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email: cleanedEmail,
-          password: cleanedPassword
-        });
-
-        if (signInData?.user) {
-          // User exists and credentials are valid
-          await addUserToAdminTable(signInData.user.id, cleanedEmail, cleanedName);
-          // Sign out after checking
-          await supabase.auth.signOut();
-        } else {
-          console.error(`خطأ في تسجيل الدخول للمستخدم الموجود: ${signInError?.message || "Unknown error"}`);
-        }
-      } else {
-        console.error(`خطأ في إنشاء المستخدم المشرف: ${signUpError.message}`);
-      }
-    } else if (signUpData?.user?.id) {
-      console.log(`تم إنشاء المستخدم المشرف بنجاح: ${cleanedEmail}`);
-
-      // Add the user to admin_users table
-      await addUserToAdminTable(signUpData.user.id, cleanedEmail, cleanedName);
-
-      // Sign out after creating the user
-      await supabase.auth.signOut();
-    }
-  } catch (error) {
-    console.error(`خطأ في إنشاء المستخدم المشرف: ${error}`);
-  }
-}
 
 /**
  * يضيف مستخدمًا إلى جدول admin_users

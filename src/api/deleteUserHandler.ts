@@ -44,43 +44,69 @@ export const deleteUserHandler = async (userId: string) => {
         throw new Error("المستخدم غير موجود");
       }
 
-      // حذف المستخدم من جدول admin_users أولاً
-      const { error: deleteAdminError } = await supabase
+      // بدلاً من حذف المستخدم من جدول admin_users، نقوم بتحديث حقل is_deleted
+      const { error: updateAdminError } = await supabase
         .from('admin_users')
-        .delete()
+        .update({
+          is_deleted: true,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', userId);
 
-      if (deleteAdminError) {
-        throw deleteAdminError;
+      if (updateAdminError) {
+        throw updateAdminError;
       }
 
-      // لا نحاول حذف المستخدم من auth.users مباشرة لأنه يتطلب صلاحيات service_role
-      // بدلاً من ذلك، نقوم بتعطيل المستخدم في جدول admin_users فقط
-      console.log("تم حذف المستخدم من جدول admin_users بنجاح");
+      // تم تحديث حالة المستخدم في جدول admin_users بنجاح
+      console.log("تم تحديث حالة المستخدم في جدول admin_users بنجاح");
 
-      // في بيئة الإنتاج، يجب استخدام Edge Function مع service_role لحذف المستخدم من auth.users
-      // أو يمكن إضافة حقل is_deleted إلى جدول admin_users وتحديثه بدلاً من حذف السجل
-
-      // لا نحاول استدعاء Edge Function في بيئة التطوير
-      // في بيئة الإنتاج، يمكن تفعيل هذا الكود بعد نشر Edge Function
-
-      /*
-      // محاولة استدعاء Edge Function إذا كانت متاحة (اختياري)
+      // الآن نحاول حذف المستخدم من auth.users باستخدام Edge Function
+      // هذا يتطلب صلاحيات service_role التي تتوفر في Edge Function
       try {
-        const { data, error } = await supabase.functions.invoke('delete-user', {
-          body: JSON.stringify({
-            userId: userId,
-            requesterId: requesterId
-          }),
-        });
+        console.log("جاري استدعاء Edge Function لحذف المستخدم من auth.users...");
 
-        if (error) {
-          console.warn("تعذر استدعاء Edge Function، ولكن تم حذف المستخدم من جدول admin_users:", error);
+        // التحقق مما إذا كنا في بيئة الإنتاج أو التطوير
+        const isProduction = window.location.hostname !== 'localhost' &&
+                            !window.location.hostname.includes('127.0.0.1');
+
+        if (isProduction) {
+          // في بيئة الإنتاج، نستدعي Edge Function
+          const { data, error } = await supabase.functions.invoke('delete-user', {
+            body: JSON.stringify({
+              userId: userId,
+              requesterId: requesterId
+            }),
+          });
+
+          if (error) {
+            console.warn("تعذر استدعاء Edge Function، ولكن تم حذف المستخدم من جدول admin_users:", error);
+            // لا نرمي خطأ هنا لأن المستخدم تم حذفه بالفعل من جدول admin_users
+            // وهذا يكفي لإزالته من واجهة المستخدم
+          } else {
+            console.log("تم حذف المستخدم بنجاح من auth.users باستخدام Edge Function");
+          }
+        } else {
+          // في بيئة التطوير، نعرض رسالة فقط
+          console.log("بيئة التطوير: تم تخطي استدعاء Edge Function. في بيئة الإنتاج، سيتم حذف المستخدم من auth.users أيضًا.");
+
+          // يمكننا أيضًا محاولة حذف المستخدم من auth.users باستخدام API مباشرة
+          // لكن هذا قد لا يعمل بسبب قيود الصلاحيات
+          try {
+            // هذا لن يعمل في معظم الحالات بسبب قيود الصلاحيات، لكنه محاولة إضافية
+            const { error: adminDeleteError } = await supabase.auth.admin.deleteUser(userId);
+            if (adminDeleteError) {
+              console.warn("تعذر حذف المستخدم من auth.users مباشرة:", adminDeleteError);
+            } else {
+              console.log("تم حذف المستخدم بنجاح من auth.users مباشرة");
+            }
+          } catch (adminDeleteError) {
+            console.warn("تعذر حذف المستخدم من auth.users مباشرة:", adminDeleteError);
+          }
         }
       } catch (edgeFnError) {
         console.warn("تعذر استدعاء Edge Function، ولكن تم حذف المستخدم من جدول admin_users:", edgeFnError);
+        // لا نرمي خطأ هنا لنفس السبب المذكور أعلاه
       }
-      */
     } catch (directUpdateError) {
       console.error("فشل حذف المستخدم مباشرة:", directUpdateError);
       throw directUpdateError;

@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import MapMarkerManager from './MapMarkerManager';
+import ClusteredMarkers from './ClusteredMarkers';
 import UserLocationMarker from './UserLocationMarker';
 import { GasStation } from '@/types/station';
 import mapboxgl from 'mapbox-gl';
+import './cluster-styles.css';
 
 interface MapMarkersAndLocationProps {
   map: mapboxgl.Map;
@@ -24,16 +26,36 @@ const MapMarkersAndLocation: React.FC<MapMarkersAndLocationProps> = ({
   userLocation,
   createPopupContent
 }) => {
+  // Determine whether to use clustering based on station count
+  const [useClustering, setUseClustering] = useState(false);
+
+  // Enable clustering when there are many stations
+  useEffect(() => {
+    // Use clustering when there are more than 20 stations for better performance
+    setUseClustering(filteredStations.length > 20);
+  }, [filteredStations.length]);
+
   return (
     <>
-      <MapMarkerManager
-        map={map}
-        stations={filteredStations}
-        selectedStation={selectedStation}
-        onSelectStation={onSelectStation}
-        language={language}
-        createPopupContent={createPopupContent}
-      />
+      {/* Use either clustered markers or regular markers based on station count */}
+      {useClustering ? (
+        <ClusteredMarkers
+          map={map}
+          stations={filteredStations}
+          selectedStation={selectedStation}
+          onSelectStation={onSelectStation}
+          language={language}
+        />
+      ) : (
+        <MapMarkerManager
+          map={map}
+          stations={filteredStations}
+          selectedStation={selectedStation}
+          onSelectStation={onSelectStation}
+          language={language}
+          createPopupContent={createPopupContent}
+        />
+      )}
 
       <UserLocationMarker
         map={map}

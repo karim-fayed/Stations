@@ -1,0 +1,175 @@
+/* تحسينات التوافق مع مختلف المتصفحات */
+
+/* تعريف أنيميشن bounce مع بادئات المتصفح */
+@-webkit-keyframes bounce {
+  0% { -webkit-transform: translateY(0); transform: translateY(0); }
+  100% { -webkit-transform: translateY(-10px); transform: translateY(-10px); }
+}
+
+@-moz-keyframes bounce {
+  0% { -moz-transform: translateY(0); transform: translateY(0); }
+  100% { -moz-transform: translateY(-10px); transform: translateY(-10px); }
+}
+
+@-o-keyframes bounce {
+  0% { -o-transform: translateY(0); transform: translateY(0); }
+  100% { -o-transform: translateY(-10px); transform: translateY(-10px); }
+}
+
+@keyframes bounce {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-10px); }
+}
+
+/* تعريف أنيميشن pulse مع بادئات المتصفح */
+@-webkit-keyframes pulse {
+  0% { -webkit-transform: scale(1); transform: scale(1); }
+  50% { -webkit-transform: scale(1.05); transform: scale(1.05); }
+  100% { -webkit-transform: scale(1); transform: scale(1); }
+}
+
+@-moz-keyframes pulse {
+  0% { -moz-transform: scale(1); transform: scale(1); }
+  50% { -moz-transform: scale(1.05); transform: scale(1.05); }
+  100% { -moz-transform: scale(1); transform: scale(1); }
+}
+
+@-o-keyframes pulse {
+  0% { -o-transform: scale(1); transform: scale(1); }
+  50% { -o-transform: scale(1.05); transform: scale(1.05); }
+  100% { -o-transform: scale(1); transform: scale(1); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* تعريف أنيميشن fadeIn مع بادئات المتصفح */
+@-webkit-keyframes fadeIn {
+  0% { opacity: 0; -webkit-transform: translateY(10px); transform: translateY(10px); }
+  100% { opacity: 1; -webkit-transform: translateY(0); transform: translateY(0); }
+}
+
+@-moz-keyframes fadeIn {
+  0% { opacity: 0; -moz-transform: translateY(10px); transform: translateY(10px); }
+  100% { opacity: 1; -moz-transform: translateY(0); transform: translateY(0); }
+}
+
+@-o-keyframes fadeIn {
+  0% { opacity: 0; -o-transform: translateY(10px); transform: translateY(10px); }
+  100% { opacity: 1; -o-transform: translateY(0); transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* تحسينات للدبابيس المحددة في سفاري */
+.marker-pin.selected.mapboxgl-marker.mapboxgl-marker-anchor-center {
+  width: 100% !important;
+  height: 50% !important;
+  background-image: url(/lovable-uploads/27c1f136-856b-4b61-b332-3cea9403770a.png) !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  cursor: pointer !important;
+
+  -webkit-animation: bounce 1s ease 0s infinite alternate none running !important;
+  -moz-animation: bounce 1s ease 0s infinite alternate none running !important;
+  -o-animation: bounce 1s ease 0s infinite alternate none running !important;
+  animation: bounce 1s ease 0s infinite alternate none running !important;
+
+  -webkit-transform-origin: center bottom !important;
+  -moz-transform-origin: center bottom !important;
+  -ms-transform-origin: center bottom !important;
+  -o-transform-origin: center bottom !important;
+  transform-origin: center bottom !important;
+
+  -webkit-transition: 0.3s ease-in-out !important;
+  -moz-transition: 0.3s ease-in-out !important;
+  -o-transition: 0.3s ease-in-out !important;
+  transition: 0.3s ease-in-out !important;
+
+  -webkit-backface-visibility: hidden !important;
+  backface-visibility: hidden !important;
+
+  /* تحسين الأداء في سفاري */
+  -webkit-perspective: 1000 !important;
+  perspective: 1000 !important;
+
+  z-index: 10 !important;
+  will-change: filter, transform, width, height !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* تحسينات للنوافذ المنبثقة في سفاري */
+.mapboxgl-popup {
+  -webkit-backface-visibility: hidden !important;
+  backface-visibility: hidden !important;
+
+  -webkit-transform: translateZ(0) !important;
+  -moz-transform: translateZ(0) !important;
+  -ms-transform: translateZ(0) !important;
+  -o-transform: translateZ(0) !important;
+  transform: translateZ(0) !important;
+}
+
+/* تحسينات للخريطة في سفاري */
+.mapboxgl-canvas-container {
+  -webkit-backface-visibility: hidden !important;
+  backface-visibility: hidden !important;
+
+  -webkit-transform: translateZ(0) !important;
+  -moz-transform: translateZ(0) !important;
+  -ms-transform: translateZ(0) !important;
+  -o-transform: translateZ(0) !important;
+  transform: translateZ(0) !important;
+}
+
+/* تحسينات لأجهزة iOS */
+@supports (-webkit-overflow-scrolling: touch) {
+  /* تحسينات خاصة بأجهزة iOS */
+  .mapboxgl-map {
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .mapboxgl-popup-content {
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* تحسين التفاعل باللمس */
+  .marker-pin {
+    cursor: pointer !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+  }
+}
+
+/* تحسينات لمتصفح Edge */
+@supports (-ms-ime-align: auto) {
+  .mapboxgl-popup {
+    transform: none !important;
+  }
+}
+
+/* تحسينات لمتصفح IE */
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+  .mapboxgl-popup {
+    transform: none !important;
+  }
+
+  .marker-pin {
+    background-size: contain !important;
+  }
+}
+
+/* تحسينات للشاشات عالية الدقة (Retina) */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .marker-pin {
+    background-size: contain !important;
+  }
+}

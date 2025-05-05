@@ -1,0 +1,27 @@
+/* تعديلات إضافية لضمان ظهور النوافذ المنبثقة أمام الدبابيس */
+
+/* زيادة z-index للنوافذ المنبثقة */
+.mapboxgl-popup {
+  z-index: 1000 !important;
+}
+
+/* تأكيد أن محتوى النافذة المنبثقة يظهر بشكل صحيح */
+.mapboxgl-popup-content {
+  z-index: 1000 !important;
+  position: relative;
+}
+
+/* تأكيد أن السهم يظهر بشكل صحيح */
+.mapboxgl-popup-tip {
+  z-index: 999 !important;
+}
+
+/* تقليل z-index للدبابيس */
+.mapboxgl-marker {
+  z-index: 5 !important;
+}
+
+/* تأكيد أن الدبابيس المحددة لا تظهر فوق النوافذ المنبثقة */
+.marker-pin {
+  z-index: 10 !important;
+}

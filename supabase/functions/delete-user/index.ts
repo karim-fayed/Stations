@@ -19,14 +19,14 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
-    
+
     // Parse request body
     const { userId, requesterId } = await req.json();
-    
+
     // Clean inputs by removing any spaces
     const cleanUserId = userId ? userId.trim() : '';
     const cleanRequesterId = requesterId ? requesterId.trim() : '';
-    
+
     if (!cleanUserId) {
       throw new Error("User ID is required");
     }
@@ -41,15 +41,15 @@ serve(async (req) => {
       .select('*')
       .eq('id', cleanRequesterId)
       .single();
-    
+
     if (requesterError) {
       throw new Error(`Error fetching requester: ${requesterError.message}`);
     }
-    
+
     if (!requesterData) {
       throw new Error("Requester not found");
     }
-    
+
     // Only owners can delete users
     if (requesterData.role !== 'owner') {
       throw new Error("Only owners can delete users");
@@ -66,23 +66,26 @@ serve(async (req) => {
       .select('*')
       .eq('id', cleanUserId)
       .single();
-    
+
     if (userError) {
       throw new Error(`Error fetching user: ${userError.message}`);
     }
-    
+
     if (!userData) {
       throw new Error("User not found");
     }
 
-    // Delete the user from admin_users table first
-    const { error: deleteAdminError } = await supabaseClient
+    // Update the is_deleted flag in admin_users table first
+    const { error: updateAdminError } = await supabaseClient
       .from('admin_users')
-      .delete()
+      .update({
+        is_deleted: true,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', cleanUserId);
 
-    if (deleteAdminError) {
-      throw deleteAdminError;
+    if (updateAdminError) {
+      throw updateAdminError;
     }
 
     // Delete the user from auth.users
@@ -95,9 +98,9 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "User deleted successfully" 
+      JSON.stringify({
+        success: true,
+        message: "User deleted successfully"
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -106,11 +109,11 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("Error deleting user:", error);
-    
+
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message || "An unknown error occurred" 
+      JSON.stringify({
+        success: false,
+        error: error.message || "An unknown error occurred"
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -59,10 +59,12 @@ export const useUserManagement = () => {
     try {
       setLoading(true);
 
-      // Fetch admin users from the admin_users table
+      // Fetch admin users from the admin_users table, excluding deleted users
       const { data, error } = await supabase
         .from('admin_users')
-        .select('*');
+        .select('*')
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: false });
 
       if (error) {
         throw error;
@@ -304,8 +306,8 @@ export const useUserManagement = () => {
       // Call the handler to update the role
       // إضافة كلمة المرور للتأكيد إذا كان الدور الجديد هو "owner"
       const result = await updateUserRoleHandler(
-        user.id, 
-        newRole, 
+        user.id,
+        newRole,
         newRole === 'owner' ? confirmPassword : undefined
       );
 
@@ -372,7 +374,7 @@ export const useUserManagement = () => {
         description: `تم حذف المستخدم ${user.email} بنجاح`,
       });
 
-      // Update the local user list
+      // Update the local user list - remove the deleted user from the UI
       setUsers(users.filter(u => u.id !== user.id));
 
       return true;

@@ -1,0 +1,54 @@
+/* إصلاح مشكلة ظهور النوافذ المنبثقة خلف الدبابيس */
+
+/* تعديل z-index للنوافذ المنبثقة */
+.mapboxgl-popup {
+  z-index: 9999 !important;
+}
+
+.mapboxgl-popup-content {
+  z-index: 9999 !important;
+}
+
+.mapboxgl-popup-tip {
+  z-index: 9998 !important;
+}
+
+/* تعديل z-index للدبابيس */
+.mapboxgl-marker {
+  z-index: 1 !important;
+}
+
+/* تعديل z-index للدبابيس المحددة */
+.marker-pin {
+  z-index: 2 !important;
+}
+
+/* تعديل z-index للنافذة المنبثقة الرئيسية */
+.station-popup {
+  z-index: 9999 !important;
+}
+
+/* تعديل الطبقات في الخريطة */
+.mapboxgl-canvas {
+  z-index: 0 !important;
+}
+
+.mapboxgl-control-container {
+  z-index: 100 !important;
+}
+
+/* تعديل أسلوب النافذة المنبثقة */
+.mapboxgl-popup-content {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* تعديل أسلوب الدبابيس */
+.marker-pin {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35)) !important;
+}
+
+/* تعديل أسلوب الدبابيس المحددة */
+.marker-pin.selected {
+  filter: drop-shadow(0 0 8px rgba(255, 119, 51, 0.8)) !important;
+}

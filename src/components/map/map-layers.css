@@ -1,0 +1,82 @@
+/* ترتيب طبقات الخريطة */
+
+/* تعريف أنيميشن bounce للدبابيس المحددة */
+@keyframes bounce {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-10px); }
+}
+
+/* الطبقة الأساسية (الخريطة نفسها) */
+.mapboxgl-canvas-container,
+.mapboxgl-canvas {
+  z-index: 0 !important;
+}
+
+/* طبقة أدوات التحكم في الخريطة */
+.mapboxgl-control-container {
+  z-index: 100 !important;
+}
+
+/* طبقة الدبابيس (العادية) */
+.mapboxgl-marker,
+.marker-pin {
+  z-index: 1 !important;
+}
+
+/* طبقة الدبابيس (المحددة) */
+.marker-pin.selected {
+  z-index: 2 !important;
+}
+
+/* طبقة النوافذ المنبثقة */
+.mapboxgl-popup,
+.mapboxgl-popup-content,
+.station-popup {
+  z-index: 9999 !important;
+}
+
+/* طبقة سهم النافذة المنبثقة */
+.mapboxgl-popup-tip {
+  z-index: 9998 !important;
+}
+
+/* طبقة واجهة المستخدم فوق الخريطة */
+.map-ui-overlay {
+  z-index: 10000 !important;
+}
+
+/* تعديلات إضافية للنوافذ المنبثقة */
+.mapboxgl-popup {
+  position: absolute !important;
+}
+
+.mapboxgl-popup-content {
+  position: relative !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* تعديلات للدبابيس */
+.marker-pin {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* تعديل أسلوب الدبابيس المحددة */
+.marker-pin.selected.mapboxgl-marker.mapboxgl-marker-anchor-center {
+  width: 100% !important;
+  height: 50% !important;
+  background-image: url(/lovable-uploads/27c1f136-856b-4b61-b332-3cea9403770a.png) !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  cursor: pointer !important;
+  transition: 0.3s ease-in-out !important;
+  transform-origin: center bottom !important;
+  z-index: 10 !important;
+  will-change: filter, transform, width, height !important;
+  animation: 1s ease 0s infinite alternate none running bounce !important;
+  transform: translate(480px, 280px) translate(-50%, -50%) translate(0px, 0px) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}

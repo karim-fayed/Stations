@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, Plus, UserCog, User, Home, AlertTriangle, Database } from "lucide-react";
+import { LogOut, Plus, UserCog, User, Home, AlertTriangle, Database, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import NotificationsPopup from "@/components/notifications/NotificationsPopup";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -36,7 +36,7 @@ const DashboardHeader = ({
           .select('role')
           .eq('id', user.id)
           .single();
-        
+
         setIsOwner(userData?.role === 'owner');
       }
     } catch (error) {
@@ -77,16 +77,18 @@ const DashboardHeader = ({
               <Home size={16} /> الصفحة الرئيسية
             </Button>
           </Link>
-          
-          <Link to="/admin/users">
-            <Button
-              variant="outline"
-              className="flex items-center gap-2 text-blue-600 border-blue-300 hover:bg-blue-50 transition-all duration-300"
-            >
-              <UserCog size={16} /> إدارة المستخدمين
-            </Button>
-          </Link>
-          
+
+          {isOwner && (
+            <Link to="/admin/users">
+              <Button
+                variant="outline"
+                className="flex items-center gap-2 text-blue-600 border-blue-300 hover:bg-blue-50 transition-all duration-300"
+              >
+                <UserCog size={16} /> إدارة المستخدمين
+              </Button>
+            </Link>
+          )}
+
           <Link to="/admin/profile">
             <Button
               variant="outline"
@@ -107,10 +109,21 @@ const DashboardHeader = ({
             </Link>
           )}
 
-          <LanguageSwitcher 
-            variant="outline" 
-            size="default" 
-            className="border-indigo-300 text-indigo-600 hover:bg-indigo-50" 
+          {isOwner && (
+            <Link to="/admin/security-examples">
+              <Button
+                variant="outline"
+                className="flex items-center gap-2 text-amber-600 border-amber-300 hover:bg-amber-50 transition-all duration-300"
+              >
+                <Shield size={16} /> أمثلة الأمان
+              </Button>
+            </Link>
+          )}
+
+          <LanguageSwitcher
+            variant="outline"
+            size="default"
+            className="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
           />
 
           <NotificationsPopup className="border-orange-300 text-orange-600 hover:text-orange-700 hover:bg-orange-50" />

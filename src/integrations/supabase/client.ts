@@ -3,10 +3,30 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://jtnqcyouncjoebqcalzh.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp0bnFjeW91bmNqb2VicWNhbHpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU1MTkyMTIsImV4cCI6MjA2MTA5NTIxMn0.VWK5DvW4LxFDLZ-RYaQXDABUaPM8y2vGFnXgKwGZ9Dk";
+// استخدام import.meta.env بدلاً من process.env
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://jtnqcyouncjoebqcalzh.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "SUPABASE_KEY";
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+// تحديد الموقع الحالي للتطبيق
+const getLocalStorageKey = () => {
+  // في بيئة الإنتاج، استخدم المجال الفعلي
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    return `sb-${SUPABASE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '')}-auth-token`;
+  }
+  // في بيئة التطوير، استخدم مفتاح محدد
+  return `sb-${SUPABASE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '')}-auth-token-dev`;
+};
+
+// إنشاء عميل Supabase مع إعدادات محسنة للجلسة
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: {
+    storageKey: getLocalStorageKey(),
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+  },
+});

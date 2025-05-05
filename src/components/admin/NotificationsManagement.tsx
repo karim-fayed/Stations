@@ -10,6 +10,7 @@ import { Notification } from '@/hooks/useNotifications';
 import { motion } from "framer-motion";
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import SoundTestAdmin from '@/components/admin/SoundTestAdmin';
 
 const NotificationsManagement = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -23,13 +24,17 @@ const NotificationsManagement = () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) return;
-        
-        const { data: userRoleData } = await supabase
+
+        const { data: userRoleData, error: roleError } = await supabase
           .from('admin_users')
           .select('role')
-          .eq('user_id', session.user.id)
+          .eq('id', session.user.id)
           .single();
-        
+
+        if (roleError) {
+          console.error('Error checking owner role:', roleError);
+        }
+
         if (userRoleData?.role === 'owner') {
           setIsOwner(true);
         } else {
@@ -51,9 +56,9 @@ const NotificationsManagement = () => {
         .from('notifications')
         .select('*')
         .order('created_at', { ascending: false });
-        
+
       if (error) throw error;
-      
+
       setNotifications(data || []);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -69,20 +74,20 @@ const NotificationsManagement = () => {
 
   useEffect(() => {
     fetchNotifications();
-    
+
     // Subscribe to changes on the notifications table
     const channel = supabase
       .channel('notifications_changes')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'notifications' 
-        }, 
+      .on('postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notifications'
+        },
         () => fetchNotifications()
       )
       .subscribe();
-      
+
     return () => {
       supabase.removeChannel(channel);
     };
@@ -95,11 +100,11 @@ const NotificationsManagement = () => {
         .from('notifications')
         .delete()
         .eq('id', id);
-        
+
       if (error) throw error;
-      
+
       setNotifications(notifications.filter(n => n.id !== id));
-      
+
       toast({
         title: 'تم حذف الإشعار',
         description: 'تم حذف الإشعار بنجاح'
@@ -135,9 +140,9 @@ const NotificationsManagement = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">إدارة الإشعارات</h2>
-        
+
         {isOwner && (
-          <CreateNotificationDialog 
+          <CreateNotificationDialog
             triggerClassName="bg-gradient-to-r from-noor-purple to-noor-orange hover:opacity-90 text-white"
             onNotificationCreated={notificationCreated}
           />
@@ -149,6 +154,9 @@ const NotificationsManagement = () => {
           <p className="font-medium">ملاحظة: فقط مالك النظام يمكنه إنشاء إشعارات جديدة.</p>
         </div>
       )}
+
+      {/* إضافة مكون اختبار الصوت للمالك فقط */}
+      <SoundTestAdmin isOwner={isOwner} />
 
       {notifications.length === 0 ? (
         <div className="text-center py-12">
@@ -169,10 +177,10 @@ const NotificationsManagement = () => {
                 <CardHeader className="bg-gray-50 pb-2">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{notification.title}</CardTitle>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => deleteNotification(notification.id)} 
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteNotification(notification.id)}
                       className="text-red-500 hover:text-red-600 hover:bg-red-50"
                     >
                       <Trash size={16} />
@@ -180,7 +188,7 @@ const NotificationsManagement = () => {
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
                     <span className="font-medium">الهدف: </span>
-                    {notification.target_role === 'all' ? 'الكل' : 
+                    {notification.target_role === 'all' ? 'الكل' :
                      notification.target_role === 'admin' ? 'المشرفون' : 'المالكون'}
                     {' • '}
                     <span>{format(new Date(notification.created_at), "dd MMMM yyyy 'الساعة' HH:mm", { locale: ar })}</span>
@@ -189,9 +197,9 @@ const NotificationsManagement = () => {
                 <CardContent className="pt-4">
                   {notification.image_url && (
                     <div className="mb-3">
-                      <img 
-                        src={notification.image_url} 
-                        alt="صورة الإشعار" 
+                      <img
+                        src={notification.image_url}
+                        alt="صورة الإشعار"
                         className="w-full max-h-40 object-contain rounded-md"
                       />
                     </div>

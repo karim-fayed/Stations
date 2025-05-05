@@ -11,11 +11,11 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocati
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const accuracyCircleRef = useRef<mapboxgl.Source | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-  
+
   // Check if map is loaded
   useEffect(() => {
     if (!map) return;
-    
+
     // If the map is already loaded
     if (map.loaded()) {
       setMapLoaded(true);
@@ -25,15 +25,15 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocati
         console.log("Map style fully loaded");
         setMapLoaded(true);
       };
-      
+
       map.on('load', onLoadHandler);
-      
+
       return () => {
         map.off('load', onLoadHandler);
       };
     }
   }, [map]);
-  
+
   // Update user location marker whenever location or map loaded state changes
   useEffect(() => {
     if (!map || !userLocation) {
@@ -42,14 +42,14 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocati
         userMarkerRef.current.remove();
         userMarkerRef.current = null;
       }
-      
+
       // Remove accuracy circle layer and source
       if (map) {
         try {
           if (map.getLayer('accuracy-circle-layer')) {
             map.removeLayer('accuracy-circle-layer');
           }
-          
+
           if (map.getSource('accuracy-circle')) {
             map.removeSource('accuracy-circle');
             accuracyCircleRef.current = null;
@@ -71,7 +71,7 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocati
     if (userMarkerRef.current) {
       userMarkerRef.current.remove();
     }
-    
+
     // Create user location dot
     const markerEl = document.createElement('div');
     markerEl.className = 'user-location-marker';
@@ -83,14 +83,14 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocati
     markerEl.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
     markerEl.style.animation = 'pulse 1.5s infinite';
     markerEl.style.zIndex = '5';
-    
+
     // Create an additional ripple effect container
     const pulsingDot = document.createElement('div');
     pulsingDot.className = 'user-location-pulse';
     pulsingDot.style.position = 'relative';
     pulsingDot.style.width = '20px';
     pulsingDot.style.height = '20px';
-    
+
     // Add a pulsing effect
     const pulse1 = document.createElement('div');
     pulse1.style.position = 'absolute';
@@ -101,7 +101,7 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocati
     pulse1.style.opacity = '1';
     pulse1.style.animation = 'ripple 2s infinite ease-out';
     pulse1.style.transform = 'scale(1)';
-    
+
     pulsingDot.appendChild(pulse1);
     pulsingDot.appendChild(markerEl);
 
@@ -120,11 +120,11 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocati
         if (map.getLayer('accuracy-circle-layer')) {
           map.removeLayer('accuracy-circle-layer');
         }
-        
+
         if (map.getSource('accuracy-circle')) {
           map.removeSource('accuracy-circle');
         }
-        
+
         // Add a circle representing the accuracy
         map.addSource('accuracy-circle', {
           'type': 'geojson',
@@ -165,9 +165,22 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocati
       }
     }
 
-    // Add ripple animation style dynamically
+    // Add ripple animation style dynamically with vendor prefixes for better browser compatibility
     const styleEl = document.createElement('style');
     styleEl.innerHTML = `
+      @-webkit-keyframes ripple {
+        0% {
+          -webkit-transform: scale(1);
+          transform: scale(1);
+          opacity: 0.8;
+        }
+        100% {
+          -webkit-transform: scale(4);
+          transform: scale(4);
+          opacity: 0;
+        }
+      }
+
       @keyframes ripple {
         0% {
           transform: scale(1);
@@ -178,24 +191,47 @@ const UserLocationMarker: React.FC<UserLocationMarkerProps> = ({ map, userLocati
           opacity: 0;
         }
       }
-      
+
+      @-webkit-keyframes pulse {
+        0% { -webkit-transform: scale(1); transform: scale(1); }
+        50% { -webkit-transform: scale(1.1); transform: scale(1.1); }
+        100% { -webkit-transform: scale(1); transform: scale(1); }
+      }
+
       @keyframes pulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.1); }
         100% { transform: scale(1); }
       }
+
+      /* تحسينات لسفاري وأجهزة آبل */
+      .user-location-marker {
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        -webkit-perspective: 1000;
+        perspective: 1000;
+      }
     `;
     document.head.appendChild(styleEl);
 
     return () => {
-      document.head.removeChild(styleEl);
-      if (map) {
+      // Remove style element if it exists
+      if (styleEl && document.head.contains(styleEl)) {
+        document.head.removeChild(styleEl);
+      }
+
+      // Clean up map layers and sources if map exists and is loaded
+      if (map && map.loaded()) {
         try {
-          if (map.getLayer('accuracy-circle-layer')) {
+          // Check if layer exists before removing
+          if (map.getStyle() && map.getLayer('accuracy-circle-layer')) {
             map.removeLayer('accuracy-circle-layer');
           }
-          
-          if (map.getSource('accuracy-circle')) {
+
+          // Check if source exists before removing
+          if (map.getStyle() && map.getSource('accuracy-circle')) {
             map.removeSource('accuracy-circle');
           }
         } catch (err) {

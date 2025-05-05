@@ -20,10 +20,10 @@ const Services = () => {
     },
     {
       icon: <Wrench size={40} />,
-      titleAr: 'صيانة السيارات',
-      titleEn: 'Car Maintenance',
-      descriptionAr: 'خدمات صيانة متكاملة للسيارات من قبل فنيين متخصصين.',
-      descriptionEn: 'Comprehensive car maintenance services by specialized technicians.',
+      titleAr: 'غسيل السيارات',
+      titleEn: 'Car Washing',
+      descriptionAr: 'خدمات غسيل متكاملة للسيارات من قبل فنيين متخصصين.',
+      descriptionEn: 'Comprehensive car washing services by specialized technicians.',
     },
     {
       icon: <Truck size={40} />,

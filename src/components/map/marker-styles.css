@@ -1,0 +1,79 @@
+/* Optimized marker styles */
+.marker-pin {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  cursor: pointer;
+  transition: transform 0.3s ease-in-out;
+  transform-origin: center bottom;
+  will-change: transform;
+  width: 28px;
+  height: 28px;
+  z-index: 1;
+}
+
+.marker-pin.selected {
+  width: 100%;
+  height: 50%;
+  background-position: center center;
+  z-index: 10;
+  animation: bounce 1s infinite alternate;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Hover effect */
+.marker-hover {
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.4));
+}
+
+/* Specific styling for mapboxgl markers */
+.marker-pin.selected.mapboxgl-marker {
+  width: 100%;
+  height: 50%;
+  background-image: url('/lovable-uploads/27c1f136-856b-4b61-b332-3cea9403770a.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
+  cursor: pointer;
+  transition: 0.3s ease-in-out;
+  transform-origin: center bottom;
+  z-index: 10;
+  will-change: filter, transform, width, height;
+  animation: bounce 1s infinite alternate;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Bounce animation with the specific transform you requested */
+@keyframes bounce {
+  0% {
+    transform: translate(var(--marker-x, 0), var(--marker-y, 0)) translate(-50%, -50%) translate(0px, 0px);
+  }
+  100% {
+    transform: translate(var(--marker-x, 0), var(--marker-y, 0)) translate(-50%, -50%) translate(0px, -10px);
+  }
+}
+
+/* Optimize animations for low-performance devices */
+@media (prefers-reduced-motion: reduce) {
+  .marker-pin.selected {
+    animation: none;
+  }
+}
+
+/* Station popup styling */
+.station-popup {
+  z-index: 9999 !important;
+}
+
+.station-popup .mapboxgl-popup-content {
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Optimize popup rendering */
+.mapboxgl-popup {
+  will-change: transform;
+}

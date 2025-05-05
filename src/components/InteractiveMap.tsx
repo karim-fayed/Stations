@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { GasStation } from '@/types/station';
 import { useToast } from "@/hooks/use-toast";
@@ -12,14 +12,16 @@ import { useCityFilter } from '@/hooks/useCityFilter';
 import { useMapLocalization } from './map/useMapLocalization';
 import { useSaudiCities } from './map/useSaudiCities';
 
-// Import modular components
+// Import essential components immediately
 import TopControls from './map/TopControls';
 import MapContainer from './map/MapContainer';
-import StationPopup from './map/StationPopup';
-import MapControls from './map/MapControls';
 import MapOverlays from './map/MapOverlays';
-import MapAnimation from './map/MapAnimation';
-import MapMarkersAndLocation from './map/MapMarkersAndLocation';
+
+// Lazy load non-essential components for better performance
+const StationPopup = lazy(() => import('./map/StationPopup'));
+const MapControls = lazy(() => import('./map/MapControls'));
+const MapAnimation = lazy(() => import('./map/MapAnimation'));
+const MapMarkersAndLocation = lazy(() => import('./map/MapMarkersAndLocation'));
 
 // Import utils
 import { createPopupContent, resetMap } from '@/utils/mapUtils';
@@ -52,12 +54,12 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const { mapContainer, map, mapLoaded } = useMapInitialization(language);
 
   // Setup search functionality
-  const { 
-    searchTerm, 
-    setSearchTerm, 
-    debouncedSearchTerm, 
+  const {
+    searchTerm,
+    setSearchTerm,
+    debouncedSearchTerm,
     setDebouncedSearchTerm,
-    filteredStations, 
+    filteredStations,
     setFilteredStations,
     isSearching,
     clearSearch
@@ -65,21 +67,21 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   // Setup city filtering
   const { filterStationsByCity, isLoadingCity, clearCityCache } = useCityFilter(
-    stations, 
-    cities, 
-    language, 
-    map, 
+    stations,
+    cities,
+    language,
+    map,
     setFilteredStations
   );
 
   // Setup user location and navigation
-  const { 
+  const {
     userLocation,
     setUserLocation,
-    isLoadingLocation, 
-    isLoadingNearest, 
-    getUserLocation, 
-    findNearestStation, 
+    isLoadingLocation,
+    isLoadingNearest,
+    getUserLocation,
+    findNearestStation,
     showDirections,
     startBackgroundLocationTracking,
     stopBackgroundLocationTracking
@@ -91,13 +93,13 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
     if (initBackgroundLocation && map.current && mapLoaded) {
       console.log("Starting background location tracking");
       startBackgroundLocationTracking();
-      
+
       // إخطار المكون الأب أننا بدأنا تحديد الموقع
       if (onLocationInitialized) {
         onLocationInitialized();
       }
     }
-    
+
     return () => {
       // إيقاف تحديد الموقع عند إزالة المكون
       stopBackgroundLocationTracking();
@@ -118,21 +120,43 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
   // Handle map reset
   const handleResetMap = () => {
     resetMap(
-      map.current, 
-      onSelectStation, 
-      setSearchTerm, 
+      map.current,
+      onSelectStation,
+      setSearchTerm,
       setDebouncedSearchTerm,
-      setUserLocation, 
-      setSelectedCity, 
+      setUserLocation,
+      setSelectedCity,
       setFilteredStations,
       language,
       toast
     );
-    
+
     // Clear search and caches for better performance
     clearSearch();
     clearCityCache();
   };
+
+  // Track if map is ready for markers
+  const [mapReadyForMarkers, setMapReadyForMarkers] = useState(false);
+
+  // Progressively load map features
+  useEffect(() => {
+    if (map.current && mapLoaded) {
+      // Delay marker loading slightly to prioritize map rendering
+      const timer = setTimeout(() => {
+        setMapReadyForMarkers(true);
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [map.current, mapLoaded]);
+
+  // Loading fallback component
+  const LoadingFallback = () => (
+    <div className="flex items-center justify-center p-4">
+      <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-noor-purple"></div>
+    </div>
+  );
 
   return (
     <div className="w-full h-full flex flex-col">
@@ -151,7 +175,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
       />
 
       {/* Map Container */}
-      <MapContainer 
+      <MapContainer
         mapContainerRef={mapContainer}
         onResetMap={handleResetMap}
         language={language}
@@ -168,42 +192,54 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
         {/* Station Popup Component - Only show when a station is selected */}
         {selectedStation && (
-          <StationPopup
-            station={selectedStation}
-            onSelectStation={onSelectStation}
-            language={language}
-            texts={texts}
-            onShowDirections={() => showDirections(selectedStation)}
-            onReset={handleResetMap}
-          />
+          <div className="map-ui-overlay">
+            <Suspense fallback={<LoadingFallback />}>
+              <StationPopup
+                station={selectedStation}
+                onSelectStation={onSelectStation}
+                language={language}
+                texts={texts}
+                onShowDirections={() => showDirections(selectedStation)}
+                onReset={handleResetMap}
+                userLocation={userLocation}
+              />
+            </Suspense>
+          </div>
         )}
       </MapContainer>
 
-      {/* Map Controls Component */}
-      <MapControls
-        onGetLocation={getUserLocation}
-        onFindNearest={() => findNearestStation()}
-        isLoadingLocation={isLoadingLocation}
-        isLoadingNearest={isLoadingNearest}
-        hasUserLocation={!!userLocation}
-        texts={texts}
-        language={language}
-      />
-
-      {/* Hidden marker management components - Only render when map is loaded */}
-      {map.current && mapLoaded && (
-        <MapMarkersAndLocation
-          map={map.current}
-          filteredStations={filteredStations}
-          selectedStation={selectedStation}
-          onSelectStation={onSelectStation}
+      {/* Map Controls Component - Lazy loaded */}
+      <Suspense fallback={<LoadingFallback />}>
+        <MapControls
+          onGetLocation={getUserLocation}
+          onFindNearest={() => findNearestStation()}
+          isLoadingLocation={isLoadingLocation}
+          isLoadingNearest={isLoadingNearest}
+          hasUserLocation={!!userLocation}
+          texts={texts}
           language={language}
-          userLocation={userLocation}
-          createPopupContent={handleCreatePopupContent}
         />
+      </Suspense>
+
+      {/* Hidden marker management components - Only render when map is fully loaded and ready */}
+      {map.current && mapLoaded && mapReadyForMarkers && (
+        <Suspense fallback={null}>
+          <MapMarkersAndLocation
+            map={map.current}
+            filteredStations={filteredStations}
+            selectedStation={selectedStation}
+            onSelectStation={onSelectStation}
+            language={language}
+            userLocation={userLocation}
+            createPopupContent={handleCreatePopupContent}
+          />
+        </Suspense>
       )}
 
-      <MapAnimation enable={true} />
+      {/* Animation component - Lazy loaded with low priority */}
+      <Suspense fallback={null}>
+        <MapAnimation enable={true} />
+      </Suspense>
     </div>
   );
 };

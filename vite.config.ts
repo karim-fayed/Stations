@@ -7,13 +7,13 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: 8980,
     proxy: {
       // Proxy API requests to Supabase Edge Functions
       '/api/create-admin-account': {
         target: 'https://jtnqcyouncjoebqcalzh.supabase.co/functions/v1/create-admin-account',
         changeOrigin: true,
-        rewrite: (path) => '',
+        rewrite: (_path) => '',
       }
     }
   },
@@ -25,6 +25,13 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  // تعريف متغيرات البيئة
+  define: {
+    // تعريف متغير process.env لحل مشكلة "process is not defined"
+    'process.env': {
+      NODE_ENV: mode,
     },
   },
 }));

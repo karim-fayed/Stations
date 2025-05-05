@@ -3,10 +3,16 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
     <title>محطات نور - Noor Stations</title>
     <meta name="description" content="موقع محطات نور لخدمات الوقود في المملكة العربية السعودية" />
     <meta name="author" content="Noor Stations" />
+    <meta name="theme-color" content="#6633cc" />
 
     <meta property="og:title" content="محطات نور - Noor Stations" />
     <meta property="og:description" content="موقع محطات نور لخدمات الوقود في المملكة العربية السعودية" />
@@ -16,9 +22,15 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@noor_stations" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-    
+
     <!-- Required Lovable script tag for new features -->
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
+
+    <!-- توفير متغير process في المتصفح -->
+    <script src="/process-shim.js"></script>
+
+    <!-- Polyfills للمتصفحات القديمة -->
+    <script src="/polyfills.js"></script>
   </head>
 
   <body>

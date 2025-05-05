@@ -19,7 +19,17 @@ export const useBackgroundLocation = (language: 'ar' | 'en') => {
   const [error, setError] = useState<string | null>(null);
   const watchIdRef = useRef<number | null>(null);
   const attemptsRef = useRef(0);
+  const locationErrorShownRef = useRef(false); // مرجع لتتبع ما إذا تم عرض رسالة الخطأ بالفعل
   const { toast } = useToast();
+
+  // التحقق من حالة الخطأ المخزنة عند بدء تشغيل الهوك
+  useEffect(() => {
+    // التحقق مما إذا كان قد تم عرض رسالة خطأ تحديد الموقع من قبل
+    const errorShown = localStorage.getItem('location_error_shown');
+    if (errorShown === 'true') {
+      locationErrorShownRef.current = true;
+    }
+  }, []);
 
   // التوقف عن متابعة الموقع عند إغلاق التطبيق
   useEffect(() => {
@@ -44,12 +54,12 @@ export const useBackgroundLocation = (language: 'ar' | 'en') => {
     }
 
     setIsLocating(true);
-    
-    // خيارات عالية الدقة لتحديد الموقع
+
+    // خيارات عالية الدقة لتحديد الموقع مع تحسينات للتوافق مع مختلف المتصفحات
     const options = {
       enableHighAccuracy: true,
-      timeout: 20000,
-      maximumAge: 0
+      timeout: 30000, // زيادة المهلة لتحسين التوافق مع سفاري وأجهزة آبل
+      maximumAge: 10000 // السماح باستخدام موقع مخزن مؤقتًا لتحسين الأداء
     };
 
     // بدء متابعة الموقع
@@ -57,9 +67,9 @@ export const useBackgroundLocation = (language: 'ar' | 'en') => {
       (position) => {
         const { latitude, longitude, accuracy } = position.coords;
         const timestamp = position.timestamp;
-        
+
         console.log(`Background location update: ${latitude}, ${longitude}, accuracy: ${accuracy}m`);
-        
+
         // تقييم الدقة ومقارنتها بالنتيجة السابقة
         if (locationData) {
           // استخدام البيانات الجديدة فقط إذا كانت الدقة أفضل
@@ -89,7 +99,7 @@ export const useBackgroundLocation = (language: 'ar' | 'en') => {
             timestamp
           });
         }
-        
+
         // إذا كانت الدقة جيدة جدًا (أقل من 20 متر)، يمكننا التوقف عن المتابعة
         if (accuracy && accuracy < 20) {
           setIsLocating(false);
@@ -106,28 +116,53 @@ export const useBackgroundLocation = (language: 'ar' | 'en') => {
             watchIdRef.current = null;
           }
         }
-        
+
         attemptsRef.current++;
       },
       (err) => {
         console.error('Background location error:', err);
         setError(err.message);
         setIsLocating(false);
-        
+
         if (watchIdRef.current !== null) {
           navigator.geolocation.clearWatch(watchIdRef.current);
           watchIdRef.current = null;
         }
-        
-        // إظهار تنبيه فقط عند حدوث خطأ في الإذن، لا نريد إزعاج المستخدم
+
+        // تحسين معالجة أخطاء تحديد الموقع
         if (err.code === err.PERMISSION_DENIED) {
-          toast({
-            title: language === 'ar' ? 'خطأ في تحديد الموقع' : 'Location Error',
-            description: language === 'ar' 
-              ? 'يرجى تفعيل خدمة تحديد المواقع للاستفادة من كامل مميزات التطبيق' 
-              : 'Please enable location services for full app functionality',
-            variant: "default",
-          });
+          // إظهار تنبيه فقط عند حدوث خطأ في الإذن وإذا لم يتم عرضه من قبل
+          if (!locationErrorShownRef.current) {
+            locationErrorShownRef.current = true; // تعيين العلم لمنع ظهور الرسالة مرة أخرى
+
+            // عرض رسالة الخطأ
+            const toastId = toast({
+              title: language === 'ar' ? 'خطأ في تحديد الموقع' : 'Location Error',
+              description: language === 'ar'
+                ? 'يرجى تفعيل خدمة تحديد المواقع للاستفادة من كامل مميزات التطبيق'
+                : 'Please enable location services for full app functionality',
+              variant: "default",
+              duration: 5000, // عرض الرسالة لمدة 5 ثوانٍ فقط
+            });
+
+            // تخزين حالة الخطأ في التخزين المحلي لمنع ظهور الرسالة مرة أخرى
+            localStorage.setItem('location_error_shown', 'true');
+
+            console.log('Location permission denied, toast shown with ID:', toastId);
+          } else {
+            console.log('Location permission denied, toast already shown');
+          }
+        } else if (err.code === err.TIMEOUT) {
+          // محاولة إعادة تشغيل تحديد الموقع بعد فترة قصيرة في حالة انتهاء المهلة
+          if (attemptsRef.current < 3) {
+            attemptsRef.current++;
+            console.log(`Location timeout, retrying (attempt ${attemptsRef.current}/3)...`);
+
+            // إعادة المحاولة بعد ثانيتين
+            setTimeout(() => {
+              startBackgroundLocationTracking();
+            }, 2000);
+          }
         }
       },
       options

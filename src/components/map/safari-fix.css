@@ -1,0 +1,39 @@
+/* تعديلات خاصة لمتصفح سفاري */
+
+/* تعريف أنيميشن bounce بشكل خاص لسفاري */
+@-webkit-keyframes bounce {
+  0% { -webkit-transform: translate(480px, 280px) translate(-50%, -50%) translate(0px, 0px); }
+  100% { -webkit-transform: translate(480px, 270px) translate(-50%, -50%) translate(0px, 0px); }
+}
+
+@keyframes bounce {
+  0% { transform: translate(480px, 280px) translate(-50%, -50%) translate(0px, 0px); }
+  100% { transform: translate(480px, 270px) translate(-50%, -50%) translate(0px, 0px); }
+}
+
+/* تعديلات خاصة للدبابيس المحددة في سفاري */
+.marker-pin.selected.mapboxgl-marker.mapboxgl-marker-anchor-center {
+  width: 100% !important;
+  height: 50% !important;
+  background-image: url(/lovable-uploads/27c1f136-856b-4b61-b332-3cea9403770a.png) !important;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  cursor: pointer !important;
+  transition: 0.3s ease-in-out !important;
+  transform-origin: center bottom !important;
+  z-index: 10 !important;
+  will-change: filter, transform, width, height !important;
+  animation: 1s ease 0s infinite alternate none running bounce !important;
+  transform: translate(480px, 280px) translate(-50%, -50%) translate(0px, 0px) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* تعديلات خاصة لأجهزة آبل */
+@supports (-webkit-touch-callout: none) {
+  .marker-pin.selected.mapboxgl-marker.mapboxgl-marker-anchor-center {
+    animation: 1s ease 0s infinite alternate none running bounce !important;
+    transform: translate(480px, 280px) translate(-50%, -50%) translate(0px, 0px) !important;
+  }
+}

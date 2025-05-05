@@ -1,21 +1,15 @@
 
-import { createTestAdmin } from "./createTestAdmin";
+// تم إزالة استيراد createTestAdmin
 
 /**
- * يجب استدعاء هذه الوظيفة مرة واحدة أثناء تهيئة التطبيق
- * للتأكد من وجود مستخدم مشرف
+ * وظيفة فارغة لتجنب الأخطاء في الأماكن التي تستدعي هذه الوظيفة
+ * تم إزالة الوظيفة الأصلية التي كانت تنشئ مستخدمين تلقائيًا
  */
 export async function ensureAdminExists() {
-  try {
-    // تشغيل هذا في وضع التطوير فقط
-    if (process.env.NODE_ENV !== "production") {
-      await createTestAdmin();
-    }
-  } catch (error) {
-    console.error("خطأ في ensureAdminExists:", error);
-  }
+  console.log("تم تعطيل إنشاء المستخدمين التلقائي");
+  // لا تفعل شيئًا - تم إزالة إنشاء المستخدمين التلقائي
+  return;
 }
 
-export * from "./createAdminUser";
-export * from "./createTestAdmin";
+// تصدير الأنواع فقط
 export * from "./types";

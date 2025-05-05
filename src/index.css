@@ -15,7 +15,7 @@
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 47.4% 11.2%;
- 
+
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
 
@@ -48,7 +48,7 @@
 
     --card: 224 71% 4%;
     --card-foreground: 213 31% 91%;
- 
+
     --border: 216 34% 17%;
     --input: 216 34% 17%;
 
@@ -76,6 +76,47 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .map-container {
+    width: 100%;
+    transition: height 0.3s ease-in-out;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* تعديلات إضافية للخريطة على الشاشات الصغيرة */
+  @media (max-width: 480px) {
+    /* الخريطة تكون دائمًا بالحجم الكامل على الأجهزة المحمولة */
+    .map-container {
+      min-height: 300px;
+      max-height: 300px;
+    }
+
+    /* لا نحتاج إلى هذه الحالة بعد الآن لأن الخريطة ستكون دائمًا موسعة */
+    .map-container:not(.expanded) {
+      min-height: 300px;
+      max-height: 300px;
+    }
+
+    .map-container.expanded {
+      min-height: 300px;
+      max-height: 300px;
+    }
+  }
+
+  /* تحريك الزر عند توسيع الخريطة */
+  .map-expand-button {
+    transition: all 0.3s ease-in-out;
+  }
+
+  /* نبض للإشارة إلى قابلية التوسيع */
+  @keyframes pulse-expand {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
   }
 }
 

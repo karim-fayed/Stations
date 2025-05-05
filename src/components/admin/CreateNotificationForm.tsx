@@ -46,7 +46,7 @@ interface CreateNotificationFormProps {
 const CreateNotificationForm = ({ onSuccess }: CreateNotificationFormProps) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // تهيئة النموذج مع مخطط التحقق
   const form = useForm<NotificationFormValues>({
     resolver: zodResolver(notificationSchema),
@@ -62,32 +62,40 @@ const CreateNotificationForm = ({ onSuccess }: CreateNotificationFormProps) => {
   const onSubmit = async (values: NotificationFormValues) => {
     try {
       setIsSubmitting(true);
-      
+
       // إضافة الطابع الزمني وحالة القراءة - التأكد من وجود جميع الحقول المطلوبة
+      const currentTime = new Date().toISOString();
       const notification = {
         title: values.title,
         content: values.content,
         target_role: values.target_role,
         image_url: values.image_url || null,
         play_sound: values.play_sound,
-        created_at: new Date().toISOString(),
+        created_at: currentTime,
+        updated_at: currentTime,
         is_read: false,
       };
-      
+
       // إدخال الإشعار إلى Supabase
-      const { error } = await supabase
+      const { error, data } = await supabase
         .from('notifications')
-        .insert(notification);
-      
-      if (error) throw error;
-      
+        .insert(notification)
+        .select();
+
+      if (error) {
+        console.error('Supabase error details:', error);
+        throw error;
+      }
+
+      console.log('Notification created successfully:', data);
+
       // إعادة تعيين النموذج وعرض رسالة نجاح
       form.reset();
       toast({
         title: 'تم إرسال الإشعار بنجاح',
         description: 'تم إرسال الإشعار إلى المستخدمين المستهدفين',
       });
-      
+
       // استدعاء دالة نجاح إذا تم توفيرها
       if (onSuccess) onSuccess();
     } catch (error) {
@@ -118,7 +126,7 @@ const CreateNotificationForm = ({ onSuccess }: CreateNotificationFormProps) => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="content"
@@ -126,17 +134,17 @@ const CreateNotificationForm = ({ onSuccess }: CreateNotificationFormProps) => {
             <FormItem>
               <FormLabel>محتوى الإشعار</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="أدخل محتوى الإشعار هنا..." 
+                <Textarea
+                  placeholder="أدخل محتوى الإشعار هنا..."
                   className="min-h-[100px]"
-                  {...field} 
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="target_role"
@@ -159,7 +167,7 @@ const CreateNotificationForm = ({ onSuccess }: CreateNotificationFormProps) => {
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="image_url"
@@ -192,10 +200,10 @@ const CreateNotificationForm = ({ onSuccess }: CreateNotificationFormProps) => {
             </FormItem>
           )}
         />
-        
-        <Button 
-          type="submit" 
-          className="w-full bg-gradient-to-r from-noor-purple to-noor-orange" 
+
+        <Button
+          type="submit"
+          className="w-full bg-gradient-to-r from-noor-purple to-noor-orange"
           disabled={isSubmitting}
         >
           {isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}

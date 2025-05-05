@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminState } from "@/types/station";
 import { Session } from "@supabase/supabase-js";
+import logger from "@/utils/logger";
 
 export const useAuthState = () => {
   const [authState, setAuthState] = useState<AdminState | null>(null);
@@ -13,7 +14,7 @@ export const useAuthState = () => {
     // Set up auth state listener FIRST
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log("Auth state changed:", event, session);
+        logger.debug("Auth state changed:", event);
 
         if (event === 'SIGNED_IN') {
           // Check if user is admin
@@ -28,11 +29,11 @@ export const useAuthState = () => {
                   .single();
 
                 if (adminError) {
-                  console.error("Error fetching admin user:", adminError);
+                  logger.error("Error fetching admin user:", adminError);
                   setAuthState({ isAuthenticated: false, user: null });
                   setUserRole(null);
                 } else {
-                  console.log("Admin user found:", adminData);
+                  logger.debug("Admin user found");
                   setAuthState({
                     isAuthenticated: true,
                     user: session.user,
@@ -40,14 +41,14 @@ export const useAuthState = () => {
                   setUserRole(adminData.role || 'admin');
                 }
               } catch (error) {
-                console.error("Error checking admin status:", error);
+                logger.error("Error checking admin status:", error);
                 setAuthState({ isAuthenticated: false, user: null });
               }
               setLoading(false);
             }, 0);
           }
         } else if (event === 'SIGNED_OUT') {
-          console.log("User signed out");
+          logger.debug("User signed out");
           setAuthState({ isAuthenticated: false, user: null });
           setLoading(false);
         }
@@ -57,21 +58,21 @@ export const useAuthState = () => {
     // THEN check for existing session
     const checkAuth = async () => {
       try {
-        console.log("Checking authentication status...");
+        logger.debug("Checking authentication status...");
 
         const { data, error } = await supabase.auth.getSession();
 
         if (error) {
-          console.error("Auth error:", error);
+          logger.error("Auth error:", error);
           setAuthState({ isAuthenticated: false, user: null });
           setLoading(false);
           return;
         }
 
-        console.log("Auth session result:", data);
+        logger.debug("Auth session result received");
 
         if (!data.session) {
-          console.log("No session found, user is not authenticated");
+          logger.debug("No session found, user is not authenticated");
           setAuthState({ isAuthenticated: false, user: null });
           setLoading(false);
           return;
@@ -85,11 +86,11 @@ export const useAuthState = () => {
           .single();
 
         if (adminError) {
-          console.error("Error fetching admin user:", adminError);
+          logger.error("Error fetching admin user:", adminError);
           setAuthState({ isAuthenticated: false, user: null });
           setUserRole(null);
         } else {
-          console.log("Admin user data:", adminData);
+          logger.debug("Admin user data retrieved");
           setAuthState({
             isAuthenticated: true,
             user: data.session.user,
@@ -97,7 +98,7 @@ export const useAuthState = () => {
           setUserRole(adminData.role || 'admin');
         }
       } catch (error) {
-        console.error("Error checking authentication:", error);
+        logger.error("Error checking authentication:", error);
         setAuthState({ isAuthenticated: false, user: null });
       } finally {
         setLoading(false);
