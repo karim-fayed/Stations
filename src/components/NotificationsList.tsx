@@ -23,6 +23,7 @@ interface Notification {
   created_at: string;
   is_read: boolean;
   image_url?: string;
+  target_role?: string;
 }
 
 const NotificationsList = () => {
@@ -56,10 +57,11 @@ const NotificationsList = () => {
       const userRole = userRoleData?.role;
       
       // Fetch notifications for this user based on role
+      // Using explicit OR conditions instead of the .or method to avoid deep instantiation
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .or(`target_role.eq.all,target_role.eq.${userRole}`)
+        .in('target_role', ['all', userRole])
         .order('created_at', { ascending: false });
         
       if (error) throw error;

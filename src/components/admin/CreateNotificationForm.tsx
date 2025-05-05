@@ -57,9 +57,12 @@ const CreateNotificationForm = ({ onSuccess }: CreateNotificationFormProps) => {
 
   const onSubmit = async (values: NotificationFormValues) => {
     try {
-      // Add timestamp and read status
+      // Add timestamp and read status - making sure all required fields are present
       const notification = {
-        ...values,
+        title: values.title,
+        content: values.content,
+        target_role: values.target_role,
+        image_url: values.image_url || null,
         created_at: new Date().toISOString(),
         is_read: false,
       };
