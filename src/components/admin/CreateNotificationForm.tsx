@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -23,8 +23,9 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
-// Define the notification schema
+// تعريف نموذج الإشعار
 const notificationSchema = z.object({
   title: z.string().min(3, { message: 'العنوان مطلوب ويجب أن يكون 3 أحرف على الأقل' }),
   content: z.string().min(10, { message: 'المحتوى مطلوب ويجب أن يكون 10 أحرف على الأقل' }),
@@ -32,9 +33,10 @@ const notificationSchema = z.object({
     required_error: 'الرجاء تحديد الجمهور المستهدف',
   }),
   image_url: z.string().optional(),
+  play_sound: z.boolean().default(true),
 });
 
-// TypeScript interface for the form values
+// واجهة نموذج الإشعار
 type NotificationFormValues = z.infer<typeof notificationSchema>;
 
 interface CreateNotificationFormProps {
@@ -43,8 +45,9 @@ interface CreateNotificationFormProps {
 
 const CreateNotificationForm = ({ onSuccess }: CreateNotificationFormProps) => {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Initialize form with validation schema
+  // تهيئة النموذج مع مخطط التحقق
   const form = useForm<NotificationFormValues>({
     resolver: zodResolver(notificationSchema),
     defaultValues: {
@@ -52,36 +55,40 @@ const CreateNotificationForm = ({ onSuccess }: CreateNotificationFormProps) => {
       content: '',
       target_role: 'all',
       image_url: '',
+      play_sound: true,
     },
   });
 
   const onSubmit = async (values: NotificationFormValues) => {
     try {
-      // Add timestamp and read status - making sure all required fields are present
+      setIsSubmitting(true);
+      
+      // إضافة الطابع الزمني وحالة القراءة - التأكد من وجود جميع الحقول المطلوبة
       const notification = {
         title: values.title,
         content: values.content,
         target_role: values.target_role,
         image_url: values.image_url || null,
+        play_sound: values.play_sound,
         created_at: new Date().toISOString(),
         is_read: false,
       };
       
-      // Insert notification to Supabase
+      // إدخال الإشعار إلى Supabase
       const { error } = await supabase
         .from('notifications')
         .insert(notification);
       
       if (error) throw error;
       
-      // Reset form and show success message
+      // إعادة تعيين النموذج وعرض رسالة نجاح
       form.reset();
       toast({
         title: 'تم إرسال الإشعار بنجاح',
         description: 'تم إرسال الإشعار إلى المستخدمين المستهدفين',
       });
       
-      // Call success callback if provided
+      // استدعاء دالة نجاح إذا تم توفيرها
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error('Error creating notification:', error);
@@ -90,6 +97,8 @@ const CreateNotificationForm = ({ onSuccess }: CreateNotificationFormProps) => {
         title: 'حدث خطأ',
         description: 'لم نتمكن من إرسال الإشعار. الرجاء المحاولة مرة أخرى.',
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -164,8 +173,34 @@ const CreateNotificationForm = ({ onSuccess }: CreateNotificationFormProps) => {
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="play_sound"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center space-x-3 space-y-0 rtl:space-x-reverse">
+              <FormControl>
+                <input
+                  type="checkbox"
+                  checked={field.value}
+                  onChange={field.onChange}
+                  className="h-4 w-4 text-purple-600 focus:ring-purple-500"
+                />
+              </FormControl>
+              <FormLabel className="mr-2">تشغيل صوت تنبيه مع الإشعار</FormLabel>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         
-        <Button type="submit" className="w-full">إرسال الإشعار</Button>
+        <Button 
+          type="submit" 
+          className="w-full bg-gradient-to-r from-noor-purple to-noor-orange" 
+          disabled={isSubmitting}
+        >
+          {isSubmitting && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+          إرسال الإشعار
+        </Button>
       </form>
     </Form>
   );

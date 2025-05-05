@@ -9,19 +9,27 @@ import { Button } from '@/components/ui/button';
 import { Bell } from 'lucide-react';
 import NotificationsList from './NotificationsList';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const NotificationsButton = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const { toast } = useToast();
 
-  // Fetch unread notifications count
+  // صوت الإشعار
+  const playNotificationSound = () => {
+    const audio = new Audio('/notification-sound.mp3');
+    audio.play().catch(e => console.error('Error playing notification sound:', e));
+  };
+
+  // جلب عدد الإشعارات غير المقروءة
   const fetchUnreadCount = async () => {
     try {
-      // Get the current user
+      // جلب المستخدم الحالي
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       
-      // Get user role
+      // جلب دور المستخدم
       const { data: userRoleData } = await supabase
         .from('admin_users')
         .select('role')
@@ -32,13 +40,13 @@ const NotificationsButton = () => {
       
       const userRole = userRoleData.role;
       
-      // Define valid target roles for this user with an explicit string array type
+      // تحديد الأدوار المستهدفة لهذا المستخدم بنوع محدد للمصفوفة
       let targetRoles = ['all'] as string[]; 
       if (userRole) {
         targetRoles.push(userRole);
       }
       
-      // Count unread notifications
+      // عد الإشعارات غير المقروءة
       const { count, error } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
@@ -53,19 +61,60 @@ const NotificationsButton = () => {
     }
   };
 
-  // Set up real-time subscription
+  // التعامل مع الإشعارات الجديدة
+  const handleNewNotification = async (payload: any) => {
+    fetchUnreadCount();
+    
+    // التحقق إذا كان هذا إشعار جديد
+    if (payload.eventType === 'INSERT') {
+      try {
+        // جلب المستخدم الحالي
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        
+        // جلب دور المستخدم
+        const { data: userRoleData } = await supabase
+          .from('admin_users')
+          .select('role')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (!userRoleData) return;
+        
+        const userRole = userRoleData.role;
+        
+        // التحقق مما إذا كان هذا الإشعار موجه للمستخدم
+        const notification = payload.new;
+        if (notification.target_role === 'all' || notification.target_role === userRole) {
+          // عرض إشعار في أعلى الشاشة
+          toast({
+            title: notification.title,
+            description: notification.content,
+            className: "toast-welcome"
+          });
+          
+          // تشغيل الصوت إذا كان الإشعار يتطلب ذلك
+          if (notification.play_sound) {
+            playNotificationSound();
+          }
+        }
+      } catch (error) {
+        console.error('Error processing new notification:', error);
+      }
+    }
+  };
+
+  // إعداد الاشتراك في الوقت الحقيقي
   useEffect(() => {
     fetchUnreadCount();
 
-    // Set up a subscription to the notifications table
+    // إعداد اشتراك في جدول الإشعارات
     const subscription = supabase
       .channel('notifications_changes')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'notifications' },
-        () => {
-          fetchUnreadCount();
-        }
+        handleNewNotification
       )
       .subscribe();
 

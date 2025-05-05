@@ -11,6 +11,7 @@ export interface Notification {
   is_read: boolean;
   image_url?: string;
   target_role: string;
+  play_sound?: boolean;
 }
 
 export const useNotifications = () => {
@@ -20,29 +21,29 @@ export const useNotifications = () => {
 
   const fetchNotifications = async () => {
     try {
-      // Get the current user's session
+      // جلب جلسة المستخدم الحالية
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       
       const userId = sessionData.session?.user?.id;
       if (!userId) throw new Error('No user found in session');
       
-      // Get the user's role from admin_users table
+      // الحصول على دور المستخدم من جدول admin_users
       const { data: userRoleData, error: userRoleError } = await supabase
         .from('admin_users')
         .select('role')
-        .eq('id', userId)
+        .eq('user_id', userId)
         .single();
         
       if (userRoleError) throw userRoleError;
       
-      // Define valid target roles for this user with an explicit string array type
+      // تحديد الأدوار المستهدفة لهذا المستخدم بنوع محدد للمصفوفة
       let targetRoles = ['all'] as string[];
       if (userRoleData?.role) {
         targetRoles.push(userRoleData.role);
       }
       
-      // Fetch notifications targeted to this user's role
+      // جلب الإشعارات الموجهة لدور هذا المستخدم
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -68,7 +69,7 @@ export const useNotifications = () => {
   useEffect(() => {
     fetchNotifications();
     
-    // Subscribe to notification updates
+    // الاشتراك في تحديثات الإشعارات
     const channel = supabase
       .channel('notifications_changes')
       .on('postgres_changes', 
@@ -95,7 +96,7 @@ export const useNotifications = () => {
         
       if (error) throw error;
       
-      // Update local state
+      // تحديث الحالة المحلية
       setNotifications(notifications.map(n => 
         n.id === id ? { ...n, is_read: true } : n
       ));
@@ -119,7 +120,7 @@ export const useNotifications = () => {
         
       if (error) throw error;
       
-      // Update local state
+      // تحديث الحالة المحلية
       setNotifications(notifications.filter(n => n.id !== id));
       
       toast({

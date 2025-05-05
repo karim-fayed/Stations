@@ -1,12 +1,13 @@
 
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileSpreadsheet, MapPin, BarChart } from "lucide-react";
+import { FileSpreadsheet, MapPin, BarChart, Bell } from "lucide-react";
 import ExcelImportExport from "./ExcelImportExport";
 import StationsTable from "./StationsTable";
 import { GasStation } from "@/types/station";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/i18n/LanguageContext";
+import NotificationsManagement from "./NotificationsManagement";
 
 interface DashboardTabsProps {
   stations: GasStation[];
@@ -37,6 +38,12 @@ const DashboardTabs = ({ stations, onEdit, onDelete }: DashboardTabsProps) => {
           <FileSpreadsheet size={16} /> <span className="hidden sm:inline">{t('dashboard', 'importExport')}</span>
         </TabsTrigger>
         <TabsTrigger
+          value="notifications"
+          className="rounded-full px-3 sm:px-6 py-2 flex items-center gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-noor-purple data-[state=active]:to-noor-orange data-[state=active]:text-white transition-all duration-300 flex-1 justify-center"
+        >
+          <Bell size={16} /> <span className="hidden sm:inline">الإشعارات</span>
+        </TabsTrigger>
+        <TabsTrigger
           value="analytics"
           className="rounded-full px-3 sm:px-6 py-2 flex items-center gap-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-noor-purple data-[state=active]:to-noor-orange data-[state=active]:text-white transition-all duration-300 flex-1 justify-center"
         >
@@ -59,6 +66,10 @@ const DashboardTabs = ({ stations, onEdit, onDelete }: DashboardTabsProps) => {
 
         <TabsContent value="import-export" className="bg-white rounded-lg shadow-lg p-6 border border-purple-100">
           <ExcelImportExport />
+        </TabsContent>
+        
+        <TabsContent value="notifications" className="bg-white rounded-lg shadow-lg p-6 border border-purple-100">
+          <NotificationsManagement />
         </TabsContent>
 
         <TabsContent value="analytics" className="bg-white rounded-lg shadow-lg p-6 border border-purple-100">
