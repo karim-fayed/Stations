@@ -26,7 +26,7 @@ const CreateNotificationForm: React.FC = () => {
   const { addNotification } = useNotifications();
   const [isLoading, setIsLoading] = useState(false);
   
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<NotificationFormData>({
+  const { register, handleSubmit, reset, setValue, getValues, formState: { errors } } = useForm<NotificationFormData>({
     defaultValues: {
       title: '',
       content: '',
@@ -95,7 +95,7 @@ const CreateNotificationForm: React.FC = () => {
         <Select
           onValueChange={(value) => {
             const formValue = value === "null" ? null : value;
-            reset({ ...register().getValues(), target_role: formValue });
+            setValue("target_role", formValue);
           }}
         >
           <SelectTrigger>
