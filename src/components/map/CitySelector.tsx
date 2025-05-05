@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SaudiCity } from '@/types/station';
 
@@ -20,11 +20,16 @@ const CitySelector: React.FC<CitySelectorProps> = ({
     selectCity: language === 'ar' ? 'اختر مدينة' : 'Select City',
   };
   
-  // Handle city change with logging for debugging
+  // Handle city change with improved logging for debugging
   const handleCityChange = (value: string) => {
-    console.log("City selected:", value);
+    console.log(`City selected: ${value}`);
     onCityChange(value);
   };
+  
+  // Log available cities for debugging
+  useEffect(() => {
+    console.log(`CitySelector loaded with ${cities.length} cities available`);
+  }, [cities]);
 
   return (
     <div className={`${language === 'ar' ? 'text-right' : 'text-left'}`}>
@@ -36,7 +41,7 @@ const CitySelector: React.FC<CitySelectorProps> = ({
         <SelectTrigger className="w-full">
           <SelectValue placeholder={texts.selectCity} />
         </SelectTrigger>
-        <SelectContent dir={language === 'ar' ? 'rtl' : 'ltr'}>
+        <SelectContent dir={language === 'ar' ? 'rtl' : 'ltr'} className="max-h-[300px]">
           {cities.map((city) => (
             <SelectItem key={city.nameEn} value={city.name}>
               {language === 'ar' ? city.name : city.nameEn}

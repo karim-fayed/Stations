@@ -118,40 +118,54 @@ export const useCityFilter = (
     }
   }, [stations, cities, language, setFilteredStations, calculateDistance, cityStationsCache]);
 
-  // Helper function to move map to city - Fixed to ensure the map actually moves
+  // Enhanced function to move map to city with better zoom handling
   const moveMapToCity = useCallback((cityName: string, stationCount: number) => {
     const city = cities.find(c => c.name === cityName || c.nameEn === cityName);
     
-    if (map.current && city) {
-      // Add console log to verify function is being called with correct data
-      console.log("Moving map to city:", cityName, "at coordinates:", city.longitude, city.latitude);
-      
-      // Ensure we're using the correct zoom level
-      const zoomLevel = detectLowPerformanceDevice() ? Math.max(city.zoom - 1, 8) : city.zoom || 11;
-      
-      // Ensure the map is centered on the city and the animation is properly executed
-      map.current.flyTo({
-        center: [city.longitude, city.latitude],
-        zoom: zoomLevel,
-        essential: true, // This option ensures the animation completes
-        duration: 1500,
-        easing: (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t // Custom easing function for smoother animation
-      });
-      
-      // Force a map repaint to ensure changes are visible
-      map.current.once('moveend', () => {
-        if (map.current) {
-          map.current.triggerRepaint();
-        }
-      });
-    } else {
+    if (!map.current || !city) {
       console.error("Cannot move map: map instance or city not found", {
         mapExists: !!map.current,
         cityFound: !!city,
         cityName
       });
+      return;
     }
 
+    console.log(`Moving map to city: ${cityName} at coordinates: ${city.longitude}, ${city.latitude}`);
+    
+    // Calculate appropriate zoom level based on station count and city size
+    let zoomLevel = city.zoom || 11;
+    
+    // Adjust zoom level based on station count
+    if (stationCount > 100) {
+      zoomLevel -= 0.5; // Zoom out a bit for many stations
+    } else if (stationCount < 10) {
+      zoomLevel += 0.5; // Zoom in a bit for few stations
+    }
+    
+    // Apply performance adjustments if needed
+    if (detectLowPerformanceDevice()) {
+      zoomLevel = Math.max(zoomLevel - 1, 8);
+    }
+    
+    // Ensure the map is centered with proper animation
+    map.current.flyTo({
+      center: [city.longitude, city.latitude],
+      zoom: zoomLevel,
+      essential: true,
+      duration: 1500,
+      easing: (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t // Smooth easing function
+    });
+    
+    // Force map update and ensure markers are displayed correctly
+    map.current.once('moveend', () => {
+      if (map.current) {
+        console.log(`Map movement completed to: ${cityName}`);
+        map.current.triggerRepaint();
+      }
+    });
+
+    // Show toast notification
     toast({
       title: language === 'ar' ? `تم الانتقال إلى ${city?.name}` : `Moved to ${city?.nameEn}`,
       description: language === 'ar'
