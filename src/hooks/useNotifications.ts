@@ -37,7 +37,7 @@ export const useNotifications = () => {
         
       if (userRoleError) throw userRoleError;
       
-      // تحديد الأدوار المستهدفة لهذا المستخدم - تجنب تعريف النوع بشكل صريح
+      // تحديد الأدوار المستهدفة لهذا المستخدم - تجنب تعريف النوع
       let targetRoles = ['all'];
       if (userRoleData?.role) {
         targetRoles.push(userRoleData.role);
