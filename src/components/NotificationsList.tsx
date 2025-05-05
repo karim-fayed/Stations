@@ -57,11 +57,14 @@ const NotificationsList = () => {
       const userRole = userRoleData?.role;
       
       // Fetch notifications for this user based on role
-      // Using explicit OR conditions instead of the .or method to avoid deep instantiation
+      // Fixed: using array parameter with .in() instead of dynamic filter construction
+      const targets = ['all'];
+      if (userRole) targets.push(userRole);
+      
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .in('target_role', ['all', userRole])
+        .in('target_role', targets)
         .order('created_at', { ascending: false });
         
       if (error) throw error;
