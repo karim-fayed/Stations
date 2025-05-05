@@ -16,8 +16,6 @@ import ProfilePage from "./pages/Admin/Profile";
 import NotFound from "./pages/NotFound";
 import { ensureAdminExists } from "./utils/admin";
 import AuthGuard from "@/components/admin/AuthGuard";
-import WhatsAppButton from "@/components/WhatsAppButton";
-import { NotificationProvider } from "@/contexts/NotificationContext";
 
 const queryClient = new QueryClient();
 
@@ -30,40 +28,36 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NotificationProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/admin/login" element={<LoginPage />} />
-              <Route path="/admin/dashboard" element={
-                <AuthGuard>
-                  <Dashboard />
-                </AuthGuard>
-              } />
-              <Route path="/admin/users" element={
-                <AuthGuard requireOwner={true}>
-                  <UserManagement />
-                </AuthGuard>
-              } />
-              <Route path="/admin/profile" element={
-                <AuthGuard>
-                  <ProfilePage />
-                </AuthGuard>
-              } />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            {/* WhatsApp floating button */}
-            <WhatsAppButton phoneNumber="966500702080" />
-          </BrowserRouter>
-        </TooltipProvider>
-      </NotificationProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/admin/login" element={<LoginPage />} />
+            <Route path="/admin/dashboard" element={
+              <AuthGuard>
+                <Dashboard />
+              </AuthGuard>
+            } />
+            <Route path="/admin/users" element={
+              <AuthGuard requireOwner={true}>
+                <UserManagement />
+              </AuthGuard>
+            } />
+            <Route path="/admin/profile" element={
+              <AuthGuard>
+                <ProfilePage />
+              </AuthGuard>
+            } />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 };

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLanguage } from '@/i18n/LanguageContext';
 import { Button } from '@/components/ui/button';
@@ -28,7 +27,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
       <DropdownMenuTrigger asChild>
         <Button variant={variant} size={size} className={`flex items-center gap-2 ${className}`}>
           <Languages size={16} />
-          <span>{language === 'ar' ? 'اللغة' : 'Language'}</span>
+          <span>{t('common', 'language')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -36,13 +35,13 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
           onClick={() => setLanguage('ar')}
           className={language === 'ar' ? 'bg-primary/10 font-bold' : ''}
         >
-          العربية
+          {t('common', 'arabic')}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => setLanguage('en')}
           className={language === 'en' ? 'bg-primary/10 font-bold' : ''}
         >
-          English
+          {t('common', 'english')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
