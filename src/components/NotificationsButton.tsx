@@ -16,37 +16,37 @@ const NotificationsButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
-  // صوت الإشعار
+  // Notification sound
   const playNotificationSound = () => {
     const audio = new Audio('/notification-sound.mp3');
     audio.play().catch(e => console.error('Error playing notification sound:', e));
   };
 
-  // جلب عدد الإشعارات غير المقروءة
+  // Fetch unread notifications count
   const fetchUnreadCount = async () => {
     try {
-      // جلب المستخدم الحالي
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
       
-      // جلب دور المستخدم
+      // Get user role
       const { data: userRoleData } = await supabase
         .from('admin_users')
         .select('role')
-        .eq('user_id', user.id)
+        .eq('user_id', session.user.id)
         .single();
         
       if (!userRoleData) return;
       
       const userRole = userRoleData.role;
       
-      // تحديد الأدوار المستهدفة لهذا المستخدم
+      // Determine target roles for this user
       let targetRoles = ['all'];
       if (userRole) {
         targetRoles.push(userRole);
       }
       
-      // عد الإشعارات غير المقروءة
+      // Count unread notifications
       const { count, error } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
@@ -61,39 +61,39 @@ const NotificationsButton = () => {
     }
   };
 
-  // التعامل مع الإشعارات الجديدة
+  // Handle new notifications
   const handleNewNotification = async (payload: any) => {
     fetchUnreadCount();
     
-    // التحقق إذا كان هذا إشعار جديد
+    // Check if this is a new notification
     if (payload.eventType === 'INSERT') {
       try {
-        // جلب المستخدم الحالي
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        // Get current user
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
         
-        // جلب دور المستخدم
+        // Get user role
         const { data: userRoleData } = await supabase
           .from('admin_users')
           .select('role')
-          .eq('user_id', user.id)
+          .eq('user_id', session.user.id)
           .single();
           
         if (!userRoleData) return;
         
         const userRole = userRoleData.role;
         
-        // التحقق مما إذا كان هذا الإشعار موجه للمستخدم
+        // Check if this notification is for this user
         const notification = payload.new;
         if (notification.target_role === 'all' || notification.target_role === userRole) {
-          // عرض إشعار في أعلى الشاشة
+          // Show toast notification
           toast({
             title: notification.title,
             description: notification.content,
             className: "toast-welcome"
           });
           
-          // تشغيل الصوت إذا كان الإشعار يتطلب ذلك
+          // Play sound if notification requires it
           if (notification.play_sound) {
             playNotificationSound();
           }
@@ -104,11 +104,11 @@ const NotificationsButton = () => {
     }
   };
 
-  // إعداد الاشتراك في الوقت الحقيقي
+  // Set up real-time subscription
   useEffect(() => {
     fetchUnreadCount();
 
-    // إعداد اشتراك في جدول الإشعارات
+    // Subscribe to notifications table
     const subscription = supabase
       .channel('notifications_changes')
       .on(

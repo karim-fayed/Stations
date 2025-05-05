@@ -21,14 +21,14 @@ export const useNotifications = () => {
 
   const fetchNotifications = async () => {
     try {
-      // جلب جلسة المستخدم الحالية
+      // Get current user session
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       
       const userId = sessionData.session?.user?.id;
       if (!userId) throw new Error('No user found in session');
       
-      // الحصول على دور المستخدم من جدول admin_users
+      // Get user role from admin_users table
       const { data: userRoleData, error: userRoleError } = await supabase
         .from('admin_users')
         .select('role')
@@ -37,13 +37,13 @@ export const useNotifications = () => {
         
       if (userRoleError) throw userRoleError;
       
-      // تحديد الأدوار المستهدفة لهذا المستخدم
+      // Determine target roles for this user
       const targetRoles = ['all'];
       if (userRoleData?.role) {
         targetRoles.push(userRoleData.role);
       }
       
-      // جلب الإشعارات الموجهة لدور هذا المستخدم
+      // Fetch notifications targeted for this user's role
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -69,7 +69,7 @@ export const useNotifications = () => {
   useEffect(() => {
     fetchNotifications();
     
-    // الاشتراك في تحديثات الإشعارات
+    // Subscribe to notifications updates
     const channel = supabase
       .channel('notifications_changes')
       .on('postgres_changes', 
@@ -96,7 +96,7 @@ export const useNotifications = () => {
         
       if (error) throw error;
       
-      // تحديث الحالة المحلية
+      // Update local state
       setNotifications(notifications.map(n => 
         n.id === id ? { ...n, is_read: true } : n
       ));
@@ -120,7 +120,7 @@ export const useNotifications = () => {
         
       if (error) throw error;
       
-      // تحديث الحالة المحلية
+      // Update local state
       setNotifications(notifications.filter(n => n.id !== id));
       
       toast({

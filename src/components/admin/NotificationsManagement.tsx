@@ -17,20 +17,24 @@ const NotificationsManagement = () => {
   const [isOwner, setIsOwner] = useState(false);
   const { toast } = useToast();
 
-  // التحقق من صلاحية المستخدم كمالك
+  // Check if the user has owner role
   useEffect(() => {
     const checkOwnerRole = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
         
         const { data: userRoleData } = await supabase
           .from('admin_users')
           .select('role')
-          .eq('user_id', user.id)
+          .eq('user_id', session.user.id)
           .single();
         
-        setIsOwner(userRoleData?.role === 'owner');
+        if (userRoleData?.role === 'owner') {
+          setIsOwner(true);
+        } else {
+          console.log('User is not an owner, role:', userRoleData?.role);
+        }
       } catch (error) {
         console.error('Error checking owner role:', error);
       }
@@ -39,7 +43,7 @@ const NotificationsManagement = () => {
     checkOwnerRole();
   }, []);
 
-  // جلب قائمة الإشعارات
+  // Fetch the list of notifications
   const fetchNotifications = async () => {
     try {
       setLoading(true);
@@ -66,7 +70,7 @@ const NotificationsManagement = () => {
   useEffect(() => {
     fetchNotifications();
     
-    // إعداد الاشتراك في التغييرات على جدول الإشعارات
+    // Subscribe to changes on the notifications table
     const channel = supabase
       .channel('notifications_changes')
       .on('postgres_changes', 
@@ -84,7 +88,7 @@ const NotificationsManagement = () => {
     };
   }, []);
 
-  // حذف الإشعار
+  // Delete a notification
   const deleteNotification = async (id: string) => {
     try {
       const { error } = await supabase
@@ -118,7 +122,7 @@ const NotificationsManagement = () => {
     });
   };
 
-  // حالة التحميل
+  // Loading state
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
