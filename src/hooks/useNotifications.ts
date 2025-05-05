@@ -36,8 +36,8 @@ export const useNotifications = () => {
         
       if (userRoleError) throw userRoleError;
       
-      // تحديد الأدوار المستهدفة لهذا المستخدم
-      const targetRoles: Array<string> = ['all'];
+      // تحديد الأدوار المستهدفة لهذا المستخدم - تعريف مباشر للمصفوفة
+      const targetRoles: string[] = ['all'];
       if (userRoleData?.role) {
         targetRoles.push(userRoleData.role);
       }
@@ -123,7 +123,7 @@ export const useNotifications = () => {
       setNotifications(notifications.filter(n => n.id !== id));
       
       toast({
-        title: 'تم حذف الإشعار',
+        title: 'تم حذف الإش��ار',
         description: 'تم حذف الإشعار بنجاح'
       });
       
