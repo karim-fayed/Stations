@@ -61,7 +61,8 @@ const NotificationsPopup: React.FC<NotificationsPopupProps> = ({ className }) =>
                 <NotificationItem
                   key={notification.id}
                   notification={notification}
-                  onClick={() => handleNotificationClick(notification.id)}
+                  onMarkAsRead={() => handleNotificationClick(notification.id)}
+                  onDelete={() => {}}
                 />
               ))}
             </div>

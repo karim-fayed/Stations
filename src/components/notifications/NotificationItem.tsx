@@ -15,7 +15,7 @@ import {
 import { Notification } from '@/hooks/useNotifications';
 import { useLanguage } from '@/i18n/LanguageContext';
 
-interface NotificationItemProps {
+export interface NotificationItemProps {
   notification: Notification;
   onMarkAsRead: (id: string) => void;
   onDelete: (id: string) => void;
