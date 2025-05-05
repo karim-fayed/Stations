@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SaudiCity } from '@/components/map/types';
+import { SaudiCity } from '@/types/station';
 
 interface CitySelectorProps {
   cities: SaudiCity[];
@@ -19,12 +19,18 @@ const CitySelector: React.FC<CitySelectorProps> = ({
   const texts = {
     selectCity: language === 'ar' ? 'اختر مدينة' : 'Select City',
   };
+  
+  // Handle city change with logging for debugging
+  const handleCityChange = (value: string) => {
+    console.log("City selected:", value);
+    onCityChange(value);
+  };
 
   return (
     <div className={`${language === 'ar' ? 'text-right' : 'text-left'}`}>
       <Select
         value={selectedCity}
-        onValueChange={onCityChange}
+        onValueChange={handleCityChange}
         dir={language === 'ar' ? 'rtl' : 'ltr'}
       >
         <SelectTrigger className="w-full">

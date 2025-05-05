@@ -116,22 +116,39 @@ export const useCityFilter = (
       handleCityError(error);
       setIsLoadingCity(false);
     }
-  }, [stations, cities, language, map, setFilteredStations, calculateDistance, cityStationsCache]);
+  }, [stations, cities, language, setFilteredStations, calculateDistance, cityStationsCache]);
 
-  // Helper function to move map to city
+  // Helper function to move map to city - Fixed to ensure the map actually moves
   const moveMapToCity = useCallback((cityName: string, stationCount: number) => {
     const city = cities.find(c => c.name === cityName || c.nameEn === cityName);
     
     if (map.current && city) {
-      // Adjust zoom level based on device performance
-      const zoomLevel = detectLowPerformanceDevice() ? Math.max(city.zoom - 1, 8) : city.zoom;
+      // Add console log to verify function is being called with correct data
+      console.log("Moving map to city:", cityName, "at coordinates:", city.longitude, city.latitude);
       
+      // Ensure we're using the correct zoom level
+      const zoomLevel = detectLowPerformanceDevice() ? Math.max(city.zoom - 1, 8) : city.zoom || 11;
+      
+      // Ensure the map is centered on the city and the animation is properly executed
       map.current.flyTo({
         center: [city.longitude, city.latitude],
         zoom: zoomLevel,
-        essential: true,
+        essential: true, // This option ensures the animation completes
         duration: 1500,
-        easing: (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t // Custom easing function
+        easing: (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t // Custom easing function for smoother animation
+      });
+      
+      // Force a map repaint to ensure changes are visible
+      map.current.once('moveend', () => {
+        if (map.current) {
+          map.current.triggerRepaint();
+        }
+      });
+    } else {
+      console.error("Cannot move map: map instance or city not found", {
+        mapExists: !!map.current,
+        cityFound: !!city,
+        cityName
       });
     }
 
@@ -155,7 +172,6 @@ export const useCityFilter = (
   // Detect if device is likely low performance
   const detectLowPerformanceDevice = useCallback(() => {
     // Check for various indicators of low-performance devices
-    // نستخدم طرق بديلة لتحديد أداء الجهاز لأن deviceMemory غير متاح في جميع المتصفحات
     const isSlowCPU = navigator.hardwareConcurrency !== undefined && navigator.hardwareConcurrency <= 4;
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
