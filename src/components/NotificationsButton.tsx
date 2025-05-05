@@ -32,11 +32,17 @@ const NotificationsButton = () => {
       
       const userRole = userRoleData.role;
       
+      // Define valid target roles for this user
+      const targetRoles = ['all'];
+      if (userRole) {
+        targetRoles.push(userRole);
+      }
+      
       // Count unread notifications
       const { count, error } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
-        .or(`target_role.eq.all,target_role.eq.${userRole}`)
+        .in('target_role', targetRoles)
         .eq('is_read', false);
         
       if (error) throw error;
