@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Menu, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import NotificationBell from './NotificationBell';
 import { supabase } from '@/integrations/supabase/client';
 
 const Header: React.FC = () => {
@@ -86,16 +85,12 @@ const Header: React.FC = () => {
             </Link>
           ))}
 
-          {/* Added notifications bell */}
-          <NotificationBell />
-
           {/* Language Switcher */}
           <LanguageSwitcher />
         </nav>
 
         {/* Mobile Navigation Button */}
         <div className="flex items-center space-x-2 rtl:space-x-reverse md:hidden">
-          <NotificationBell />
           <LanguageSwitcher />
           <Button variant="ghost" size="sm" onClick={toggleMenu}>
             {isOpen ? <X size={24} /> : <Menu size={24} />}
