@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -36,8 +37,8 @@ export const useNotifications = () => {
         
       if (userRoleError) throw userRoleError;
       
-      // تحديد الأدوار المستهدفة لهذا المستخدم - تعريف مباشر للمصفوفة
-      const targetRoles: string[] = ['all'];
+      // تحديد الأدوار المستهدفة لهذا المستخدم - تجنب تعريف النوع بشكل صريح
+      let targetRoles = ['all'];
       if (userRoleData?.role) {
         targetRoles.push(userRoleData.role);
       }
@@ -123,7 +124,7 @@ export const useNotifications = () => {
       setNotifications(notifications.filter(n => n.id !== id));
       
       toast({
-        title: 'تم حذف الإش��ار',
+        title: 'تم حذف الإشعار',
         description: 'تم حذف الإشعار بنجاح'
       });
       
