@@ -54,17 +54,17 @@ const NotificationsList = () => {
         
       if (userRoleError) throw userRoleError;
       
-      const userRole = userRoleData?.role;
+      // Define valid target roles for this user
+      const targetRoles: string[] = ['all'];
+      if (userRoleData?.role) {
+        targetRoles.push(userRoleData.role);
+      }
       
       // Fetch notifications for this user based on role
-      // Fixed: using array parameter with .in() instead of dynamic filter construction
-      const targets = ['all'];
-      if (userRole) targets.push(userRole);
-      
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .in('target_role', targets)
+        .in('target_role', targetRoles)
         .order('created_at', { ascending: false });
         
       if (error) throw error;
