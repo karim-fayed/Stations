@@ -55,7 +55,7 @@ const NotificationsList = () => {
       if (userRoleError) throw userRoleError;
       
       // Define valid target roles for this user
-      const targetRoles: string[] = ['all'];
+      const targetRoles = ['all'];
       if (userRoleData?.role) {
         targetRoles.push(userRoleData.role);
       }
