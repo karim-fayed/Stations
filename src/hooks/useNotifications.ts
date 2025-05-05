@@ -35,13 +35,14 @@ export const useNotifications = () => {
         
       if (userRoleError) throw userRoleError;
       
-      // Define valid target roles for this user
-      const targetRoles = ['all'];
+      // Define valid target roles for this user - avoid complex type inference
+      const targetRoles: string[] = ['all'];
       if (userRoleData?.role) {
         targetRoles.push(userRoleData.role);
       }
       
       // Fetch notifications for this user based on role
+      // Use the explicit array to avoid deep type recursion
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
