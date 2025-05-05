@@ -37,7 +37,7 @@ export const useNotifications = () => {
       if (userRoleError) throw userRoleError;
       
       // Define valid target roles for this user with explicit type annotation
-      const targetRoles: string[] = ['all'];
+      const targetRoles: Array<string> = ['all'];
       if (userRoleData?.role) {
         targetRoles.push(userRoleData.role);
       }
