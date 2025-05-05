@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { GasStation } from '@/types/station';
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCcw } from "lucide-react";
 
 // Import custom hooks
 import { useMapInitialization } from '@/hooks/useMapInitialization';
@@ -14,15 +13,13 @@ import { useMapLocalization } from './map/useMapLocalization';
 import { useSaudiCities } from './map/useSaudiCities';
 
 // Import modular components
-import CitySelector from './map/CitySelector';
-import MapControls from './map/MapControls';
+import TopControls from './map/TopControls';
+import MapContainer from './map/MapContainer';
 import StationPopup from './map/StationPopup';
-import MapMarkerManager from './map/MapMarkerManager';
-import UserLocationMarker from './map/UserLocationMarker';
-import MapAnimation from './map/MapAnimation';
-import MapSearchBar from './map/MapSearchBar';
+import MapControls from './map/MapControls';
 import MapOverlays from './map/MapOverlays';
-import { Button } from '@/components/ui/button';
+import MapAnimation from './map/MapAnimation';
+import MapMarkersAndLocation from './map/MapMarkersAndLocation';
 
 // Import utils
 import { createPopupContent, resetMap } from '@/utils/mapUtils';
@@ -139,45 +136,26 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="mb-4 flex flex-col sm:flex-row gap-2">
-        {/* City Selector Component */}
-        <div className="flex-1">
-          <CitySelector
-            cities={cities}
-            selectedCity={selectedCity}
-            onCityChange={handleCityChange}
-            language={language}
-          />
-        </div>
+      {/* Search and City Selection */}
+      <TopControls
+        cities={cities}
+        selectedCity={selectedCity}
+        onCityChange={handleCityChange}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        debouncedSearchTerm={debouncedSearchTerm}
+        filteredStations={filteredStations}
+        texts={texts}
+        language={language}
+        isSearching={isSearching}
+      />
 
-        {/* Search Field */}
-        <MapSearchBar
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          debouncedSearchTerm={debouncedSearchTerm}
-          filteredStations={filteredStations}
-          texts={texts}
-          language={language}
-          isSearching={isSearching}
-        />
-      </div>
-
-      <div className="relative flex-grow">
-        <div ref={mapContainer} className="map-container h-[500px] rounded-lg shadow-lg"></div>
-
-        {/* Reset map button */}
-        <div className="absolute top-2 left-2 z-10">
-          <Button
-            variant="outline" 
-            size="icon"
-            className="bg-white hover:bg-gray-100 shadow-md"
-            onClick={handleResetMap}
-            title={language === 'ar' ? 'إعادة تعيين الخريطة' : 'Reset map'}
-          >
-            <RefreshCcw className="h-4 w-4" />
-          </Button>
-        </div>
-
+      {/* Map Container */}
+      <MapContainer 
+        mapContainerRef={mapContainer}
+        onResetMap={handleResetMap}
+        language={language}
+      >
         {/* Map Overlay Components */}
         <MapOverlays
           isLoadingLocation={isLoadingLocation}
@@ -199,7 +177,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
             onReset={handleResetMap}
           />
         )}
-      </div>
+      </MapContainer>
 
       {/* Map Controls Component */}
       <MapControls
@@ -214,21 +192,15 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
       {/* Hidden marker management components - Only render when map is loaded */}
       {map.current && mapLoaded && (
-        <>
-          <MapMarkerManager
-            map={map.current}
-            stations={filteredStations}
-            selectedStation={selectedStation}
-            onSelectStation={onSelectStation}
-            language={language}
-            createPopupContent={handleCreatePopupContent}
-          />
-
-          <UserLocationMarker
-            map={map.current}
-            userLocation={userLocation}
-          />
-        </>
+        <MapMarkersAndLocation
+          map={map.current}
+          filteredStations={filteredStations}
+          selectedStation={selectedStation}
+          onSelectStation={onSelectStation}
+          language={language}
+          userLocation={userLocation}
+          createPopupContent={handleCreatePopupContent}
+        />
       )}
 
       <MapAnimation enable={true} />
