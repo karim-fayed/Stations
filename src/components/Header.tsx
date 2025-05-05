@@ -10,9 +10,17 @@ const Header = () => {
   const { language, t, dir } = useLanguage();
 
   return (
-    <header className={`w-full bg-gradient-to-r from-noor-purple to-noor-orange py-2 sm:py-4 px-2 sm:px-4 md:px-6`} dir={dir}>
+    <header className={`w-full bg-gradient-to-r from-noor-purple to-noor-orange py-2 px-2 sm:px-4 md:px-6`} dir={dir}>
       <div className="container mx-auto">
-        <div className="relative flex items-center justify-center mb-2 sm:mb-4">
+        {/* Title and Logo section */}
+        <div className="relative flex items-center justify-center">
+          {/* Floating Menu Button - moved to top to align with control panel button */}
+          <div className={`absolute ${language === 'ar' ? 'left-4' : 'right-4'} top-1/2 transform -translate-y-1/2`}>
+            <div className="md:hidden">
+              <HomeSidebar />
+            </div>
+          </div>
+
           <h1 className="text-white text-lg sm:text-xl md:text-2xl font-bold text-center flex items-center justify-center">
             {language === 'ar' ? (
               <>
@@ -44,15 +52,9 @@ const Header = () => {
               </>
             )}
           </h1>
-
-          {/* Floating Menu Button - تم نقله ليكون محاذياً لزر لوحة التحكم */}
-          <div className={`absolute ${language === 'ar' ? 'left-0' : 'right-0'} top-[60%] transform -translate-y-1/2`}>
-            <div className="md:hidden">
-              <HomeSidebar />
-            </div>
-          </div>
         </div>
 
+        {/* Navigation Menu section */}
         <div className="flex flex-wrap items-center justify-between">
           <div className="flex items-center">
             {/* Logo placeholder */}
