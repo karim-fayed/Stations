@@ -32,8 +32,8 @@ const NotificationsButton = () => {
       
       const userRole = userRoleData.role;
       
-      // Define valid target roles for this user with explicit type annotation
-      const targetRoles: Array<string> = ['all']; 
+      // Define valid target roles for this user
+      const targetRoles: string[] = ['all']; 
       if (userRole) {
         targetRoles.push(userRole);
       }

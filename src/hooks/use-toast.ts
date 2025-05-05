@@ -1,3 +1,4 @@
+
 import * as React from "react"
 
 import type {
@@ -6,7 +7,7 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = 3000 // تم تغيير هذه القيمة إلى 3000 مللي ثانية (3 ثواني)
 
 type ToasterToast = ToastProps & {
   id: string
@@ -160,6 +161,9 @@ function toast({ ...props }: Toast) {
       },
     },
   })
+
+  // تلقائيًا قم بحذف الإشعار بعد 3 ثواني
+  setTimeout(dismiss, TOAST_REMOVE_DELAY)
 
   return {
     id: id,
