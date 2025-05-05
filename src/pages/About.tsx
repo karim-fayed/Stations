@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Toaster } from "@/components/ui/toaster";
@@ -6,6 +7,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { UserCircle, Award, Users, Target, Globe, Lightbulb } from "lucide-react";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 const About = () => {
   const { language, t } = useLanguage();
@@ -40,6 +42,12 @@ const About = () => {
       descriptionEn: 'We are committed to sustainability practices and environmental preservation in all our operations.',
     },
   ];
+  
+  const carouselImages = [
+    "https://images.unsplash.com/photo-1545558014-8692077e9b5c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1557683316-973673baf926?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+    "https://images.unsplash.com/photo-1622542796254-5b9c46ab0d2f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
+  ];
 
   return (
     <motion.div
@@ -73,12 +81,32 @@ const About = () => {
           </h1>
 
           <div className="mb-12 relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-noor-purple/20 to-noor-orange/20 rounded-lg"></div>
-            <img 
-              src="https://images.unsplash.com/photo-1545558014-8692077e9b5c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80" 
-              alt="Noor Stations" 
-              className="w-full h-64 md:h-80 object-cover rounded-lg shadow-lg"
-            />
+            <Carousel
+              opts={{
+                align: "center",
+                loop: true,
+              }}
+              className="w-full"
+            >
+              <CarouselContent>
+                {carouselImages.map((image, index) => (
+                  <CarouselItem key={index} className="relative">
+                    <div className="relative h-64 md:h-80 overflow-hidden rounded-lg">
+                      <div className="absolute inset-0 bg-gradient-to-r from-noor-purple/20 to-noor-orange/20 rounded-lg z-10"></div>
+                      <img 
+                        src={image} 
+                        alt={`Noor Stations ${index + 1}`} 
+                        className="w-full h-full object-cover transition-transform duration-5000 hover:scale-105"
+                      />
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <div className="flex justify-center mt-4">
+                <CarouselPrevious className={`relative ${language === 'ar' ? 'mr-2' : 'ml-2'} static`} />
+                <CarouselNext className={`relative ${language === 'ar' ? 'ml-2' : 'mr-2'} static`} />
+              </div>
+            </Carousel>
           </div>
 
           <div className="prose prose-lg max-w-none mb-12">
