@@ -1,9 +1,17 @@
 
 import React from 'react';
 import { useLanguage } from '@/i18n/LanguageContext';
+import { useLocation } from 'react-router-dom';
 
 const WhatsAppButton = () => {
   const { language } = useLanguage();
+  const location = useLocation();
+  
+  // Only show on main pages: home, services, about, contact
+  const mainPages = ['/', '/services', '/about', '/contact'];
+  const shouldShow = mainPages.includes(location.pathname);
+  
+  if (!shouldShow) return null;
   
   return (
     <div className="fixed bottom-6 right-6 z-50 animate-bounce hover:animate-none">
