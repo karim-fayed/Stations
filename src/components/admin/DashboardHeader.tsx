@@ -1,11 +1,13 @@
 
+import React from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, Plus, Trash2, Bell } from "lucide-react";
+import { LogOut, Plus, UserCog, User, Home, AlertTriangle } from "lucide-react";
+import { Link } from "react-router-dom";
+import NotificationsPopup from "@/components/notifications/NotificationsPopup";
 import { motion } from "framer-motion";
-import CreateNotificationDialog from "./CreateNotificationDialog";
 
 interface DashboardHeaderProps {
-  onLogout: () => Promise<void>;
+  onLogout: () => void;
   onAddStation: () => void;
   onDeleteDuplicates?: () => void;
   duplicateCount?: number;
@@ -15,64 +17,89 @@ const DashboardHeader = ({
   onLogout,
   onAddStation,
   onDeleteDuplicates,
-  duplicateCount = 0
+  duplicateCount = 0,
 }: DashboardHeaderProps) => {
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+    <div className="bg-white rounded-lg shadow-lg p-6 border-b-4 border-noor-purple">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center">
-            لوحة التحكم
-            <motion.div
-              className="mr-2 p-1 bg-gradient-to-r from-noor-purple to-noor-orange rounded-full"
-              animate={{ rotate: [0, 360] }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-            >
-              <div className="h-5 w-5 bg-white rounded-full"></div>
-            </motion.div>
-          </h1>
-          <p className="text-gray-600 mt-1">إدارة محطات نور</p>
+        <div className="flex items-center">
+          <div className="relative mr-4">
+            <img
+              src="https://noor.com.sa/wp-content/themes/noor/images/apple-touch-icon-72x72.png"
+              alt="Noor Logo"
+              className="h-14 w-14 animate-spin-slow"
+              style={{ animationDuration: "15s" }}
+            />
+            <div
+              className="absolute inset-0 bg-gradient-to-r from-noor-purple to-noor-orange rounded-full blur-md opacity-30 animate-pulse"
+              style={{ animationDuration: "3s" }}
+            ></div>
+          </div>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-noor-purple to-noor-orange bg-clip-text text-transparent">
+              لوحة تحكم محطات نور
+            </h1>
+            <p className="text-gray-600 mt-1">إدارة محطات الوقود</p>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-3 mr-auto md:mr-0">
-          {duplicateCount > 0 && onDeleteDuplicates && (
+        <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
+          <Link to="/">
             <Button
-              variant="destructive"
-              size="sm"
-              className="flex items-center"
-              onClick={onDeleteDuplicates}
+              variant="outline"
+              className="flex items-center gap-2 text-green-600 border-green-300 hover:bg-green-50 transition-all duration-300"
             >
-              <Trash2 className="ml-1 h-4 w-4" />
-              <span>حذف {duplicateCount} محطة مكررة</span>
+              <Home size={16} /> الصفحة الرئيسية
             </Button>
-          )}
-
-          <CreateNotificationDialog />
+          </Link>
           
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex items-center"
-            onClick={onAddStation}
-          >
-            <Plus className="ml-1 h-4 w-4" />
-            <span>إضافة محطة</span>
-          </Button>
+          <Link to="/admin/users">
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 text-blue-600 border-blue-300 hover:bg-blue-50 transition-all duration-300"
+            >
+              <UserCog size={16} /> إدارة المستخدمين
+            </Button>
+          </Link>
+          
+          <Link to="/admin/profile">
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 text-purple-600 border-purple-300 hover:bg-purple-50 transition-all duration-300"
+            >
+              <User size={16} /> الملف الشخصي
+            </Button>
+          </Link>
+
+          <NotificationsPopup className="border-orange-300 text-orange-600 hover:text-orange-700 hover:bg-orange-50" />
 
           <Button
             variant="outline"
-            size="sm"
-            className="flex items-center"
+            className="flex items-center gap-2 text-red-600 border-red-300 hover:bg-red-50 transition-all duration-300"
             onClick={onLogout}
           >
-            <LogOut className="ml-1 h-4 w-4" />
-            <span>تسجيل الخروج</span>
+            <LogOut size={16} /> تسجيل الخروج
           </Button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mt-6">
+        <Button
+          className="flex items-center gap-2 bg-gradient-to-r from-noor-purple to-noor-orange text-white hover:opacity-90 transition-all duration-300 shadow-md"
+          onClick={onAddStation}
+        >
+          <Plus size={16} /> إضافة محطة جديدة
+        </Button>
+
+        {duplicateCount > 0 && onDeleteDuplicates && (
+          <Button
+            variant="outline"
+            className="flex items-center gap-2 text-amber-600 border-amber-300 hover:bg-amber-50 transition-all duration-300"
+            onClick={onDeleteDuplicates}
+          >
+            <AlertTriangle size={16} /> حذف المحطات المكررة ({duplicateCount})
+          </Button>
+        )}
       </div>
     </div>
   );
