@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, Plus, UserCog, User, Home, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import NotificationsPopup from "@/components/notifications/NotificationsPopup";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { motion } from "framer-motion";
 
 interface DashboardHeaderProps {
@@ -70,6 +71,12 @@ const DashboardHeader = ({
               <User size={16} /> الملف الشخصي
             </Button>
           </Link>
+
+          <LanguageSwitcher 
+            variant="outline" 
+            size="default" 
+            className="border-indigo-300 text-indigo-600 hover:bg-indigo-50" 
+          />
 
           <NotificationsPopup className="border-orange-300 text-orange-600 hover:text-orange-700 hover:bg-orange-50" />
 

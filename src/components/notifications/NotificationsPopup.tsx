@@ -17,13 +17,17 @@ interface NotificationsPopupProps {
 }
 
 const NotificationsPopup: React.FC<NotificationsPopupProps> = ({ className }) => {
-  const { notifications, isLoading, markAsRead } = useNotifications();
+  const { notifications, isLoading, markAsRead, deleteNotification } = useNotifications();
   
   // Count unread notifications
   const unreadCount = notifications.filter(n => !n.is_read).length;
   
   const handleNotificationClick = (id: string) => {
     markAsRead(id);
+  };
+
+  const handleDeleteNotification = (id: string) => {
+    deleteNotification(id);
   };
   
   return (
@@ -62,7 +66,7 @@ const NotificationsPopup: React.FC<NotificationsPopupProps> = ({ className }) =>
                   key={notification.id}
                   notification={notification}
                   onMarkAsRead={() => handleNotificationClick(notification.id)}
-                  onDelete={() => {}}
+                  onDelete={() => handleDeleteNotification(notification.id)}
                 />
               ))}
             </div>

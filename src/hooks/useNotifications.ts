@@ -10,27 +10,28 @@ export interface Notification {
   created_at: string;
   is_read: boolean;
   image_url?: string;
-  target_role?: string;
+  target_role: string;
 }
 
 export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
 
   const fetchNotifications = async () => {
     try {
-      setIsLoading(true);
+      // Get the current user's session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
       
-      // Get the current user's role
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      const userId = sessionData.session?.user?.id;
+      if (!userId) throw new Error('No user found in session');
       
-      // Get user's role
+      // Get the user's role from admin_users table
       const { data: userRoleData, error: userRoleError } = await supabase
         .from('admin_users')
         .select('role')
-        .eq('user_id', user.id)
+        .eq('id', userId)
         .single();
         
       if (userRoleError) throw userRoleError;
@@ -41,7 +42,7 @@ export const useNotifications = () => {
         targetRoles.push(userRoleData.role);
       }
       
-      // Fetch notifications for this user based on role
+      // Fetch notifications targeted to this user's role
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -55,14 +56,36 @@ export const useNotifications = () => {
       console.error('Error fetching notifications:', error);
       toast({
         variant: 'destructive',
-        title: 'خطأ في جلب الإشعارات',
-        description: 'لم نتمكن من جلب الإشعارات. الرجاء المحاولة مرة أخرى لاحقا.',
+        title: 'خطأ في تحميل الإشعارات',
+        description: 'حدث خطأ أثناء محاولة تحميل الإشعارات'
       });
+      setNotifications([]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchNotifications();
+    
+    // Subscribe to notification updates
+    const channel = supabase
+      .channel('notifications_changes')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'notifications' 
+        }, 
+        () => fetchNotifications()
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+  
   const markAsRead = async (id: string) => {
     try {
       const { error } = await supabase
@@ -73,25 +96,20 @@ export const useNotifications = () => {
       if (error) throw error;
       
       // Update local state
-      setNotifications(notifications.map(notification => 
-        notification.id === id 
-          ? { ...notification, is_read: true } 
-          : notification
+      setNotifications(notifications.map(n => 
+        n.id === id ? { ...n, is_read: true } : n
       ));
       
-      toast({
-        title: 'تم تحديد الإشعار كمقروء',
-      });
     } catch (error) {
       console.error('Error marking notification as read:', error);
       toast({
         variant: 'destructive',
-        title: 'حدثت مشكلة',
-        description: 'لم نتمكن من تحديد الإشعار كمقروء.',
+        title: 'خطأ في تحديث الإشعار',
+        description: 'حدث خطأ أثناء محاولة تحديث حالة الإشعار'
       });
     }
   };
-
+  
   const deleteNotification = async (id: string) => {
     try {
       const { error } = await supabase
@@ -102,31 +120,27 @@ export const useNotifications = () => {
       if (error) throw error;
       
       // Update local state
-      setNotifications(notifications.filter(notification => notification.id !== id));
+      setNotifications(notifications.filter(n => n.id !== id));
       
       toast({
-        title: 'تم حذف الإشعار بنجاح',
+        title: 'تم حذف الإشعار',
+        description: 'تم حذف الإشعار بنجاح'
       });
+      
     } catch (error) {
       console.error('Error deleting notification:', error);
       toast({
         variant: 'destructive',
-        title: 'حدثت مشكلة',
-        description: 'لم نتمكن من حذف الإشعار.',
+        title: 'خطأ في حذف الإشعار',
+        description: 'حدث خطأ أثناء محاولة حذف الإشعار'
       });
     }
   };
 
-  // Fetch notifications on component mount
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  return {
-    notifications,
-    isLoading,
+  return { 
+    notifications, 
+    isLoading, 
     markAsRead,
-    deleteNotification,
-    fetchNotifications
+    deleteNotification
   };
 };
