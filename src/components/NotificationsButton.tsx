@@ -40,8 +40,8 @@ const NotificationsButton = () => {
       
       const userRole = userRoleData.role;
       
-      // تحديد الأدوار المستهدفة لهذا المستخدم بنوع محدد للمصفوفة
-      let targetRoles = ['all'] as string[]; 
+      // تحديد الأدوار المستهدفة لهذا المستخدم - استخدام نوع محدد بوضوح
+      const targetRoles: string[] = ['all']; 
       if (userRole) {
         targetRoles.push(userRole);
       }
