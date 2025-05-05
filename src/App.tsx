@@ -13,6 +13,7 @@ import LoginPage from "./pages/Admin/Login";
 import Dashboard from "./pages/Admin/Dashboard";
 import UserManagement from "./pages/Admin/UserManagement";
 import ProfilePage from "./pages/Admin/Profile";
+import DatabaseManagement from "./pages/Admin/DatabaseManagement";
 import NotFound from "./pages/NotFound";
 import { ensureAdminExists } from "./utils/admin";
 import AuthGuard from "@/components/admin/AuthGuard";
@@ -52,6 +53,11 @@ const App = () => {
             <Route path="/admin/profile" element={
               <AuthGuard>
                 <ProfilePage />
+              </AuthGuard>
+            } />
+            <Route path="/admin/database" element={
+              <AuthGuard requireOwner={true}>
+                <DatabaseManagement />
               </AuthGuard>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

@@ -1,11 +1,12 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, Plus, UserCog, User, Home, AlertTriangle } from "lucide-react";
+import { LogOut, Plus, UserCog, User, Home, AlertTriangle, Database } from "lucide-react";
 import { Link } from "react-router-dom";
 import NotificationsPopup from "@/components/notifications/NotificationsPopup";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardHeaderProps {
   onLogout: () => void;
@@ -20,6 +21,29 @@ const DashboardHeader = ({
   onDeleteDuplicates,
   duplicateCount = 0,
 }: DashboardHeaderProps) => {
+  const [isOwner, setIsOwner] = useState(false);
+
+  useEffect(() => {
+    checkUserRole();
+  }, []);
+
+  const checkUserRole = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: userData } = await supabase
+          .from('admin_users')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        
+        setIsOwner(userData?.role === 'owner');
+      }
+    } catch (error) {
+      console.error('Error checking user role:', error);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 border-b-4 border-noor-purple">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -71,6 +95,17 @@ const DashboardHeader = ({
               <User size={16} /> الملف الشخصي
             </Button>
           </Link>
+
+          {isOwner && (
+            <Link to="/admin/database">
+              <Button
+                variant="outline"
+                className="flex items-center gap-2 text-cyan-600 border-cyan-300 hover:bg-cyan-50 transition-all duration-300"
+              >
+                <Database size={16} /> إدارة قاعدة البيانات
+              </Button>
+            </Link>
+          )}
 
           <LanguageSwitcher 
             variant="outline" 
