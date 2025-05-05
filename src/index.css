@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap');
 @import 'mapbox-gl/dist/mapbox-gl.css';
 
@@ -84,31 +83,45 @@
 @keyframes fade-in {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-10px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
 @keyframes fade-out {
   from {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
   to {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-10px) scale(0.95);
   }
 }
 
 .animate-fade-in {
-  animation: fade-in 0.3s ease-in-out forwards;
+  animation: fade-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .data-[state=closed]:animate-fade-out {
-  animation: fade-out 0.3s ease-in-out forwards;
+  animation: fade-out 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* تأثير وهج للرسالة الترحيبية */
+@keyframes gentle-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px 2px rgba(139, 92, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px 5px rgba(139, 92, 246, 0.5);
+  }
+}
+
+.toast-welcome {
+  animation: gentle-glow 2s infinite;
 }
 
 .map-container {
@@ -193,5 +206,3 @@ html, body, #root {
   margin-left: 5px;
   margin-right: 0;
 }
-
-

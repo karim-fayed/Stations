@@ -19,10 +19,10 @@ export function Toaster() {
           <Toast 
             key={id} 
             {...props}
-            className="animate-fade-in data-[state=closed]:animate-fade-out bg-gradient-to-r from-white to-gray-50 dark:from-slate-950 dark:to-slate-900 border-purple-200 shadow-xl"
+            className="animate-fade-in data-[state=closed]:animate-fade-out bg-gradient-to-r from-purple-50 to-white dark:from-slate-800 dark:to-slate-900 border-purple-300 shadow-xl rounded-lg"
           >
             <div className="grid gap-1">
-              {title && <ToastTitle className="text-lg font-bold text-noor-purple">{title}</ToastTitle>}
+              {title && <ToastTitle className="text-lg font-bold text-purple-700 dark:text-purple-300">{title}</ToastTitle>}
               {description && (
                 <ToastDescription className="text-sm opacity-90">{description}</ToastDescription>
               )}
@@ -32,7 +32,7 @@ export function Toaster() {
           </Toast>
         )
       })}
-      <ToastViewport className="fixed left-1/2 transform -translate-x-1/2 top-4 flex max-h-screen w-full flex-col-reverse gap-2 p-4 sm:flex-col md:max-w-[420px]" />
+      <ToastViewport className="fixed left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2 flex max-h-screen w-full flex-col-reverse gap-2 p-4 sm:flex-col md:max-w-[420px] z-[100]" />
     </ToastProvider>
   )
 }
