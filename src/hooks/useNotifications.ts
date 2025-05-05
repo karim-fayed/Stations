@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -38,7 +37,7 @@ export const useNotifications = () => {
       if (userRoleError) throw userRoleError;
       
       // تحديد الأدوار المستهدفة لهذا المستخدم - استخدام نوع محدد بوضوح
-      const targetRoles: string[] = ['all'];
+      const targetRoles: string[] = ['all']; 
       if (userRoleData?.role) {
         targetRoles.push(userRoleData.role);
       }
