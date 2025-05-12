@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { GasStation } from '@/types/station';
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from '@/i18n/LanguageContext';
 
 // Import custom hooks
 import { useMapInitialization } from '@/hooks/useMapInitialization';
@@ -29,7 +30,7 @@ import { createPopupContent, resetMap } from '@/utils/mapUtils';
 interface InteractiveMapProps {
   selectedStation: GasStation | null;
   onSelectStation: (station: GasStation | null) => void;
-  language: 'ar' | 'en';
+  language?: 'ar' | 'en'; // Hacemos el parámetro opcional
   stations: GasStation[];
   initBackgroundLocation?: boolean;
   onLocationInitialized?: () => void;
@@ -38,17 +39,22 @@ interface InteractiveMapProps {
 const InteractiveMap: React.FC<InteractiveMapProps> = ({
   selectedStation,
   onSelectStation,
-  language,
+  language: propLanguage,
   stations,
   initBackgroundLocation = false,
   onLocationInitialized
 }) => {
+  // Usamos el contexto de idioma
+  const { language: contextLanguage } = useLanguage();
+
+  // Usamos el idioma proporcionado como prop o el del contexto
+  const language = propLanguage || contextLanguage;
   const [selectedCity, setSelectedCity] = useState<string>('');
   const { toast } = useToast();
 
   // Load localization and cities data
   const texts = useMapLocalization(language);
-  const { cities } = useSaudiCities();
+  const { cities, refreshCities } = useSaudiCities();
 
   // Initialize map
   const { mapContainer, map, mapLoaded } = useMapInitialization(language);
@@ -172,6 +178,7 @@ const InteractiveMap: React.FC<InteractiveMapProps> = ({
         texts={texts}
         language={language}
         isSearching={isSearching}
+        refreshCities={refreshCities}
       />
 
       {/* Map Container */}

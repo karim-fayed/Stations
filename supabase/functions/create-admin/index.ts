@@ -1,6 +1,14 @@
-
+// @ts-ignore
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+// @ts-ignore
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+
+// @ts-ignore
+declare const Deno: {
+  env: {
+    get(key: string): string | undefined;
+  };
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,45 +27,45 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // First check if the user already exists
+    // قراءة بيانات المستخدم من body الطلب
+    const body = await req.json();
+    const { email, password, role, name } = body;
+    if (!email || !password || !role) {
+      throw new Error("يجب توفير البريد الإلكتروني وكلمة المرور والدور");
+    }
+
+    // التحقق من عدم وجود المستخدم مسبقًا
     const { data: existingUsers, error: searchError } = await supabaseClient.auth.admin.listUsers();
-    
     if (searchError) {
       throw new Error(`Error searching for existing users: ${searchError.message}`);
     }
-    
-    const existingUser = existingUsers?.users?.find(u => u.email === "a@a.com");
-    
+    const existingUser = existingUsers?.users?.find(u => u.email === email);
     if (existingUser) {
-      // Check if they're already in the admin_users table
+      // إضافة للسجل الإداري إذا لم يكن موجودًا
       const { data: adminData } = await supabaseClient
         .from('admin_users')
         .select('*')
         .eq('id', existingUser.id)
         .single();
-        
       if (!adminData) {
-        // Add to admin_users table if not already there
         const { error: insertError } = await supabaseClient
           .from('admin_users')
           .insert({
             id: existingUser.id,
             email: existingUser.email,
-            name: "Admin A",
-            role: "admin",
+            name: name || "Admin User",
+            role,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
-
         if (insertError) {
           throw insertError;
         }
       }
-      
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: "User already exists and is now an admin",
+          message: "User already exists and is now in admin_users table",
           user: existingUser
         }),
         {
@@ -67,35 +75,30 @@ serve(async (req) => {
       );
     }
 
-    // Create the new admin user if they don't exist
+    // إنشاء المستخدم الجديد
     const { data: userData, error: createError } = await supabaseClient.auth.admin.createUser({
-      email: "a@a.com",
-      password: "Password123!",
-      email_confirm: true // Auto-confirm the email
+      email,
+      password,
+      email_confirm: true
     });
-
     if (createError) {
       throw createError;
     }
-
-    // If user was created successfully, add them to the admin_users table
     if (userData.user) {
       const { error: insertError } = await supabaseClient
         .from('admin_users')
         .insert({
           id: userData.user.id,
           email: userData.user.email,
-          name: "Admin A",
-          role: "admin",
+          name: name || "Admin User",
+          role,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         });
-
       if (insertError) {
         throw insertError;
       }
     }
-
     return new Response(
       JSON.stringify({ 
         success: true, 

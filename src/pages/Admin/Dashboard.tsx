@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus } from "lucide-react";
+import { Plus, BarChart3, Building2, RefreshCw, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { GasStation } from "@/types/station";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, insertStationDirect } from "@/integrations/supabase/client";
 import {
   fetchStations,
   addStation,
@@ -16,6 +16,7 @@ import {
   checkDuplicateStationsInList,
   deleteDuplicateStations
 } from "@/services/stationService";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 import DashboardHeader from "@/components/admin/DashboardHeader";
 import DashboardTabs from "@/components/admin/DashboardTabs";
@@ -36,10 +37,14 @@ const Dashboard = () => {
   const [duplicateStation, setDuplicateStation] = useState<GasStation | null>(null);
   const [pendingAddStation, setPendingAddStation] = useState<Partial<GasStation> | null>(null);
   const [duplicateStationsCount, setDuplicateStationsCount] = useState<number>(0);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(1000); // زيادة حجم الصفحة لتحميل جميع المحطات - تم تغييره من 50 إلى 1000
+  const [totalStationsCount, setTotalStationsCount] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [isAddingInProgress, setIsAddingInProgress] = useState(false);
+  const { language, t } = useLanguage();
 
-  // التحقق من صلاحية المشرف
   useEffect(() => {
     const verifyAdmin = async () => {
       try {
@@ -50,32 +55,85 @@ const Dashboard = () => {
       } catch (error) {
         navigate("/admin/login");
       } finally {
-        loadStations();
+        loadStationsOptimized();
       }
     };
 
     verifyAdmin();
-  }, [navigate]);
+  }, [navigate, page]);
 
-  // التحقق من المحطات المكررة
-  useEffect(() => {
-    const checkDuplicates = async () => {
-      if (stations.length > 0) {
-        try {
-          const duplicateMap = await checkDuplicateStationsInList(stations);
-          let count = 0;
-          duplicateMap.forEach(isDuplicate => {
-            if (isDuplicate) count++;
-          });
-          setDuplicateStationsCount(count);
-        } catch (error) {
-          console.error("Error checking for duplicate stations:", error);
-        }
+  const checkDuplicates = useCallback(async (stationsList: GasStation[]) => {
+    if (stationsList.length > 0) {
+      try {
+        const duplicateMap = await checkDuplicateStationsInList(stationsList);
+        let count = 0;
+        duplicateMap.forEach(isDuplicate => {
+          if (isDuplicate) count++;
+        });
+        setDuplicateStationsCount(count);
+      } catch (error) {
+        console.error("Error checking for duplicate stations:", error);
       }
-    };
+    }
+  }, []);
 
-    checkDuplicates();
-  }, [stations]);
+  useEffect(() => {
+    checkDuplicates(stations);
+  }, [stations, checkDuplicates]);
+
+  const loadStationsOptimized = async () => {
+    try {
+      setIsLoading(true);
+
+      // إنشاء مهمتين متوازيتين: واحدة للعدد وواحدة للبيانات
+      const [countPromise, dataPromise] = await Promise.allSettled([
+        // مهمة الحصول على العدد الإجمالي
+        supabase
+          .from('stations')
+          .select('*', { count: 'exact', head: true }),
+
+        // مهمة الحصول على البيانات المصفحة مع الترتيب
+        supabase
+          .from('stations')
+          .select('*')
+          .range((page - 1) * pageSize, page * pageSize - 1)
+          .order('created_at', { ascending: false })
+      ]);
+
+      // معالجة نتيجة العد
+      if (countPromise.status === 'fulfilled') {
+        setTotalStationsCount(countPromise.value.count || 0);
+      } else {
+        console.error("Error fetching count:", countPromise.reason);
+        setTotalStationsCount(0);
+      }
+
+      // معالجة نتيجة البيانات
+      if (dataPromise.status === 'fulfilled') {
+        setStations(dataPromise.value.data || []);
+      } else {
+        console.error("Error fetching data:", dataPromise.reason);
+        setStations([]);
+        toast({
+          title: "خطأ في تحميل البيانات",
+          description: "حدث خطأ أثناء تحميل بيانات المحطات",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error loading stations:", error);
+      toast({
+        title: "خطأ في تحميل البيانات",
+        description: "حدث خطأ أثناء تحميل بيانات المحطات",
+        variant: "destructive",
+      });
+      setStations([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // تم إزالة وظائف التنقل بين الصفحات لأننا نقوم بتحميل جميع المحطات مرة واحدة
 
   const loadStations = async () => {
     try {
@@ -95,7 +153,7 @@ const Dashboard = () => {
 
   const handleAddStation = async () => {
     try {
-      if (!currentStation.name || !currentStation.region || 
+      if (!currentStation.name || !currentStation.region ||
           currentStation.latitude === undefined || currentStation.longitude === undefined) {
         toast({
           title: "بيانات غير مكتملة",
@@ -126,30 +184,106 @@ const Dashboard = () => {
         console.error("Error checking for duplicate station:", duplicateError);
       }
 
-      // إذا لم تكن هناك محطة مكررة، نضيف المحطة الجديدة
-      const newStation = await addStation({
-        name: currentStation.name,
-        region: currentStation.region,
-        sub_region: currentStation.sub_region || '',
-        latitude: Number(currentStation.latitude),
-        longitude: Number(currentStation.longitude),
-        fuel_types: currentStation.fuel_types || '',
-        additional_info: currentStation.additional_info || ''
-      });
+      // بدء عملية الإضافة
+      setIsAddingInProgress(true);
 
-      setStations([...stations, newStation]);
-      setIsAddDialogOpen(false);
-      setCurrentStation({});
+      try {
+        // تحضير بيانات المحطة
+        const stationData = {
+          name: currentStation.name,
+          region: currentStation.region || '',
+          sub_region: currentStation.sub_region || '',
+          latitude: Number(currentStation.latitude),
+          longitude: Number(currentStation.longitude),
+          fuel_types: currentStation.fuel_types || '',
+          additional_info: currentStation.additional_info || ''
+        };
 
-      toast({
-        title: "تمت الإضافة بنجاح",
-        description: `تمت إضافة محطة ${newStation.name} بنجاح`,
-      });
+        let stationResult;
+        let attempts = 0;
+        const maxAttempts = 3;
+        let lastError;
+
+        // محاولة الإضافة عدة مرات مع تأخير متزايد بين المحاولات
+        while (attempts < maxAttempts) {
+          attempts++;
+          try {
+            console.log(`Attempt ${attempts} to add station`);
+
+            // إظهار رسالة أثناء المحاولة إذا كانت ليست المحاولة الأولى
+            if (attempts > 1) {
+              toast({
+                title: `المحاولة ${attempts} من ${maxAttempts}`,
+                description: "يتم إعادة محاولة إضافة المحطة...",
+                duration: 2000,
+              });
+            }
+
+            // استخدام الدالة الجديدة المحسنة
+            stationResult = await insertStationDirect(stationData);
+            console.log(`Station added successfully on attempt ${attempts}:`, stationResult);
+
+            // إذا نجحت العملية، نتوقف
+            break;
+          } catch (error) {
+            console.error(`Error on attempt ${attempts}:`, error);
+            lastError = error;
+
+            // إذا وصلنا للمحاولة الأخيرة، نرمي الخطأ للمعالجة الخارجية
+            if (attempts === maxAttempts) {
+              throw error;
+            }
+
+            // انتظار قبل المحاولة التالية (زيادة الانتظار مع كل محاولة)
+            const delayTime = attempts * 1500; // زيادة التأخير مع كل محاولة
+            await new Promise(resolve => setTimeout(resolve, delayTime));
+          }
+        }
+
+        if (!stationResult) {
+          throw new Error("فشلت إضافة المحطة بعد عدة محاولات");
+        }
+
+        // تحديث قائمة المحطات
+        setStations(prevStations => [stationResult, ...prevStations]);
+        setIsAddDialogOpen(false);
+        setCurrentStation({});
+
+        // إعادة تحميل البيانات لتحديث العدد الإجمالي
+        loadStationsOptimized();
+
+        toast({
+          title: "تمت الإضافة بنجاح",
+          description: `تمت إضافة محطة ${stationResult.name} بنجاح`,
+        });
+      } finally {
+        setIsAddingInProgress(false);
+      }
     } catch (error) {
       console.error("Error adding station:", error);
+
+      // تحسين رسالة الخطأ المعروضة للمستخدم
+      let errorMsg = "حدث خطأ أثناء إضافة المحطة الجديدة";
+
+      if (error instanceof Error) {
+        // إذا كان الخطأ له رسالة محددة
+        errorMsg = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        // إذا كان من نوع خطأ Supabase
+        if ('code' in error && typeof error.code === 'string') {
+          if (error.code === '21000') {
+            errorMsg = "خطأ في سياسات قاعدة البيانات. يرجى التواصل مع المطور.";
+          } else if (error.code === '42501') {
+            errorMsg = "ليس لديك صلاحيات كافية لإضافة محطة جديدة.";
+          } else if ('message' in error && typeof error.message === 'string') {
+            errorMsg = error.message;
+          }
+        }
+      }
+
       toast({
         title: "خطأ في إضافة المحطة",
-        description: (error as Error).message || "حدث خطأ أثناء إضافة المحطة الجديدة",
+        description: errorMsg,
         variant: "destructive",
       });
     }
@@ -158,39 +292,81 @@ const Dashboard = () => {
   // إضافة المحطة بالقوة رغم وجود محطة مكررة
   const handleForceAddStation = async () => {
     try {
-      if (!pendingAddStation) return;
+      if (!pendingAddStation) {
+        console.error("No pending station to add");
+        return;
+      }
 
-      // تجاوز التحقق من المحطات المكررة
-      const { data, error } = await supabase
-        .from("stations")
-        .insert({
+      console.log("Force adding station:", pendingAddStation);
+
+      // بدء عملية الإضافة
+      setIsAddingInProgress(true);
+
+      try {
+        // تحضير بيانات المحطة
+        const stationData = {
           name: pendingAddStation.name,
-          region: pendingAddStation.region,
+          region: pendingAddStation.region || '',
           sub_region: pendingAddStation.sub_region || '',
           latitude: Number(pendingAddStation.latitude),
           longitude: Number(pendingAddStation.longitude),
           fuel_types: pendingAddStation.fuel_types || '',
           additional_info: pendingAddStation.additional_info || ''
-        })
-        .select()
-        .single();
+        };
 
-      if (error) throw error;
+        let stationResult;
+        let attempts = 0;
+        const maxAttempts = 3;
 
-      const newStation = data as GasStation;
-      setStations([...stations, newStation]);
+        // محاولة الإضافة عدة مرات مع تأخير متزايد بين المحاولات
+        while (attempts < maxAttempts) {
+          attempts++;
+          try {
+            console.log(`Force add attempt ${attempts}`);
 
-      // إغلاق النوافذ وإعادة تعيين الحالة
-      setIsDuplicateDialogOpen(false);
-      setIsAddDialogOpen(false);
-      setPendingAddStation(null);
-      setDuplicateStation(null);
-      setCurrentStation({});
+            // استخدام الدالة الجديدة المحسنة
+            stationResult = await insertStationDirect(stationData);
+            console.log(`Station force-added successfully on attempt ${attempts}:`, stationResult);
 
-      toast({
-        title: "تمت الإضافة بنجاح",
-        description: `تمت إضافة محطة ${newStation.name} بنجاح`,
-      });
+            // إذا نجحت العملية، نتوقف
+            break;
+          } catch (error) {
+            console.error(`Error on force add attempt ${attempts}:`, error);
+
+            // إذا وصلنا للمحاولة الأخيرة، نرمي الخطأ للمعالجة الخارجية
+            if (attempts === maxAttempts) {
+              throw error;
+            }
+
+            // انتظار قبل المحاولة التالية (زيادة الانتظار مع كل محاولة)
+            await new Promise(resolve => setTimeout(resolve, attempts * 1000));
+          }
+        }
+
+        if (!stationResult) {
+          throw new Error("فشلت إضافة المحطة بالقوة بعد عدة محاولات");
+        }
+
+        // تحديث قائمة المحطات
+        setStations(prevStations => [...prevStations, stationResult]);
+
+        // إغلاق النوافذ وإعادة تعيين الحالة
+        setIsDuplicateDialogOpen(false);
+        setIsAddDialogOpen(false);
+        setPendingAddStation(null);
+        setDuplicateStation(null);
+        setCurrentStation({});
+
+        // إعادة تحميل البيانات لتحديث العدد الإجمالي
+        loadStationsOptimized();
+
+        toast({
+          title: "تمت الإضافة بنجاح",
+          description: `تمت إضافة محطة ${stationResult.name} بنجاح`,
+        });
+      } finally {
+        setIsAddingInProgress(false);
+      }
     } catch (error) {
       console.error("Error force adding station:", error);
       toast({
@@ -298,6 +474,11 @@ const Dashboard = () => {
     }
   };
 
+  // التعامل مع تغيير القيم في القوائم المنسدلة
+  const handleSelectChange = (name: string, value: string) => {
+    setCurrentStation({ ...currentStation, [name]: value });
+  };
+
   const handleOpenAddDialog = () => {
     setCurrentStation({});
     setIsAddDialogOpen(true);
@@ -313,18 +494,13 @@ const Dashboard = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  // فتح نافذة حذف المحطات المكررة
-  const handleOpenDeleteDuplicatesDialog = () => {
-    setIsDeleteDuplicatesDialogOpen(true);
-  };
-
   // حذف المحطات المكررة
   const handleDeleteDuplicates = async () => {
     try {
       const result = await deleteDuplicateStations(stations);
 
       // تحديث قائمة المحطات بعد الحذف
-      loadStations();
+      loadStationsOptimized();
 
       // إغلاق النافذة
       setIsDeleteDuplicatesDialogOpen(false);
@@ -344,104 +520,141 @@ const Dashboard = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-purple-50 to-orange-50 rtl">
-      <div className="container mx-auto py-8 px-4">
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <DashboardHeader
-            onLogout={handleLogout}
-            onAddStation={handleOpenAddDialog}
-            onDeleteDuplicates={duplicateStationsCount > 0 ? handleOpenDeleteDuplicatesDialog : undefined}
-            duplicateCount={duplicateStationsCount}
-          />
-        </motion.div>
+  const handleOpenDeleteDuplicatesDialog = () => {
+    setIsDeleteDuplicatesDialogOpen(true);
+  };
 
+  const handleCloseDeleteDuplicatesDialog = () => {
+    setIsDeleteDuplicatesDialogOpen(false);
+  };
+
+  // إحصائيات
+  // استخدام العدد الإجمالي من قاعدة البيانات بدلاً من طول المصفوفة المحلية
+  const totalStations = totalStationsCount;
+  const duplicateCount = duplicateStationsCount;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-white via-purple-50 to-orange-50">
+      {/* هيدر متحرك */}
+      <DashboardHeader
+        onLogout={handleLogout}
+        onAddStation={handleOpenAddDialog}
+        onDeleteDuplicates={duplicateCount > 0 ? handleOpenDeleteDuplicatesDialog : undefined}
+        duplicateCount={duplicateCount}
+        isAddingInProgress={isAddingInProgress}
+      />
+
+      {/* بطاقات إحصائية */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.7 }}
+        className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+      >
+        <motion.div
+          whileHover={{ scale: 1.03 }}
+          className="bg-white rounded-xl shadow-md p-6 flex items-center gap-4 border-b-4 border-noor-purple"
+        >
+          <Building2 className="h-10 w-10 text-noor-purple" />
+          <div>
+            <div className="text-2xl font-bold text-noor-purple">{totalStations}</div>
+            <div className="text-gray-600">{language === 'ar' ? 'إجمالي المحطات' : 'Total Stations'}</div>
+          </div>
+        </motion.div>
+        <motion.div
+          whileHover={{ scale: 1.03 }}
+          className="bg-white rounded-xl shadow-md p-6 flex items-center gap-4 border-b-4 border-orange-400"
+        >
+          <BarChart3 className="h-10 w-10 text-orange-400" />
+          <div>
+            <div className="text-2xl font-bold text-orange-500">{duplicateCount}</div>
+            <div className="text-gray-600">{language === 'ar' ? 'محطات مكررة' : 'Duplicate Stations'}</div>
+          </div>
+        </motion.div>
+        <motion.div
+          whileHover={{ scale: 1.03 }}
+          className="bg-white rounded-xl shadow-md p-6 flex items-center gap-4 border-b-4 border-green-400"
+        >
+          {isLoading ? (
+            <Loader2 className="h-10 w-10 text-green-400 animate-spin" />
+          ) : (
+            <RefreshCw className="h-10 w-10 text-green-400" />
+          )}
+          <div>
+            <div className="text-2xl font-bold text-green-500">
+              {isLoading
+                ? (language === 'ar' ? 'جاري التحميل...' : 'Loading...')
+                : (language === 'ar' ? 'محدث' : 'Updated')}
+            </div>
+            <div className="text-gray-600">{language === 'ar' ? 'حالة البيانات' : 'Data Status'}</div>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      {/* تبويبات وإدارة المحطات */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.7 }}
+        className="container mx-auto"
+      >
         {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-noor-purple border-opacity-30 border-t-noor-orange"></div>
+          <div className="flex flex-col items-center justify-center p-12">
+            <Loader2 className="h-12 w-12 text-noor-purple animate-spin mb-4" />
+            <div className="text-xl text-noor-purple">جاري تحميل بيانات المحطات...</div>
           </div>
         ) : (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.7, delay: 0.2 }}
-            className="mt-6"
-          >
-            <DashboardTabs
-              stations={stations}
-              onEdit={handleOpenEditDialog}
-              onDelete={handleOpenDeleteDialog}
-            />
-          </motion.div>
+          <DashboardTabs
+            stations={stations}
+            onEdit={handleOpenEditDialog}
+            onDelete={handleOpenDeleteDialog}
+          />
         )}
+      </motion.div>
 
-      {/* نافذة إضافة محطة جديدة */}
+      {/* النوافذ المنبثقة */}
       <StationDialog
-        isOpen={isAddDialogOpen}
+        isOpen={isAddDialogOpen || isEditDialogOpen}
+        onClose={() => { setIsAddDialogOpen(false); setIsEditDialogOpen(false); }}
         station={currentStation}
-        isEditing={false}
+        isEditing={isEditDialogOpen}
         onInputChange={handleInputChange}
-        onClose={() => setIsAddDialogOpen(false)}
-        onSubmit={handleAddStation}
+        onSelectChange={handleSelectChange}
+        onSubmit={isAddDialogOpen ? handleAddStation : handleEditStation}
       />
-
-      {/* نافذة تحرير محطة */}
-      <StationDialog
-        isOpen={isEditDialogOpen}
-        station={currentStation}
-        isEditing={true}
-        onInputChange={handleInputChange}
-        onClose={() => setIsEditDialogOpen(false)}
-        onSubmit={handleEditStation}
-      />
-
-      {/* نافذة حذف محطة */}
       <DeleteStationDialog
         isOpen={isDeleteDialogOpen}
-        stationName={currentStation.name || ""}
-        stationId={currentStation.id}
         onClose={() => setIsDeleteDialogOpen(false)}
+        stationName={currentStation.name || ''}
+        stationId={currentStation.id as string}
         onConfirm={handleDeleteStation}
       />
-
-      {/* نافذة المحطة المكررة */}
       <DuplicateStationDialog
         isOpen={isDuplicateDialogOpen}
+        onClose={() => setIsDuplicateDialogOpen(false)}
         duplicateStation={duplicateStation}
-        onClose={() => {
-          setIsDuplicateDialogOpen(false);
-          setPendingAddStation(null);
-          setDuplicateStation(null);
-        }}
-        onDelete={(id) => {
-          // حذف المحطة المكررة ثم إضافة المحطة الجديدة
-          handleDeleteStation(id);
-          setIsDuplicateDialogOpen(false);
-          // بعد الحذف، نضيف المحطة الجديدة
-          if (pendingAddStation) {
-            const stationToAdd = { ...pendingAddStation };
-            setPendingAddStation(null);
-            setDuplicateStation(null);
-            setCurrentStation(stationToAdd);
-            // استخدام setTimeout لضمان اكتمال عملية الحذف قبل الإضافة
-            setTimeout(() => handleAddStation(), 500);
-          }
-        }}
+        onDelete={id => handleDeleteStation(id)}
         onContinueAnyway={handleForceAddStation}
       />
-
-      {/* نافذة حذف المحطات المكررة */}
       <DeleteDuplicatesDialog
         isOpen={isDeleteDuplicatesDialogOpen}
-        duplicateCount={duplicateStationsCount}
-        onClose={() => setIsDeleteDuplicatesDialogOpen(false)}
+        onClose={handleCloseDeleteDuplicatesDialog}
+        duplicateCount={duplicateCount}
         onConfirm={handleDeleteDuplicates}
       />
-      </div>
+
+      {/* Se eliminaron los controles de paginación duplicados */}
+
+      {isAddingInProgress && (
+        <div className="fixed top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
+            <Loader2 className="h-10 w-10 text-noor-purple animate-spin mb-4" />
+            <div className="text-lg font-semibold">
+              {language === 'ar' ? 'جاري إضافة المحطة...' : 'Adding station...'}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

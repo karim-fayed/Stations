@@ -104,13 +104,28 @@ export default {
 				'pulse-light': {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.7' },
-				}
+				},
+				fadeIn: {
+					'0%': { opacity: '0', transform: 'translateY(10px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' },
+				  },
+				  slideIn: {
+					'0%': { opacity: '0', transform: 'translateX(-100%)' }, // من اليسار
+					'100%': { opacity: '1', transform: 'translateX(0)' },
+				  },
+				  bounce: {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-10px)' },
+				  }
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'pulse-light': 'pulse-light 2s ease-in-out infinite',
 				'spin-slow': 'spin 15s linear infinite',
+				'fadeIn': 'fadeIn 0.3s ease-out',
+				'slide-in': 'slideIn 0.5s ease-out',
+				'bounce': 'bounce 1s ease infinite',
 			},
 			fontFamily: {
 				cairo: ['Cairo', 'sans-serif'],

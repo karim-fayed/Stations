@@ -1,13 +1,16 @@
 /**
  * وحدة للتخزين الآمن للبيانات المحلية
  * تستخدم التشفير لحماية البيانات المخزنة في localStorage
+ * تم تحديثها لاستخدام خوارزمية تشفير أقوى (AES)
  */
 
-// مفتاح التشفير (يجب أن يكون فريدًا لكل تطبيق)
-const ENCRYPTION_KEY = 'station-noor-secure-storage-key';
+import CryptoJS from 'crypto-js';
+
+// الحصول على مفتاح التشفير من المتغيرات البيئية أو استخدام مفتاح افتراضي
+const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || 'station-noor-secure-storage-key-v2';
 
 // بادئة للمفاتيح المشفرة
-const ENCRYPTED_PREFIX = 'encrypted:';
+const ENCRYPTED_PREFIX = 'encrypted_v2:';
 
 // قائمة المفاتيح الحساسة التي يجب تشفيرها دائمًا
 const SENSITIVE_KEYS = [
@@ -18,7 +21,14 @@ const SENSITIVE_KEYS = [
   'key',
   'secret',
   'credentials',
-  'user'
+  'user',
+  'api',
+  'mapbox',
+  'supabase',
+  'firebase',
+  'admin',
+  'access',
+  'refresh'
 ];
 
 /**
@@ -33,44 +43,97 @@ const isSensitiveKey = (key: string): boolean => {
 };
 
 /**
- * تشفير نص باستخدام مفتاح
+ * تشفير نص باستخدام خوارزمية AES
  * @param text النص المراد تشفيره
  * @returns النص المشفر
  */
 const encrypt = (text: string): string => {
   try {
-    // تنفيذ تشفير بسيط (في الإنتاج، استخدم مكتبة تشفير قوية)
-    const result = [];
-    for (let i = 0; i < text.length; i++) {
-      const charCode = text.charCodeAt(i) ^ ENCRYPTION_KEY.charCodeAt(i % ENCRYPTION_KEY.length);
-      result.push(String.fromCharCode(charCode));
-    }
-    return btoa(encodeURIComponent(result.join('')));
+    if (!text) return '';
+
+    // إنشاء IV عشوائي (متجه التهيئة)
+    const iv = CryptoJS.lib.WordArray.random(16);
+
+    // تشفير النص باستخدام AES
+    const encrypted = CryptoJS.AES.encrypt(text, ENCRYPTION_KEY, {
+      iv: iv,
+      mode: CryptoJS.mode.CBC,
+      padding: CryptoJS.pad.Pkcs7
+    });
+
+    // دمج IV مع النص المشفر للتمكن من فك التشفير لاحقًا
+    const result = iv.concat(encrypted.ciphertext).toString(CryptoJS.enc.Base64);
+
+    return result;
   } catch (error) {
     console.error('Error encrypting data:', error);
-    // في حالة الخطأ، نعيد النص الأصلي
+    // في حالة الخطأ، نعيد النص الأصلي مع تحذير
+    console.warn('Returning unencrypted data due to encryption error');
     return text;
   }
 };
 
 /**
- * فك تشفير نص باستخدام مفتاح
+ * فك تشفير نص مشفر باستخدام خوارزمية AES
  * @param encryptedText النص المشفر
- * @returns النص الأصلي
+ * @returns النص الأصلي بعد فك التشفير
  */
 const decrypt = (encryptedText: string): string => {
   try {
-    const text = decodeURIComponent(atob(encryptedText));
-    const result = [];
-    for (let i = 0; i < text.length; i++) {
-      const charCode = text.charCodeAt(i) ^ ENCRYPTION_KEY.charCodeAt(i % ENCRYPTION_KEY.length);
-      result.push(String.fromCharCode(charCode));
-    }
-    return result.join('');
+    if (!encryptedText) return '';
+
+    // تحويل النص المشفر من Base64 إلى WordArray
+    const ciphertext = CryptoJS.enc.Base64.parse(encryptedText);
+
+    // استخراج IV (أول 16 بايت)
+    const iv = CryptoJS.lib.WordArray.create(
+      ciphertext.words.slice(0, 4),
+      16
+    );
+
+    // استخراج النص المشفر (باقي البيانات)
+    const encryptedData = CryptoJS.lib.WordArray.create(
+      ciphertext.words.slice(4),
+      ciphertext.sigBytes - 16
+    );
+
+    // إنشاء كائن CipherParams
+    const cipherParams = CryptoJS.lib.CipherParams.create({
+      ciphertext: encryptedData
+    });
+
+    // فك التشفير
+    const decrypted = CryptoJS.AES.decrypt(
+      cipherParams,
+      ENCRYPTION_KEY,
+      {
+        iv: iv,
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7
+      }
+    );
+
+    return decrypted.toString(CryptoJS.enc.Utf8);
   } catch (error) {
     console.error('Error decrypting data:', error);
-    // في حالة الخطأ، نعيد النص المشفر
-    return encryptedText;
+
+    // محاولة فك التشفير بالطريقة القديمة إذا فشلت الطريقة الجديدة
+    try {
+      // هذا للتوافق مع البيانات المشفرة بالطريقة القديمة
+      const text = decodeURIComponent(atob(encryptedText));
+      const result = [];
+      const oldKey = 'station-noor-secure-storage-key';
+
+      for (let i = 0; i < text.length; i++) {
+        const charCode = text.charCodeAt(i) ^ oldKey.charCodeAt(i % oldKey.length);
+        result.push(String.fromCharCode(charCode));
+      }
+
+      return result.join('');
+    } catch (legacyError) {
+      console.error('Error decrypting with legacy method:', legacyError);
+      return encryptedText;
+    }
   }
 };
 
@@ -103,7 +166,8 @@ const sanitizeData = (data: any): any => {
 };
 
 /**
- * واجهة التخزين الآمن
+ * واجهة التخزين الآمن - الإصدار المحسن
+ * يستخدم تشفير AES مع تطهير البيانات وحماية إضافية
  */
 export const secureStorage = {
   /**
@@ -122,10 +186,10 @@ export const secureStorage = {
 
       // التحقق مما إذا كان يجب تشفير البيانات
       if (forceEncryption || isSensitiveKey(key)) {
-        // تشفير القيمة
+        // تشفير القيمة باستخدام الخوارزمية المحسنة
         const encryptedValue = encrypt(jsonValue);
 
-        // تخزين القيمة المشفرة
+        // تخزين القيمة المشفرة مع البادئة الجديدة
         localStorage.setItem(key, ENCRYPTED_PREFIX + encryptedValue);
       } else {
         // تخزين القيمة بدون تشفير
@@ -152,7 +216,7 @@ export const secureStorage = {
         return defaultValue;
       }
 
-      // إذا كانت القيمة مشفرة، فك تشفيرها
+      // التعامل مع القيم المشفرة بالإصدار الجديد
       if (storedValue.startsWith(ENCRYPTED_PREFIX)) {
         try {
           const encryptedValue = storedValue.substring(ENCRYPTED_PREFIX.length);
@@ -166,12 +230,26 @@ export const secureStorage = {
           }
         } catch (decryptError) {
           console.warn(`Error decrypting item ${key}:`, decryptError);
-          // في حالة فشل فك التشفير، نحاول قراءة القيمة كما هي
+          return defaultValue;
+        }
+      }
+
+      // التعامل مع القيم المشفرة بالإصدار القديم
+      if (storedValue.startsWith('encrypted:')) {
+        try {
+          const encryptedValue = storedValue.substring('encrypted:'.length);
+          // استخدام دالة فك التشفير التي تدعم الإصدار القديم
+          const decryptedValue = decrypt(encryptedValue);
+
+          // تحويل القيمة من سلسلة JSON
           try {
-            return JSON.parse(storedValue.substring(ENCRYPTED_PREFIX.length)) as T;
+            return JSON.parse(decryptedValue) as T;
           } catch {
-            return defaultValue;
+            return decryptedValue as unknown as T;
           }
+        } catch (decryptError) {
+          console.warn(`Error decrypting legacy item ${key}:`, decryptError);
+          return defaultValue;
         }
       }
 
@@ -221,6 +299,41 @@ export const secureStorage = {
     } catch (error) {
       console.error(`Error checking item ${key}:`, error);
       return false;
+    }
+  },
+
+  /**
+   * إعادة تشفير جميع البيانات المخزنة باستخدام الخوارزمية الجديدة
+   * مفيد عند الترقية من الإصدار القديم إلى الإصدار الجديد
+   */
+  upgradeEncryption: (): void => {
+    try {
+      const keys = Object.keys(localStorage);
+      let upgradedCount = 0;
+
+      for (const key of keys) {
+        const value = localStorage.getItem(key);
+
+        // تحديث القيم المشفرة بالإصدار القديم فقط
+        if (value && value.startsWith('encrypted:')) {
+          try {
+            const encryptedValue = value.substring('encrypted:'.length);
+            const decryptedValue = decrypt(encryptedValue);
+
+            // إعادة تشفير القيمة باستخدام الخوارزمية الجديدة
+            const newEncryptedValue = encrypt(decryptedValue);
+            localStorage.setItem(key, ENCRYPTED_PREFIX + newEncryptedValue);
+
+            upgradedCount++;
+          } catch (error) {
+            console.error(`Error upgrading encryption for key ${key}:`, error);
+          }
+        }
+      }
+
+      console.log(`Upgraded encryption for ${upgradedCount} items`);
+    } catch (error) {
+      console.error('Error upgrading encryption:', error);
     }
   }
 };

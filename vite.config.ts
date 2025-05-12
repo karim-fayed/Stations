@@ -14,7 +14,10 @@ export default defineConfig(({ mode }) => ({
         target: 'https://jtnqcyouncjoebqcalzh.supabase.co/functions/v1/create-admin-account',
         changeOrigin: true,
         rewrite: (_path) => '',
-      }
+      },
+      hmr: {
+        overlay: false,
+      },
     }
   },
   plugins: [
@@ -33,5 +36,22 @@ export default defineConfig(({ mode }) => ({
     'process.env': {
       NODE_ENV: mode,
     },
+  },
+  build: {
+    target: 'esnext',
+    minify: 'terser',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          // Eliminamos la línea problemática con el comodín
+          // y dejamos que Vite maneje los paquetes de Radix UI automáticamente
+        },
+      },
+    },
+    chunkSizeWarningLimit: 1000,
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom'],
   },
 }));

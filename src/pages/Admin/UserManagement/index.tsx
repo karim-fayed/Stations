@@ -1,108 +1,96 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useNavigate, Link } from "react-router-dom";
-import UserTable from "./components/UserTable";
+import { Link } from "react-router-dom";
+import { UserTable } from "./components/UserTable";
 import CreateUserDialog from "./components/CreateUserDialog";
 import PasswordResetDialog from "./components/PasswordResetDialog";
 import DeleteUserDialog from "./components/DeleteUserDialog";
 import PromoteToOwnerDialog from "./components/PromoteToOwnerDialog";
 import { useUserManagement, User } from "./hooks/useUserManagement";
-import { Loader2, Home, ArrowLeft, Plus } from "lucide-react";
+import { Loader2, Home, ArrowLeft, Plus, Search } from "lucide-react";
 import { motion } from "framer-motion";
+import { AddUserDialog } from "./components/AddUserDialog";
+import { EditUserDialog } from "./components/EditUserDialog";
+import { NewUser, UserUpdate } from "./types";
 
 const UserManagement = () => {
-  const navigate = useNavigate();
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [search, setSearch] = useState("");
+  const [lastSignInFilter, setLastSignInFilter] = useState("all");
   const {
-    users,
+    users: fetchedUsers,
     loading,
     currentUser,
+    checkingPermissions,
+    fetchUsers,
     createUser,
     initiatePasswordReset,
     changeUserPassword,
     changeUserRole,
-    deleteUser
+    handleDeleteUser
   } = useUserManagement();
 
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isPromoteToOwnerDialogOpen, setIsPromoteToOwnerDialogOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [checkingPermissions, setCheckingPermissions] = useState(true);
-
-  // التحقق من صلاحيات المستخدم
   useEffect(() => {
-    const checkPermissions = async () => {
-      setCheckingPermissions(true);
+    if (fetchedUsers) {
+      setUsers(fetchedUsers);
+    }
+  }, [fetchedUsers]);
 
-      // إذا كان المستخدم ليس مالكًا، قم بتوجيهه إلى لوحة التحكم
-      if (currentUser && currentUser.role !== 'owner') {
-        navigate('/admin/dashboard');
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+  };
+
+  const handleAddUser = async (newUser: NewUser) => {
+    const success = await createUser(newUser);
+    if (success) {
+      setShowAddUser(false);
+      await fetchUsers();
+    }
+    return success;
+  };
+
+  const handleUpdateUser = async (user: User, updates: UserUpdate) => {
+    if (updates.password) {
+      return await changeUserPassword(user, updates.password);
+    }
+    if (updates.role) {
+      return await changeUserRole(user, updates.role);
+    }
+    return false;
+  };
+
+  const handleUserDeleted = (userId: string) => {
+    setUsers(users.filter(user => user.id !== userId));
+  };
+
+  // تصفية المستخدمين حسب البحث والفلترة
+  const filteredUsers = users.filter(user => {
+    const q = search.trim().toLowerCase();
+    let match = true;
+    if (q) {
+      match = (
+        user.email.toLowerCase().includes(q) ||
+        (user.name && user.name.toLowerCase().includes(q)) ||
+        (user.role && user.role.toLowerCase().includes(q))
+      );
+    }
+    // فلترة حسب حالة آخر تسجيل دخول
+    if (lastSignInFilter !== "all") {
+      const now = new Date();
+      let isActive = false;
+      if (user.last_sign_in_at) {
+        const lastSignIn = new Date(user.last_sign_in_at);
+        const diffDays = (now.getTime() - lastSignIn.getTime()) / (1000 * 60 * 60 * 24);
+        isActive = diffDays <= 30;
       }
-
-      setCheckingPermissions(false);
-    };
-
-    if (currentUser !== null) {
-      checkPermissions();
+      if (lastSignInFilter === "active" && !isActive) return false;
+      if (lastSignInFilter === "inactive" && isActive) return false;
+      if (lastSignInFilter === "inactive" && !user.last_sign_in_at) return true;
     }
-  }, [currentUser, navigate]);
-
-  const handleOpenPasswordDialog = (user: User) => {
-    setSelectedUser(user);
-    setIsPasswordDialogOpen(true);
-  };
-
-  const handleOpenDeleteDialog = (user: User) => {
-    setSelectedUser(user);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleOpenPromoteToOwnerDialog = (user: User) => {
-    setSelectedUser(user);
-    setIsPromoteToOwnerDialogOpen(true);
-  };
-
-  const handleDeleteUser = async () => {
-    if (selectedUser) {
-      const success = await deleteUser(selectedUser);
-      if (success) {
-        setIsDeleteDialogOpen(false);
-      }
-    }
-  };
-
-  // تغيير دور المستخدم
-  const handleChangeRole = async (user: User, newRole: string) => {
-    // إذا كان الدور الجديد هو "owner"، نفتح نافذة تأكيد بكلمة المرور
-    if (newRole === 'owner') {
-      setSelectedUser(user);
-      setIsPromoteToOwnerDialogOpen(true);
-    } else {
-      // للأدوار الأخرى، نغير الدور مباشرة دون تأكيد إضافي
-      await changeUserRole(user, newRole);
-    }
-  };
-
-  // تأكيد ترقية المستخدم لمالك
-  const handlePromoteToOwner = async (password: string) => {
-    if (!selectedUser) return;
-    
-    try {
-      const success = await changeUserRole(selectedUser, 'owner', password);
-      if (success) {
-        setIsPromoteToOwnerDialogOpen(false);
-      }
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  // تغيير كلمة المرور مباشرة
-  const handleDirectPasswordChange = async (user: User, newPassword: string) => {
-    return await changeUserPassword(user, newPassword);
-  };
+    return match;
+  });
 
   if (checkingPermissions || (loading && currentUser === null)) {
     return (
@@ -112,9 +100,15 @@ const UserManagement = () => {
     );
   }
 
-  // إذا كان المستخدم ليس مالكًا، لا تعرض الصفحة
-  if (currentUser && currentUser.role !== 'owner') {
-    return null;
+  if (!currentUser || currentUser.role !== 'owner') {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">غير مصرح</h1>
+          <p className="text-gray-600">عذراً، ليس لديك صلاحية للوصول إلى هذه الصفحة</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -142,7 +136,6 @@ const UserManagement = () => {
                 <p className="text-gray-600 mt-1">إدارة حسابات المستخدمين والصلاحيات</p>
               </div>
             </div>
-            
             <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
               <Link to="/">
                 <Button
@@ -162,14 +155,35 @@ const UserManagement = () => {
               </Link>
               <Button
                 className="flex items-center gap-2 bg-gradient-to-r from-noor-purple to-noor-orange text-white hover:opacity-90 transition-all duration-300 hover:scale-105 shadow-md"
-                onClick={() => setIsCreateDialogOpen(true)}
+                onClick={() => setShowAddUser(true)}
               >
                 <Plus size={16} /> إضافة مستخدم جديد
               </Button>
             </div>
           </div>
+          {/* مربع البحث وفلترة النشاط */}
+          <div className="mt-6 flex flex-col md:flex-row items-center gap-2 max-w-2xl">
+            <div className="relative w-full md:w-72">
+              <input
+                type="text"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-noor-purple"
+                placeholder="ابحث عن مستخدم..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            </div>
+            <select
+              className="rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-noor-purple bg-white text-gray-700"
+              value={lastSignInFilter}
+              onChange={e => setLastSignInFilter(e.target.value)}
+            >
+              <option value="all">كل الحالات</option>
+              <option value="active">نشط (آخر 30 يومًا)</option>
+              <option value="inactive">غير نشط</option>
+            </select>
+          </div>
         </motion.div>
-
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -177,45 +191,32 @@ const UserManagement = () => {
           className="bg-white rounded-lg shadow-lg border border-purple-100 overflow-hidden"
         >
           <UserTable
-            users={users}
+            users={filteredUsers}
             loading={loading}
-            onChangePassword={handleOpenPasswordDialog}
-            onChangeRole={handleChangeRole}
-            onDeleteUser={handleOpenDeleteDialog}
+            onEditUser={handleEditUser}
             currentUserId={currentUser?.id}
             isOwner={currentUser?.role === 'owner'}
+            handleDeleteUser={handleDeleteUser}
+            onUserDeleted={handleUserDeleted}
+            onResetPassword={initiatePasswordReset}
           />
         </motion.div>
-
-        <CreateUserDialog
-          isOpen={isCreateDialogOpen}
-          onOpenChange={setIsCreateDialogOpen}
-          onCreateUser={createUser}
-        />
-
-        <PasswordResetDialog
-          isOpen={isPasswordDialogOpen}
-          onOpenChange={setIsPasswordDialogOpen}
-          onResetPassword={initiatePasswordReset}
-          onDirectPasswordChange={handleDirectPasswordChange}
-          selectedUser={selectedUser}
-          canDirectChange={true}
-          currentUserId={currentUser?.id}
-        />
-
-        <DeleteUserDialog
-          isOpen={isDeleteDialogOpen}
-          user={selectedUser}
-          onClose={() => setIsDeleteDialogOpen(false)}
-          onConfirm={handleDeleteUser}
-        />
-
-        <PromoteToOwnerDialog
-          isOpen={isPromoteToOwnerDialogOpen}
-          onClose={() => setIsPromoteToOwnerDialogOpen(false)}
-          onConfirm={handlePromoteToOwner}
-          user={selectedUser}
-        />
+        {showAddUser && (
+          <AddUserDialog
+            open={showAddUser}
+            onClose={() => setShowAddUser(false)}
+            onAddUser={handleAddUser}
+          />
+        )}
+        {editingUser && (
+          <EditUserDialog
+            open={!!editingUser}
+            onClose={() => setEditingUser(null)}
+            user={editingUser}
+            onUpdateUser={handleUpdateUser}
+            onInitiatePasswordReset={initiatePasswordReset}
+          />
+        )}
       </div>
     </div>
   );

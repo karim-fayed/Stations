@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { Bell, MapPin, Info } from 'lucide-react';
-import { notificationService } from '@/services/NotificationService';
 import { useToast } from '@/hooks/use-toast';
 import securityUtils from "@/utils/securityUtils";
 
@@ -45,15 +44,24 @@ const PermissionsDialog: React.FC<PermissionsDialogProps> = ({
     try {
       // طلب إذن الإشعارات
       if ('Notification' in window) {
-        // تهيئة خدمة الإشعارات
-        notificationService.initialize();
+        // إذا كان المستخدم قد منح الأذونات، لا تطلب الأذونات مرة أخرى
+        const hasGrantedPermissions = securityUtils.secureStorage.getItem('permissions_granted', false);
+        if (hasGrantedPermissions) {
+          // إظهار رسالة نجاح
+          toast({
+            title: 'تم تفعيل الأذونات',
+            description: 'شكرًا لك! يمكنك الآن الاستفادة من كامل مميزات التطبيق',
+            variant: 'default',
+          });
 
-        // طلب إذن الإشعارات
-        const notificationPermission = await notificationService.requestPermission();
+          // إغلاق مربع الحوار
+          setOpen(false);
 
-        if (notificationPermission === 'granted') {
-          // إرسال إشعار ترحيبي
-          notificationService.sendWelcomeNotification();
+          // استدعاء دالة رد الاتصال إذا تم توفيرها
+          if (onPermissionsGranted) {
+            onPermissionsGranted();
+          }
+          return;
         }
       }
 

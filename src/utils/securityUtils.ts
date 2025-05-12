@@ -1,6 +1,7 @@
 /**
  * وحدة لتأمين التطبيق بشكل عام
  * توفر وظائف أمان عامة للتطبيق
+ * تم تحديثها لتوفير حماية متقدمة للكود والبيانات
  */
 
 import secureStorage from "./secureStorage";
@@ -10,6 +11,9 @@ import secureIO from "./secureIO";
 import secureFiles from "./secureFiles";
 import secureCommunication from "./secureCommunication";
 import { supabase } from "@/integrations/supabase/client";
+import codeProtection from "./codeProtection";
+import tokenProtection from "./tokenProtection";
+import tamperProtection from "./tamperProtection";
 
 /**
  * التحقق من صلاحيات المستخدم
@@ -86,8 +90,9 @@ export const getCurrentUser = async (): Promise<any> => {
  */
 export const secureLogout = async (): Promise<void> => {
   try {
-    // تسجيل الخروج من Supabase
-    await supabase.auth.signOut();
+    // استخدام مدير الجلسات لتسجيل الخروج وتنظيف الجلسة
+    const sessionManager = (await import('./sessionManager')).default;
+    await sessionManager.logoutAndCleanup();
 
     // مسح البيانات المخزنة محليًا
     secureStorage.removeItem('session_token');
@@ -98,12 +103,17 @@ export const secureLogout = async (): Promise<void> => {
       'auth_data',
       'token',
       'credentials',
-      'session'
+      'session',
+      'noor_session_id',
+      'noor_last_activity'
     ];
 
     sensitiveKeys.forEach(key => {
       secureStorage.removeItem(key);
     });
+
+    // مسح بيانات الجلسة من sessionStorage
+    sessionStorage.removeItem('noor_browser_session');
   } catch (error) {
     console.error('فشل في تسجيل الخروج:', error);
     throw new Error('فشل في تسجيل الخروج: ' + (error as Error).message);
@@ -112,9 +122,45 @@ export const secureLogout = async (): Promise<void> => {
 
 /**
  * تأمين التطبيق عند بدء التشغيل
+ * تم تحديثها لتوفير حماية متقدمة للكود والبيانات
  */
 export const secureAppInitialization = (): void => {
   try {
+    console.log('بدء تأمين التطبيق...');
+
+    // المرحلة 1: تأمين المفاتيح والتوكن الحساسة
+    try {
+      console.log('تأمين المفاتيح والتوكن الحساسة...');
+      tokenProtection.protectAllSensitiveTokens();
+      tokenProtection.hideTokensFromConsole();
+    } catch (error) {
+      console.error('فشل في تأمين المفاتيح والتوكن:', error);
+    }
+
+    // المرحلة 2: تفعيل حماية الكود
+    try {
+      console.log('تفعيل حماية الكود...');
+      codeProtection.initializeProtection();
+    } catch (error) {
+      console.error('فشل في تفعيل حماية الكود:', error);
+    }
+
+    // المرحلة 3: تفعيل حماية الكود من التلاعب
+    try {
+      console.log('تفعيل حماية الكود من التلاعب...');
+      tamperProtection.initializeTamperProtection();
+    } catch (error) {
+      console.error('فشل في تفعيل حماية الكود من التلاعب:', error);
+    }
+
+    // المرحلة 4: ترقية تشفير البيانات المخزنة
+    try {
+      console.log('ترقية تشفير البيانات المخزنة...');
+      secureStorage.upgradeEncryption();
+    } catch (error) {
+      console.error('فشل في ترقية تشفير البيانات المخزنة:', error);
+    }
+
     // إضافة معالج للأخطاء غير المعالجة
     window.addEventListener('error', (event) => {
       console.error('خطأ غير معالج:', event.error);
@@ -154,7 +200,21 @@ export const secureAppInitialization = (): void => {
       xssProtection.httpEquiv = 'X-XSS-Protection';
       xssProtection.content = '1; mode=block';
       document.head.appendChild(xssProtection);
+
+      // إضافة سياسة Referrer-Policy
+      const referrerPolicy = document.createElement('meta');
+      referrerPolicy.httpEquiv = 'Referrer-Policy';
+      referrerPolicy.content = 'strict-origin-when-cross-origin';
+      document.head.appendChild(referrerPolicy);
+
+      // إضافة سياسة Permissions-Policy
+      const permissionsPolicy = document.createElement('meta');
+      permissionsPolicy.httpEquiv = 'Permissions-Policy';
+      permissionsPolicy.content = 'geolocation=(self), camera=(), microphone=()';
+      document.head.appendChild(permissionsPolicy);
     }
+
+    console.log('تم تأمين التطبيق بنجاح');
   } catch (error) {
     console.error('فشل في تأمين التطبيق عند بدء التشغيل:', error);
   }
@@ -168,6 +228,9 @@ export default {
   secureIO,
   secureFiles,
   secureCommunication,
+  codeProtection,
+  tokenProtection,
+  tamperProtection,
   checkUserPermission,
   isLoggedIn,
   getCurrentUser,

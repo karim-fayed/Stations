@@ -3,6 +3,7 @@ import React from 'react';
 import CitySelector from './CitySelector';
 import MapSearchBar from './MapSearchBar';
 import { SaudiCity } from '@/types/station';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface TopControlsProps {
   cities: SaudiCity[];
@@ -13,8 +14,9 @@ interface TopControlsProps {
   debouncedSearchTerm: string;
   filteredStations: any[];
   texts: any;
-  language: 'ar' | 'en';
+  language?: 'ar' | 'en'; // Hacemos el parámetro opcional
   isSearching: boolean;
+  refreshCities?: () => void;
 }
 
 const TopControls: React.FC<TopControlsProps> = ({
@@ -26,9 +28,15 @@ const TopControls: React.FC<TopControlsProps> = ({
   debouncedSearchTerm,
   filteredStations,
   texts,
-  language,
-  isSearching
+  language: propLanguage,
+  isSearching,
+  refreshCities
 }) => {
+  // Usamos el contexto de idioma
+  const { language: contextLanguage } = useLanguage();
+
+  // Usamos el idioma proporcionado como prop o el del contexto
+  const language = propLanguage || contextLanguage;
   return (
     <div className="mb-4 flex flex-col sm:flex-row gap-2">
       {/* City Selector Component */}
@@ -38,6 +46,7 @@ const TopControls: React.FC<TopControlsProps> = ({
           selectedCity={selectedCity}
           onCityChange={onCityChange}
           language={language}
+          refreshCities={refreshCities}
         />
       </div>
 

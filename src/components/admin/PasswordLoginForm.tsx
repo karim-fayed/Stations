@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { motion } from "framer-motion";
 import logger from "@/utils/logger";
+import sessionManager from "@/utils/sessionManager";
 
 interface PasswordLoginFormProps {
   email: string;
@@ -143,6 +144,14 @@ const PasswordLoginForm = ({ email, setEmail }: PasswordLoginFormProps) => {
           title: t('login', 'loginSuccess'),
           description: t('login', 'redirecting'),
         });
+
+        // تهيئة الجلسة
+        try {
+          await sessionManager.initializeSession();
+          logger.debug("تم تهيئة الجلسة بنجاح");
+        } catch (sessionError) {
+          logger.error("خطأ في تهيئة الجلسة:", sessionError);
+        }
 
         // Redirect to dashboard
         setTimeout(() => {

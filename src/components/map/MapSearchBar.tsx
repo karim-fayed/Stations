@@ -4,6 +4,7 @@ import { Search, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapTexts } from './types';
+import { useLanguage } from '@/i18n/LanguageContext';
 
 interface MapSearchBarProps {
   searchTerm: string;
@@ -11,7 +12,7 @@ interface MapSearchBarProps {
   debouncedSearchTerm: string;
   filteredStations: any[];
   texts: MapTexts;
-  language: 'ar' | 'en';
+  language?: 'ar' | 'en'; // Hacemos el parámetro opcional
   isSearching?: boolean;
 }
 
@@ -21,9 +22,14 @@ const MapSearchBar: React.FC<MapSearchBarProps> = ({
   debouncedSearchTerm,
   filteredStations,
   texts,
-  language,
+  language: propLanguage,
   isSearching = false
 }) => {
+  // Usamos el contexto de idioma
+  const { language: contextLanguage } = useLanguage();
+
+  // Usamos el idioma proporcionado como prop o el del contexto
+  const language = propLanguage || contextLanguage;
   const hasSearchResults = debouncedSearchTerm !== '' && filteredStations.length > 0;
 
   return (

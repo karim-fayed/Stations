@@ -114,7 +114,6 @@ const Index = () => {
               <InteractiveMap
                 selectedStation={selectedStation}
                 onSelectStation={handleSelectStation}
-                language={language}
                 stations={stations}
                 initBackgroundLocation={!locationInitializedRef.current}
                 onLocationInitialized={() => {
@@ -128,7 +127,6 @@ const Index = () => {
                 stations={stations}
                 onSelectStation={handleSelectStation}
                 selectedStation={selectedStation}
-                language={language}
               />
             </TabsContent>
           </Tabs>

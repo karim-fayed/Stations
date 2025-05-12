@@ -7,6 +7,7 @@ import { GasStation } from "@/types/station";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { fetchStationsByRegion } from '@/services/stationService';
+import { useLanguage } from "@/i18n/LanguageContext";
 import {
   Pagination,
   PaginationContent,
@@ -26,20 +27,25 @@ interface GasStationListProps {
   stations: GasStation[];
   onSelectStation: (station: GasStation) => void;
   selectedStation: GasStation | null;
-  language: 'ar' | 'en';
+  language?: 'ar' | 'en'; // Hacemos el parámetro opcional
 }
 
 const GasStationList: React.FC<GasStationListProps> = ({
   stations,
   onSelectStation,
   selectedStation,
-  language
+  language: propLanguage // Renombramos para evitar conflictos
 }) => {
+  // Usamos el contexto de idioma
+  const { language: contextLanguage, t } = useLanguage();
+
+  // Usamos el idioma proporcionado como prop o el del contexto
+  const language = propLanguage || contextLanguage;
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filteredStations, setFilteredStations] = useState<GasStation[]>(stations);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 5; // عدد المحطات في كل صفحة
+  const itemsPerPage = 10; // عدد المحطات في كل صفحة (تم تغييره من 5 إلى 10)
 
   const translations = useMemo(() => ({
     selectRegion: language === 'ar' ? 'اختر منطقة' : 'Select Region',
@@ -64,7 +70,21 @@ const GasStationList: React.FC<GasStationListProps> = ({
     return uniqueRegions.filter(Boolean).sort();
   }, [stations]);
 
-  // تحديث القائمة عند تغيير المنطقة المحددة
+  // تحسين أداء البحث باستخدام debounce
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>('');
+
+  // تطبيق debounce على مصطلح البحث
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // تأخير 300 مللي ثانية لتحسين الأداء
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [searchTerm]);
+
+  // تحديث القائمة عند تغيير المنطقة المحددة أو مصطلح البحث
   useEffect(() => {
     const filterStations = async () => {
       try {
@@ -78,15 +98,20 @@ const GasStationList: React.FC<GasStationListProps> = ({
         }
 
         // تطبيق البحث إذا كان هناك مصطلح بحث
-        if (searchTerm) {
-          filtered = filtered.filter(station =>
-            station.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            station.region.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            station.sub_region.toLowerCase().includes(searchTerm.toLowerCase())
-          );
+        if (debouncedSearchTerm) {
+          const searchTermLower = debouncedSearchTerm.toLowerCase();
+          // تحسين أداء البحث باستخدام مقارنة واحدة لكل محطة
+          filtered = filtered.filter(station => {
+            const nameMatch = station.name?.toLowerCase().includes(searchTermLower);
+            const regionMatch = station.region?.toLowerCase().includes(searchTermLower);
+            const subRegionMatch = station.sub_region?.toLowerCase().includes(searchTermLower);
+            return nameMatch || regionMatch || subRegionMatch;
+          });
         }
 
         setFilteredStations(filtered);
+        // إعادة تعيين الصفحة الحالية إلى 1 عند تغيير نتائج البحث
+        setCurrentPage(1);
       } catch (error) {
         console.error('Error filtering stations:', error);
         setFilteredStations([]);
@@ -94,7 +119,7 @@ const GasStationList: React.FC<GasStationListProps> = ({
     };
 
     filterStations();
-  }, [selectedRegion, stations, searchTerm]);
+  }, [selectedRegion, stations, debouncedSearchTerm]);
 
   // تنسيق المسافة
   const formatDistance = (station: GasStation) => {
@@ -139,7 +164,7 @@ const GasStationList: React.FC<GasStationListProps> = ({
             <SelectTrigger className="w-full sm:w-[300px]">
               <SelectValue placeholder={translations.selectRegion} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent dir={language === 'ar' ? 'rtl' : 'ltr'}>
               <SelectGroup>
                 <SelectItem value="all">{translations.allRegions}</SelectItem>
                 {regions.map((region) => (
@@ -235,7 +260,7 @@ const GasStationList: React.FC<GasStationListProps> = ({
           </Table>
         </div>
 
-        {/* إضافة التنقل بين الصفحات */}
+        {/* إضافة التنقل بين الصفحات - تم توحيد عناصر التنقل */}
         {filteredStations.length > 0 && (
           <div className="mt-4">
             <Pagination>

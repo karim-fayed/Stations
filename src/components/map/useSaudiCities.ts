@@ -1,51 +1,65 @@
 
 import { useEffect, useState } from 'react';
 import { SaudiCity } from '../../types/station';
-import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { fetchCities, getDefaultCities } from '@/services/cityService';
 
 export const useSaudiCities = () => {
   const [cities, setCities] = useState<SaudiCity[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
   const { toast } = useToast();
 
+  // دالة لتحديث قائمة المدن
+  const refreshCities = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  // دالة لإضافة مدينة محلية إلى القائمة
+  const addLocalCity = (newCity: SaudiCity) => {
+    setCities(prevCities => {
+      // التحقق من عدم وجود المدينة بالفعل في القائمة
+      const exists = prevCities.some(city =>
+        city.name === newCity.name ||
+        (city.latitude === newCity.latitude && city.longitude === newCity.longitude)
+      );
+
+      if (exists) {
+        return prevCities;
+      }
+
+      // إضافة المدينة الجديدة وترتيب القائمة أبجديًا
+      return [...prevCities, newCity].sort((a, b) => a.name.localeCompare(b.name));
+    });
+  };
+
   useEffect(() => {
-    const fetchCities = async () => {
+    const getCities = async () => {
       try {
         setIsLoading(true);
-        // Get cities from the database
-        const { data, error } = await supabase
-          .from('cities')
-          .select('*');
 
-        if (error) {
-          throw error;
-        }
+        // استخدام الخدمة الجديدة لجلب المدن
+        const citiesData = await fetchCities();
+        setCities(citiesData);
 
-        // Map database cities to SaudiCity interface
-        const mappedCities: SaudiCity[] = data.map(city => ({
-          name: city.name_ar,
-          nameEn: city.name_en,
-          latitude: city.latitude,
-          longitude: city.longitude,
-          zoom: city.zoom || 10
-        }));
-
-        setCities(mappedCities);
       } catch (error) {
         console.error('Error fetching cities:', error);
         toast({
           title: 'خطأ في جلب المدن',
-          description: 'حدث خطأ أثناء محاولة جلب قائمة المدن',
+          description: 'حدث خطأ أثناء محاولة جلب قائمة المدن. تم استخدام القائمة الافتراضية.',
           variant: 'destructive',
         });
+
+        // استخدام قائمة المدن الافتراضية في حالة حدوث أي خطأ
+        const defaultCities = getDefaultCities();
+        setCities(defaultCities);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchCities();
-  }, [toast]);
+    getCities();
+  }, [toast, refreshTrigger]);
 
-  return { cities, isLoading };
+  return { cities, isLoading, refreshCities, addLocalCity };
 };

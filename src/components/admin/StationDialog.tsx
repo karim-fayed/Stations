@@ -15,6 +15,7 @@ interface StationDialogProps {
   station: Partial<GasStation>;
   isEditing: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onSelectChange: (name: string, value: string) => void;
   onClose: () => void;
   onSubmit: () => void;
 }
@@ -24,6 +25,7 @@ const StationDialog = ({
   station,
   isEditing,
   onInputChange,
+  onSelectChange,
   onClose,
   onSubmit,
 }: StationDialogProps) => {
@@ -40,10 +42,11 @@ const StationDialog = ({
             {description}
           </DialogDescription>
         </DialogHeader>
-        
+
         <StationForm
           station={station}
           onInputChange={onInputChange}
+          onSelectChange={onSelectChange}
           onCancel={onClose}
           onSubmit={onSubmit}
           submitLabel={submitLabel}

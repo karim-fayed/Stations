@@ -34,8 +34,9 @@ export const logger = {
    * تسجيل معلومات
    */
   info: (message: string, ...data: any[]): void => {
-    if (!isLoggingEnabled) return;
-    console.info(message, ...data);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(message, ...data);
+    }
   },
 
   /**
@@ -57,8 +58,9 @@ export const logger = {
    * تسجيل معلومات تصحيح الأخطاء - فقط في وضع التطوير
    */
   debug: (message: string, ...data: any[]): void => {
-    if (!isLoggingEnabled) return;
-    console.debug(message, ...data);
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(message, ...data);
+    }
   },
 
   /**

@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Home, Users, UserCircle, LogOut, MapPin, FileSpreadsheet, BarChart, Languages } from "lucide-react";
+import { Menu, Home, Users, UserCircle, LogOut, FileSpreadsheet, BarChart, Languages } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { motion } from "framer-motion";
@@ -34,7 +34,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOwner = false, onLogout
       href: '/',
     },
     {
-      icon: <MapPin size={20} />,
+      icon: <Home size={20} />,
       label: t('dashboard', 'stations'),
       href: '/admin/dashboard',
     },
@@ -60,6 +60,12 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOwner = false, onLogout
       icon: <Users size={20} />,
       label: t('userManagement', 'title'),
       href: '/admin/users',
+    });
+
+    menuItems.push({
+      icon: null,
+      label: 'إدارة المناطق',
+      href: '/admin/regions',
     });
   }
 

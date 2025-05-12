@@ -81,13 +81,13 @@ const Header = () => {
                   </Link>
                 </NavigationMenuItem>
 
-                <NavigationMenuItem>
+                {/* <NavigationMenuItem>
                   <Link to="/about">
                     <Button variant="ghost" className="text-white text-sm h-8 px-2 md:h-10 md:px-4">
                       {language === 'ar' ? 'عن نور' : 'About Noor'}
                     </Button>
                   </Link>
-                </NavigationMenuItem>
+                </NavigationMenuItem> */}
 
                 <NavigationMenuItem>
                   <Link to="/contact">
@@ -95,7 +95,7 @@ const Header = () => {
                       {language === 'ar' ? 'اتصل بنا' : 'Contact Us'}
                     </Button>
                   </Link>
-                </NavigationMenuItem>
+                </NavigationMenuItem> 
 
                 <NavigationMenuItem>
                   <LanguageSwitcher

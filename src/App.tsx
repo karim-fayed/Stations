@@ -1,21 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState, Suspense, lazy } from "react";
-import Index from "./pages/Index";
-import Services from "./pages/Services";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import LoginPage from "./pages/Admin/Login";
-import Dashboard from "./pages/Admin/Dashboard";
-import UserManagement from "./pages/Admin/UserManagement";
-import ProfilePage from "./pages/Admin/Profile";
-import DatabaseManagement from "./pages/Admin/DatabaseManagement";
-import SecurityExamples from "./pages/SecurityExamples";
-import NotFound from "./pages/NotFound";
 import { ensureAdminExists } from "./utils/admin";
 import AuthGuard from "@/components/admin/AuthGuard";
 import WhatsAppButton from "./components/WhatsAppButton";
@@ -24,8 +12,33 @@ import PermissionsDialog from "@/components/permissions/PermissionsDialog";
 import LoadingIndicator from "@/components/ui/loading-indicator";
 import logger from "@/utils/logger";
 import securityUtils from "@/utils/securityUtils";
+import { fixUpdateStationFunction } from "@/integrations/supabase/client";
+import sessionManager from "@/utils/sessionManager";
 
-const queryClient = new QueryClient();
+// تحميل المكونات بشكل كسول
+const Index = lazy(() => import("./pages/Index"));
+const Services = lazy(() => import("./pages/Services"));
+//const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const LoginPage = lazy(() => import("./pages/Admin/Login"));
+const Dashboard = lazy(() => import("./pages/Admin/Dashboard"));
+const UserManagement = lazy(() => import("./pages/Admin/UserManagement"));
+const ProfilePage = lazy(() => import("./pages/Admin/Profile"));
+const DatabaseManagement = lazy(() => import("./pages/Admin/DatabaseManagement"));
+const RegionsManagement = lazy(() => import("./pages/Admin/RegionsManagement"));
+const SecurityExamples = lazy(() => import("./pages/SecurityExamples"));
+const FeedbacksAdmin = lazy(() => import("./pages/Admin/Feedbacks"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 دقائق
+      gcTime: 10 * 60 * 1000, // 10 دقائق
+      retry: 1,
+    },
+  },
+});
 
 const App = () => {
   const [showPermissionDialog, setShowPermissionDialog] = useState(false);
@@ -51,8 +64,36 @@ const App = () => {
       soundService.initialize();
     }, 1000);
 
+    // المرحلة 2.5: التحقق من حالة الجلسة
+    setTimeout(async () => {
+      logger.debug("App initializing - stage 2.5: checking session state");
+      try {
+        // التحقق من حالة الجلسة عند تحميل التطبيق
+        // هذا سيقوم بتسجيل الخروج تلقائيًا إذا تم إغلاق المتصفح/التبويب وإعادة فتحه
+        await sessionManager.checkSessionOnLoad();
+      } catch (error) {
+        logger.error("Error checking session state:", error);
+      }
+    }, 1200);
+
     // تم إزالة المرحلة 3: التحقق من المستخدمين المشرفين
     // لا يتم إنشاء مستخدمين تلقائيًا بعد الآن
+
+    // المرحلة 3.5: إصلاح وظائف قاعدة البيانات
+    setTimeout(async () => {
+      logger.debug("App initializing - stage 3.5: fixing database functions");
+      try {
+        // محاولة إصلاح دالة تحديث المحطة
+        const result = await fixUpdateStationFunction();
+        if (result) {
+          logger.debug("Successfully fixed update_station function");
+        } else {
+          logger.warn("Failed to fix update_station function automatically");
+        }
+      } catch (error) {
+        logger.error("Error fixing database functions:", error);
+      }
+    }, 1500);
 
     // المرحلة 4: عرض مربع حوار الأذونات إذا لزم الأمر
     setTimeout(() => {
@@ -69,6 +110,11 @@ const App = () => {
         setShowPermissionDialog(true);
       }
     }, 2000);
+
+    // تنظيف عند إلغاء تحميل المكون
+    return () => {
+      // لا نقوم بتسجيل الخروج هنا، فقط نقوم بتنظيف المستمعين
+    };
   }, []);
 
   return (
@@ -81,40 +127,52 @@ const App = () => {
         {isLoading && <LoadingIndicator />}
 
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/admin/login" element={<LoginPage />} />
-            <Route path="/admin/dashboard" element={
-              <AuthGuard>
-                <Dashboard />
-              </AuthGuard>
-            } />
-            <Route path="/admin/users" element={
-              <AuthGuard requireOwner={true}>
-                <UserManagement />
-              </AuthGuard>
-            } />
-            <Route path="/admin/profile" element={
-              <AuthGuard>
-                <ProfilePage />
-              </AuthGuard>
-            } />
-            <Route path="/admin/database" element={
-              <AuthGuard requireOwner={true}>
-                <DatabaseManagement />
-              </AuthGuard>
-            } />
-            <Route path="/admin/security-examples" element={
-              <AuthGuard requireOwner={true}>
-                <SecurityExamples />
-              </AuthGuard>
-            } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Suspense fallback={<LoadingIndicator />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/services" element={<Services />} />
+              {/* <Route path="/about" element={<About />} /> */}
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/admin/login" element={<LoginPage />} />
+              <Route path="/admin/dashboard" element={
+                <AuthGuard>
+                  <Dashboard />
+                </AuthGuard>
+              } />
+              <Route path="/admin/users" element={
+                <AuthGuard requireOwner={true}>
+                  <UserManagement />
+                </AuthGuard>
+              } />
+              <Route path="/admin/profile" element={
+                <AuthGuard>
+                  <ProfilePage />
+                </AuthGuard>
+              } />
+              <Route path="/admin/database" element={
+                <AuthGuard requireOwner={true}>
+                  <DatabaseManagement />
+                </AuthGuard>
+              } />
+              <Route path="/admin/security-examples" element={
+                <AuthGuard requireOwner={true}>
+                  <SecurityExamples />
+                </AuthGuard>
+              } />
+              <Route path="/admin/feedbacks" element={
+                <AuthGuard requireOwner={true}>
+                  <FeedbacksAdmin />
+                </AuthGuard>
+              } />
+              <Route path="/admin/regions" element={
+                <AuthGuard requireOwner={true}>
+                  <RegionsManagement />
+                </AuthGuard>
+              } />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
           <WhatsAppButton />
 
           {/* مكون طلب الأذونات */}

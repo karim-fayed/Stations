@@ -10,6 +10,7 @@ import { UserCircle, Mail, Phone, MapPin, Clock, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import FeedbackForm from '@/components/FeedbackForm';
 
 const Contact = () => {
   const { language, t } = useLanguage();
@@ -54,6 +55,7 @@ const Contact = () => {
       titleEn: 'Call Us',
       contentAr: '+966 8003033313',
       contentEn: '+966 8003033313',
+      onClick: () => window.open('tel:+9668003033313', '_self'),
     },
     {
       icon: <Mail size={24} />,
@@ -61,6 +63,7 @@ const Contact = () => {
       titleEn: 'Email',
       contentAr: 'info@noor.com.sa',
       contentEn: 'info@noor.com.sa',
+      onClick: () => window.open('mailto:info@noor.com.sa', '_self'),
     },
     {
       icon: <MapPin size={24} />,
@@ -68,6 +71,14 @@ const Contact = () => {
       titleEn: 'Address',
       contentAr: 'نجران، المملكة العربية السعودية',
       contentEn: 'Najran, Saudi Arabia',
+      onClick: () => {
+        if (confirm('هل تود الانتقال إلى موقع الشركة على خريطة Google؟')) {
+          window.open(
+            'https://www.google.com/maps/place/NJGA8170،+8170+الغويلا+144،+3330،+حي+الغويلا+ب،+نجران+66231',
+            '_blank'
+          );
+        }
+      },
     },
     {
       icon: <Clock size={24} />,
@@ -123,14 +134,24 @@ const Contact = () => {
                       transition={{ duration: 0.3, delay: index * 0.1 }}
                       className="flex items-center gap-3"
                     >
-                      <div className="text-noor-purple">
-                        {item.icon}
-                      </div>
+                      <div className="text-noor-purple">{item.icon}</div>
                       <div>
                         <h3 className="font-medium">
                           {language === 'ar' ? item.titleAr : item.titleEn}
                         </h3>
-                        <p className="text-gray-600">
+                        <p
+                          onClick={item.onClick ? item.onClick : undefined} // إضافة onClick للنص فقط
+                          className={`text-gray-600 ${
+                            item.onClick ? 'cursor-pointer underline hover:text-noor-purple' : ''
+                          }`} // تسطير النص وتغيير اللون عند التمرير
+                          title={
+                            item.onClick
+                              ? language === 'ar'
+                                ? 'انقر للتفاعل'
+                                : 'Click to interact'
+                              : undefined
+                          } // إضافة تلميح عند التمرير
+                        >
                           {language === 'ar' ? item.contentAr : item.contentEn}
                         </p>
                       </div>
@@ -139,19 +160,29 @@ const Contact = () => {
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow-lg p-6 h-[300px]">
+              <div className="bg-white rounded-lg shadow-lg p-6 h-[350px]">
                 <h2 className="text-xl font-bold mb-4">
                   {language === 'ar' ? 'موقعنا' : 'Our Location'}
                 </h2>
-                <div className="bg-gray-200 h-full rounded-lg flex items-center justify-center">
-                  <p className="text-gray-500">
-                    {language === 'ar' ? 'خريطة جوجل ستظهر هنا' : 'Google Map will appear here'}
-                  </p>
-                </div>
+                <iframe
+                  title="Google Map"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3623.976795093967!2d44.333933!3d17.5670539!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x15fed944db4cb7b1%3A0xc976f5bbaf6d674f!2zTmFqcmFuLCDYp9mE2YjZhtin2YYg2YTZhNix2KfZhSDZhdin2YTZitmG2Kk!5e0!3m2!1sar!2ssa!4v1715179640373!5m2!1sar!2ssa&disableDefaultUI=true"
+                  style={{
+                    width: '100%',
+                    height: '258px',
+                    border: 0,
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+
+                  }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-lg p-6">
+           {/*  <div className="bg-white rounded-lg shadow-lg p-6">
               <h2 className="text-xl font-bold mb-4">
                 {language === 'ar' ? 'أرسل لنا رسالة' : 'Send Us a Message'}
               </h2>
@@ -234,7 +265,152 @@ const Contact = () => {
                   )}
                 </Button>
               </form>
+            </div> */}
+
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-semibold mb-6 text-center text-noor-purple">
+                {language === 'ar'
+                  ? 'هل لديك فكرة أو اقتراح؟ نحن هنا للاستماع إليك!'
+                  : 'Do you have an idea or suggestion? We are here to listen to you!'}
+              </h2>
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+
+                {/* Name Input */}
+                <div className="relative input-field">
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    className="peer mt-1 block w-full rounded-lg border border-[#ecedec] bg-transparent px-4 py-3 text-lg focus:outline-none focus:border-[#2d79f3] focus:ring-0 focus:shadow-none"
+                    placeholder=" "
+                  />
+                  <Label
+                    htmlFor="name"
+                    className={`absolute transition-all duration-300 text-gray-400 bg-transparent
+                      peer-placeholder-shown:top-[5px] peer-placeholder-shown:left-[15px] peer-placeholder-shown:text-lg
+                      peer-focus:top-[-22px] peer-focus:left-[12px] peer-focus:text-xl peer-focus:text-[#2d79f3] peer-focus:font-bold
+                      ${language === 'ar' ? 'right-4 left-auto text-right' : 'left-4 text-left'}`}
+                  >
+                    {language === 'ar' ? 'الاسم' : 'Name'}
+                  </Label>
+                </div>
+
+                {/* Email Input */}
+                <div className="relative input-field mt-6">
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="peer mt-1 block w-full rounded-lg border border-[#ecedec] bg-transparent px-4 py-3 text-lg focus:outline-none focus:border-[#2d79f3] focus:ring-0 focus:shadow-none"
+                    placeholder=" "
+                  />
+                  <Label
+                    htmlFor="email"
+                    className={`absolute transition-all duration-300 text-gray-400 bg-transparent
+                      peer-placeholder-shown:top-[5px] peer-placeholder-shown:left-[15px] peer-placeholder-shown:text-lg
+                      peer-focus:top-[-22px] peer-focus:left-[12px] peer-focus:text-xl peer-focus:text-[#2d79f3] peer-focus:font-bold
+                      ${language === 'ar' ? 'right-4 left-auto text-right' : 'left-4 text-left'}`}
+                  >
+                    {language === 'ar' ? 'البريد الإلكتروني' : 'Email'}
+                  </Label>
+                </div>
+
+                {/* Phone Input */}
+                <div className="relative input-field mt-6">
+                  {/* Prefix +966 */}
+                  <span
+                    className={`absolute top-1/2 left-4 -translate-y-1/2 text-gray-500 text-lg select-none ${
+                      formData.phone ? '' : ''
+                    }`}
+                  >
+                    +966
+                  </span>
+
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => {
+                      // نسمح فقط بالأرقام
+                      const digitsOnly = e.target.value.replace(/\D/g, '');
+                      setFormData({ ...formData, phone: digitsOnly });
+                    }}
+                    required
+                    maxLength={9} // لأن أرقام السعودية عادة 9 بعد +966
+                    className="peer mt-1 block w-full rounded-lg border border-[#ecedec] bg-transparent px-20 py-3 text-lg focus:outline-none focus:border-[#2d79f3] focus:ring-0 focus:shadow-none"
+                    placeholder=" "
+                    dir="ltr"
+                  />
+
+                  <Label
+                    htmlFor="phone"
+                    className={`absolute transition-all duration-300 text-gray-400 bg-transparent
+                      peer-placeholder-shown:top-[5px] peer-placeholder-shown:left-[15px] peer-placeholder-shown:text-lg
+                      peer-focus:top-[-22px] peer-focus:left-[12px] peer-focus:text-xl peer-focus:text-[#2d79f3] peer-focus:font-bold
+                      ${language === 'ar' ? 'right-4 left-auto text-right' : 'left-4 text-left'}`}
+                  >
+                    {language === 'ar' ? 'رقم الهاتف' : 'Phone'}
+                  </Label>
+                </div>
+
+
+
+                {/* Message Textarea */}
+                <div className="relative input-field mt-6">
+                  <Textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                    rows={4}
+                    className="peer mt-1 block w-full rounded-lg border border-[#ecedec] bg-transparent px-4 py-3 text-lg focus:outline-none focus:border-[#2d79f3] focus:ring-0 focus:shadow-none"
+                    placeholder=" "
+                  />
+                  <Label
+                    htmlFor="message"
+                    className={`absolute transition-all duration-300 text-gray-400 bg-transparent
+                      peer-placeholder-shown:top-[5px] peer-placeholder-shown:left-[15px] peer-placeholder-shown:text-lg
+                      peer-focus:top-[-22px] peer-focus:left-[12px] peer-focus:text-xl peer-focus:text-[#2d79f3] peer-focus:font-bold
+                      ${language === 'ar' ? 'right-4 left-auto text-right' : 'left-4 text-left'}`}
+                  >
+                    {language === 'ar' ? 'الرسالة' : 'Message'}
+                  </Label>
+                </div>
+
+
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-gradient-to-r from-noor-purple to-noor-orange text-white hover:opacity-90 py-3 text-lg rounded-lg focus:outline-none"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <span className="animate-spin">⌛</span>
+                      {language === 'ar' ? 'جاري الإرسال...' : 'Sending...'}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Send size={18} />
+                      {language === 'ar' ? 'إرسال الرسالة' : 'Send Message'}
+                    </span>
+                  )}
+                </Button>
+              </form>
             </div>
+
+            <FeedbackForm />
+
+
+
+
           </div>
         </motion.div>
       </main>

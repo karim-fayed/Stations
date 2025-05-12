@@ -58,8 +58,8 @@ export const useBackgroundLocation = (language: 'ar' | 'en') => {
     // خيارات عالية الدقة لتحديد الموقع مع تحسينات للتوافق مع مختلف المتصفحات
     const options = {
       enableHighAccuracy: true,
-      timeout: 30000, // زيادة المهلة لتحسين التوافق مع سفاري وأجهزة آبل
-      maximumAge: 10000 // السماح باستخدام موقع مخزن مؤقتًا لتحسين الأداء
+      timeout: 60000, // زيادة المهلة أكثر لتحسين التوافق مع سفاري وأجهزة آبل
+      maximumAge: 30000 // السماح باستخدام موقع مخزن مؤقتًا لتحسين الأداء
     };
 
     // بدء متابعة الموقع
@@ -158,10 +158,44 @@ export const useBackgroundLocation = (language: 'ar' | 'en') => {
             attemptsRef.current++;
             console.log(`Location timeout, retrying (attempt ${attemptsRef.current}/3)...`);
 
-            // إعادة المحاولة بعد ثانيتين
+            // إعادة المحاولة بعد فترة أطول (5 ثوانٍ)
             setTimeout(() => {
               startBackgroundLocationTracking();
-            }, 2000);
+            }, 5000);
+          } else {
+            // إذا فشلت المحاولات المتكررة، نستخدم خيارات أقل دقة
+            console.log('Multiple location timeouts, trying with lower accuracy settings...');
+
+            // استخدام خيارات أقل دقة للمحاولة الأخيرة
+            const fallbackOptions = {
+              enableHighAccuracy: false,
+              timeout: 10000,
+              maximumAge: 60000
+            };
+
+            // محاولة أخيرة باستخدام getCurrentPosition بدلاً من watchPosition
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                const { latitude, longitude, accuracy } = position.coords;
+                const timestamp = position.timestamp;
+
+                console.log(`Fallback location obtained: ${latitude}, ${longitude}, accuracy: ${accuracy}m`);
+
+                setLocationData({
+                  latitude,
+                  longitude,
+                  accuracy,
+                  timestamp
+                });
+
+                setIsLocating(false);
+              },
+              (fallbackErr) => {
+                console.error('Fallback location error:', fallbackErr);
+                setIsLocating(false);
+              },
+              fallbackOptions
+            );
           }
         }
       },
