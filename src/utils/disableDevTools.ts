@@ -7,9 +7,23 @@
 // استخدام import.meta.env بدلاً من process.env
 const isProduction = import.meta.env.PROD === true;
 
+// دالة لاكتشاف iOS/Safari
+function isIOS() {
+// استخدام window كـ unknown ثم تحويله إلى Record<string, unknown> لتجاوز تحذيرات any
+const win = window as unknown as Record<string, unknown>;
+return /iPad|iPhone|iPod/.test(navigator.userAgent) && !win.MSStream;
+}
+function isSafari() {
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+}
+
 if (isProduction) {
-  // تعطيل أدوات المطور
+  // تعطيل أدوات المطور (ما عدا iOS/Safari)
   const disableDevTools = () => {
+    if (isIOS() || isSafari()) {
+      // لا تفعل أي شيء على iOS/Safari
+      return;
+    }
     // تعطيل مفتاح F12
     document.addEventListener('keydown', (event) => {
       if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && event.key === 'I')) {
@@ -38,9 +52,13 @@ if (isProduction) {
       const widthThreshold = window.outerWidth - window.innerWidth > threshold;
       const heightThreshold = window.outerHeight - window.innerHeight > threshold;
 
+      // استخدام window كـ unknown ثم تحويله إلى Record<string, unknown> لتجاوز تحذيرات any
+      const win = window as unknown as Record<string, unknown>;
+      // تعريف نوع Firebug بشكل آمن
+      const firebug = win.Firebug as { chrome?: { isInitialized?: boolean } } | undefined;
       if (
         !(heightThreshold && widthThreshold) &&
-        ((window.Firebug && window.Firebug.chrome && window.Firebug.chrome.isInitialized) ||
+        ((firebug && firebug.chrome && firebug.chrome.isInitialized) ||
           widthThreshold ||
           heightThreshold)
       ) {

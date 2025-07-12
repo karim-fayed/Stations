@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 
+import { GasStation } from '@/types/station';
+
 interface MapOverlaysProps {
   isLoadingLocation: boolean;
   isLoadingNearest: boolean;
   selectedCity: string;
-  filteredStations: any[];
+  filteredStations: GasStation[];
   language: 'ar' | 'en';
   isLoadingCity?: boolean;
 }
@@ -18,22 +20,41 @@ const MapOverlays: React.FC<MapOverlaysProps> = ({
   language,
   isLoadingCity = false
 }) => {
-  const [showInitialMessage, setShowInitialMessage] = useState(true);
-  
-  // Hide the initial message after 5 seconds
+
+  // رسالة ترحيب تظهر مرة واحدة فقط عند أول زيارة
+  const [showWelcome, setShowWelcome] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !window.localStorage.getItem('noor_map_welcome_shown');
+    }
+    return true;
+  });
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowInitialMessage(false);
-    }, 5000);
-    
-    // Clean up timer when component unmounts
-    return () => clearTimeout(timer);
-  }, []);
+    if (showWelcome && typeof window !== 'undefined') {
+      const timer = setTimeout(() => {
+        setShowWelcome(false);
+        window.localStorage.setItem('noor_map_welcome_shown', '1');
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [showWelcome]);
 
   return (
     <>
-      {/* Show "Select a city" message when no city is selected, but hide after 5 seconds */}
-      {!selectedCity && filteredStations.length === 0 && !isLoadingLocation && !isLoadingCity && showInitialMessage && (
+      {/* رسالة ترحيب تظهر مرة واحدة فقط */}
+      {showWelcome && !isLoadingLocation && !isLoadingCity && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-2xl text-center z-[9999]">
+          <h3 className="text-2xl font-bold text-noor-purple mb-3">
+            {language === 'ar' ? 'مرحباً بك في خريطة المحطات' : 'Welcome to the Stations Map'}
+          </h3>
+          <p className="text-gray-700 text-lg mb-2">
+            {language === 'ar' ? 'يرجى اختيار مدينة من القائمة لعرض المحطات' : 'Please select a city to view stations'}
+          </p>
+        </div>
+      )}
+
+      {/* رسالة اختر مدينة تظهر فقط إذا لم يتم اختيار مدينة ولم تظهر رسالة الترحيب */}
+      {!showWelcome && !selectedCity && filteredStations.length === 0 && !isLoadingLocation && !isLoadingCity && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm p-6 rounded-lg shadow-lg text-center">
           <h3 className="text-xl font-bold text-noor-purple mb-2">
             {language === 'ar' ? 'اختر مدينة' : 'Select a City'}

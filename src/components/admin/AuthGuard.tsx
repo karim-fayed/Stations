@@ -3,7 +3,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import LoadingSpinner from "@/components/ui/loading-spinner";
-import sessionManager from "@/utils/sessionManager";
+
 import logger from "@/utils/logger";
 
 interface AuthGuardProps {
@@ -24,6 +24,7 @@ const AuthGuard = ({ children, requireOwner = false }: AuthGuardProps) => {
 
         // التحقق من حالة الجلسة عند تحميل الصفحة
         // هذا سيقوم بتسجيل الخروج تلقائيًا إذا تم إغلاق المتصفح/التبويب وإعادة فتحه
+        const sessionManager = (await import("@/utils/sessionManager")).default;
         const isSessionValid = await sessionManager.checkSessionOnLoad();
 
         if (!isSessionValid) {

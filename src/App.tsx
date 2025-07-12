@@ -13,7 +13,7 @@ import LoadingIndicator from "@/components/ui/loading-indicator";
 import logger from "@/utils/logger";
 import securityUtils from "@/utils/securityUtils";
 import { fixUpdateStationFunction } from "@/integrations/supabase/client";
-import sessionManager from "@/utils/sessionManager";
+
 
 // تحميل المكونات بشكل كسول
 const Index = lazy(() => import("./pages/Index"));
@@ -40,7 +40,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => {
+function App() {
   const [showPermissionDialog, setShowPermissionDialog] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -68,8 +68,8 @@ const App = () => {
     setTimeout(async () => {
       logger.debug("App initializing - stage 2.5: checking session state");
       try {
-        // التحقق من حالة الجلسة عند تحميل التطبيق
-        // هذا سيقوم بتسجيل الخروج تلقائيًا إذا تم إغلاق المتصفح/التبويب وإعادة فتحه
+        // Dynamic import for sessionManager
+        const sessionManager = (await import("@/utils/sessionManager")).default;
         await sessionManager.checkSessionOnLoad();
       } catch (error) {
         logger.error("Error checking session state:", error);
@@ -112,9 +112,6 @@ const App = () => {
     }, 2000);
 
     // تنظيف عند إلغاء تحميل المكون
-    return () => {
-      // لا نقوم بتسجيل الخروج هنا، فقط نقوم بتنظيف المستمعين
-    };
   }, []);
 
   return (
@@ -132,7 +129,6 @@ const App = () => {
               <Route path="/" element={<Index />} />
               <Route path="/services" element={<Services />} />
               {/* <Route path="/about" element={<About />} /> */}
-              <Route path="/contact" element={<Contact />} />
               <Route path="/admin/login" element={<LoginPage />} />
               <Route path="/admin/dashboard" element={
                 <AuthGuard>
@@ -149,16 +145,6 @@ const App = () => {
                   <ProfilePage />
                 </AuthGuard>
               } />
-              <Route path="/admin/database" element={
-                <AuthGuard requireOwner={true}>
-                  <DatabaseManagement />
-                </AuthGuard>
-              } />
-              <Route path="/admin/security-examples" element={
-                <AuthGuard requireOwner={true}>
-                  <SecurityExamples />
-                </AuthGuard>
-              } />
               <Route path="/admin/feedbacks" element={
                 <AuthGuard requireOwner={true}>
                   <FeedbacksAdmin />
@@ -172,6 +158,7 @@ const App = () => {
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+
           </Suspense>
           <WhatsAppButton />
 
@@ -188,6 +175,6 @@ const App = () => {
       </TooltipProvider>
     </QueryClientProvider>
   );
-};
+}
 
 export default App;

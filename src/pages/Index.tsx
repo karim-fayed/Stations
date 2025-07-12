@@ -78,16 +78,26 @@ const Index = () => {
     >
       <Toaster />
 
-      <div className="absolute top-4 right-4 z-10">
-        <Link to="/admin/login">
-          <Button variant="outline" className="flex items-center gap-2 bg-white/80 hover:bg-white">
-            <UserCircle size={18} />
-            <span className="hidden sm:inline">{t('home', 'adminPanel')}</span>
-          </Button>
-        </Link>
-      </div>
 
-      <Header />
+      {/* هيدر مع زر القائمة وزر لوحة التحكم في نفس الصف */}
+      <div className="relative">
+        <Header />
+        <div
+          className="absolute z-20"
+          style={{
+            top: '50%',
+            transform: 'translateY(-50%)',
+            right: '1rem',
+          }}
+        >
+          <Link to="/admin/login">
+            <Button variant="outline" className="flex items-center gap-2 bg-white/80 hover:bg-white shadow-md">
+              <UserCircle size={18} />
+              <span className="hidden sm:inline">{t('home', 'adminPanel')}</span>
+            </Button>
+          </Link>
+        </div>
+      </div>
 
       <main className="flex-grow container mx-auto p-4 md:p-6">
 
@@ -114,7 +124,7 @@ const Index = () => {
               <InteractiveMap
                 selectedStation={selectedStation}
                 onSelectStation={handleSelectStation}
-                stations={stations}
+                stations={filteredStations.length > 0 ? filteredStations : stations}
                 initBackgroundLocation={!locationInitializedRef.current}
                 onLocationInitialized={() => {
                   locationInitializedRef.current = true;
